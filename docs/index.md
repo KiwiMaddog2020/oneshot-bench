@@ -148,3 +148,7 @@ deterministic suite: serve the game, open it with the test flag, and watch 71
 assertions and a world fingerprint settle in six seconds. That is the
 reproducible half. The rest is a careful record of a single long climb, plateau
 and blind spot included.
+
+---
+
+<p class="byline"><em>I build agentic systems across multiple coding LLMs. More of my research notes are <a href="/">here</a>.</em></p>

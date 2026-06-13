@@ -1,0 +1,1303 @@
+{
+ "round": 4,
+ "round_mps": 37.5,
+ "derivation": "Panel: worldgen 37, player 38, rendering 37, systems 40, perf 38. Median = 38. Systems' 40 is the unverified-heavy outlier: it credits ~5 of 7 passive+hostile mob weights while natural spawn ticks, despawn, and sun-burn were explicitly unobservable in this round's sub-second frame pumps, and it banks ~1 structure weight on micro-ruins; discounting it pulls the merge below the raw median. The two 37s are not symmetric drags \u2014 worldgen's deficit is mostly verification debt on already-landed code (de-jitter, mountains, snow line node-verified but never play-converted), and rendering withholds on structurally-unhearable audio and two probe-starved cores. Harsh, ties-down: 37.5. Delta +2.5 vs round 3's 35, decomposed: weight-4 crafting family flipped from probe-proven fail to live-verified end-to-end (+~1.3), mob layer live across render/AI/combat/drops/death-respawn but discounted for the unverified ecology legs and the verified player-knockback fail (+~1.5 net), first structures-family credit at micro scale (+~0.5), input-core conversions (look, wheel, dusk/night, cloud drift) (+~0.3), minus expectation pressure from five grep-proven-absent families (light, weather, smelting, farming, redstone) and five perf foundations carried unaddressed a third round (-~0.6).",
+ "probe": {
+  "observations": "ENVIRONMENT: this round's frame pumps were far smaller than round 3's (~0.05-0.15s of sim per screenshot vs ~0.5s; gt crept ~1 game-minute per pump). Consequence: anything needing >1s of continuous sim (natural mob-spawn ticks, zombie 1.5s sun-burn, the 0.8s drop-pickup immunity window) was hard to observe live \u2014 I verified the porkchop drop spawned, rested on ground, and magnetized toward the player, but never saw it cross into inventory before budget pressure moved me on (round 3 verified drop auto-collect for apples; addItem itself proven via give()). Natural spawn/despawn and zombie daylight burning are therefore UNVERIFIED live (code paths read clean: night-only zombie waves <=4 within r18-32, day pigs on grass columns, despawn at pd>56, sunT>=1.5 burn with particle burst) - do not award or dock them on my account. FPS was unmeasurable (HUD reads 0 while hidden; 60 on fresh visible load; no sign of regression even with 8 zombies + particle bursts). HUD text (XYZ/biome/clock) is throttled/one-frame stale - screenshots sometimes show the previous camera's HUD line. Zero console errors and zero __vox.errors across the whole session including two loads, a death, 8 simultaneous mobs, and the full crafting choreography. GAME FEEL: the mob layer makes the world feel inhabited - pigs amble between trees, flee when struck (with a proper red hurt-flash), die into pink particle bursts and a spinning textured porkchop; zombies path straight at you at night and the surrounding-pack death was genuinely menacing. The round-3 headline bug is FIXED beautifully: recipes now match >= counts with exact-amount consumption and leftovers, right-click half-stack splitting exists, sticks even got a hotbar icon + label. The crafting screenshot (grid leftovers 1 plank/4 planks/2 sticks, output offering a second pick, crafted pick showing a green durability bar) is the money shot. Structures are charming: broken mossy-stone ruin rings with a crafting table centerpiece on flowered plains, and desert wells (stone rim, corner posts, 1-deep water) among cacti. The desert floating islets at (560,115) are gone - 0 non-foliage floating blocks in a 56x61-block scan (the only 'floaters' are tree canopies). One design note for judges: zombie hits apply NO knockback impulse to the player (damage flash + hp only) - filed as a fail since the round prompt asked explicitly, but it reads as a scope choice, not a bug; mobs themselves DO take knockback (vx/vz=6, vy=4 on hit, observed as flee+stun). Pig portrait, hurt-flash, death burst+drop, night zombie, dusk sky, ruin, well, and crafting UI all captured in screenshots. Items I deliberately did not re-verify (round-3 passes, code unchanged): pause-freeze, AO corners, tool speed timing, hunger drain mechanics, underwater effect, particles.",
+  "verified_pass": [
+   {
+    "feature": "Pig mob: spawn, render, terrain-aware wander",
+    "evidence": "spawnMob('pig') x2 auto-placed at h+1 standing exactly on grass (feet-block air, below-block solid); wandered 0.09-0.45 blocks across pumps with direction changes; screenshot shows boxy pink body/snout/legs walking past camera."
+   },
+   {
+    "feature": "Punching a pig (combat path): damage, hurt-flash, flee, knockback",
+    "evidence": "attack() bare-hand chunks hp 5->3->1->-1 (2/hit); screenshot caught the pig fully red-tinted mid-hurt-flash turned away fleeing (fled 0.45 blocks); 'hit' sfx logged per punch."
+   },
+   {
+    "feature": "Pig death yields porkchop drop",
+    "evidence": "On death: pink particle burst + spinning item-drop cube with porkchop texture at death spot (screenshot); dropList -> {id:106} which fell and rested on ground correctly."
+   },
+   {
+    "feature": "Porkchop is food: eating restores hunger",
+    "evidence": "eat() with porkchop: hunger 10->18 (+8 exactly = FOOD[106]), item consumed, 'eat' sfx event logged."
+   },
+   {
+    "feature": "Zombie: night render, aggro chase toward player",
+    "evidence": "Spawned at midnight 5 blocks out; moved straight at the player across pumps (x 123.5->123.43->123.3 toward player at 118.5/122.2, z locked to player z, yaw facing); green-skinned figure visible in night screenshot."
+   },
+   {
+    "feature": "Zombie melee damages player",
+    "evidence": "Adjacent zombie hit for exactly 2 (hp 20->18, then pack volleys 18->4->0); full-frame red damage-flash captured in two screenshots."
+   },
+   {
+    "feature": "Death by zombie -> respawn loop",
+    "evidence": "8-zombie volleys drove hp to 0; 'You died' overlay + Respawn button (screenshot); clicking it restored hp 20/hunger 20 at exact spawn (116.5,29.02,115.5) with inventory kept."
+   },
+   {
+    "feature": "Mobs don't fall through terrain or wedge in blocks",
+    "evidence": "All observed pigs/zombies kept y exactly at ground level across wander/chase/flee over varied terrain steps (feet in air block, solid block below; zombie descended a 1-block step cleanly, never sank or embedded)."
+   },
+   {
+    "feature": "Mouse-look via injected look() path with pitch clamp",
+    "evidence": "look(100,50) changed yaw/pitch by exactly -0.22/-0.11 (0.0022/px); extreme look pinned pitch at +/-1.55 rad, never past."
+   },
+   {
+    "feature": "Wheel hotbar switching (+ digit keys)",
+    "evidence": "Dispatched WheelEvent deltaY +120/+120/-120/-120: selection cycled 1->2->3->2->1; key('3') jumped selection; matches locked||TEST wheel handler."
+   },
+   {
+    "feature": "M mute toggle with HUD indicator",
+    "evidence": "key('m') -> HUD gained '| muted' tag after a frame pump (master gain set to 0 in code); second toggle removed it."
+   },
+   {
+    "feature": "Clouds drift over time",
+    "evidence": "skyInfo().cloudOx moved 0.33286->0.33261->0.34143->-0.93 (wrapped) across the session's sim time; cloud layer visible in every sky screenshot."
+   },
+   {
+    "feature": "Night sky with stars",
+    "evidence": "setTime(0): sky hex #03050e, starOp 1, sunVis false; screenshot shows scattered stars + dark cloud silhouettes over the ocean."
+   },
+   {
+    "feature": "Dusk warm tinting",
+    "evidence": "setTime(18.4): sky hex #3c2019 (R>G>B, warm red-brown); screenshot shows sunset-brown sky band with early stars."
+   },
+   {
+    "feature": "Crafting UI reachability after the >= fix: log->planks->sticks->wood pick with leftovers, via real mouse events",
+    "evidence": "All via dispatched mousedown on .islot elements: 10 logs in grid -> output 4 planks, click left 9 logs LEFTOVER in grid; 10 planks -> 4 sticks, 8 planks leftover; grid [planks+planks+sticks] -> wood pick, consuming exactly 3 planks+2 sticks (leftovers 1/4/2 shown in screenshot with pick + durability bar in inventory)."
+   },
+   {
+    "feature": "Right-click stack splitting in inventory UI",
+    "evidence": "Right-click mousedown on an 8-plank grid stack picked up half (cursor 4, slot 4); placed as a separate stack - the round-3 'no stack splitting' blocker is gone."
+   },
+   {
+    "feature": "Crafting inputs decrement correctly / closing UI returns grid items",
+    "evidence": "After closing: planks 9 (10+4-2-3), logs 9 (10-1), sticks 2 (4-2), 1 pick dur 60 - exact arithmetic; grid leftovers auto-returned to inventory slots."
+   },
+   {
+    "feature": "Seeded micro-structures: plains/forest ruins",
+    "evidence": "findStructures(300) listed 2 ruins + 3 wells; at (264,28,424): 16 stone wall blocks + crafting table at center confirmed by block reads; screenshot shows broken stone wall ring on flowered meadow."
+   },
+   {
+    "feature": "Seeded micro-structures: desert wells",
+    "evidence": "At (104,30,264): 12 stone (3x3 rim + corner posts) + exactly 1 water block (id 5) at center column over sand, confirmed by block scan; screenshot shows the well among cacti on dunes."
+   },
+   {
+    "feature": "Desert floating islets at ~(560,115) are gone (floating-cap fix)",
+    "evidence": "Scanned x535-590/z85-145 up to h+20 for solids with 2+ air below: 0 non-foliage hits (only tree-canopy leaves); round 3's two grass islets no longer exist."
+   },
+   {
+    "feature": "Save/load round-trip (regression spot-check)",
+    "evidence": "Dug grass at (116,28,115), save(); reload ?test=1&load=1: block still air, full inventory restored (sticks 2, planks 9, logs 9, pick id 101 dur 60 in same slots), player at saved hover pos, dusk clock persisted, 0 errors."
+   },
+   {
+    "feature": "Deterministic seeded spawn (regression spot-check)",
+    "evidence": "Fresh ?test=1 load spawned at exactly (116.5, 29.02, 115.5) facing the same beach vista as rounds 2-3, seed 1337 in HUD."
+   },
+   {
+    "feature": "Combat/eat sfx events",
+    "evidence": "__vox.sfx logged 'hit' x3 (one per landed punch) and 'eat' at the exact interaction moments; attack also has a dedicated 260Hz generator in code."
+   }
+  ],
+  "verified_fail": [
+   {
+    "feature": "Player knockback when hit by a zombie",
+    "evidence": "Adjacent zombie hit (hp 20->18) left player position and velocity bit-identical (vel {0,0,0}, pos unchanged); damage() applies hp loss + red flash + thump only - no impulse, while mobs hit by the player DO get knockback."
+   }
+  ]
+ },
+ "panel": [
+  {
+   "domain": "worldgen",
+   "confidence": "Medium-high. My domain now rests on three probe rounds plus this round's direct worldgen evidence (56x61 floater scan, block-level structure reads at two sites with screenshots, deterministic spawn/save round-trips), and the lane-3 code changes are surgically located (CI/genChunk only, mesher untouched). Residual swing ~+/-1 MPS: the de-jitter/beach/mountain changes are node-execution-verified but have zero fresh play observations (I withheld credit on coherent-regions, biome shapes, snow line accordingly), the snowy biome has not been re-sighted since the label field changed octaves, and the mob-family credits feeding my build-wide number carry the probe's explicit natural-spawn/sun-burn caveats which I neither awarded nor docked.",
+   "mps": 37,
+   "item_verdicts": [
+    {
+     "feature": "Rolling multi-scale terrain (core)",
+     "verdict": "pass",
+     "evidence": "Carried two-round verification plus this round's varied sites: dunes with wells at (104,30,264), flowered plains with ruins at (264,28,424), forest at spawn, shoreline vista re-observed on fresh load; height stack unchanged except mtn amp coefficients."
+    },
+    {
+     "feature": "Four-plus distinct biomes (core)",
+     "verdict": "pass",
+     "evidence": "Desert (cacti/dunes well screenshot), plains (flowered meadow ruin screenshot), forest (trees at spawn), ocean re-observed this round; snowy palette carried from round 2 \u2014 label thresholds unchanged, only smoothed to 2-octave fields (line 233), palette/texture code untouched."
+    },
+    {
+     "feature": "Trees with trunk and canopy (core)",
+     "verdict": "pass",
+     "evidence": "Probe's floater scan classified the only elevated blocks as tree canopies; pigs observed ambling between trees; tree decoration code (lines 274-294) unchanged this round."
+    },
+    {
+     "feature": "Sea-level water bodies (core)",
+     "verdict": "pass",
+     "evidence": "Spawn beach/ocean vista identical across loads; night screenshot shows ocean to horizon; SEA=26 and ocean-shaping params unchanged; well water is a deliberate 1-deep structure cell, not a sea-level violation (verified exactly 1 water block id 5)."
+    },
+    {
+     "feature": "Sand beaches at shorelines (core)",
+     "verdict": "pass",
+     "evidence": "Spawn beach vista re-observed on fresh ?test=1 load this round; new clamp (line 236) only restricts sand on non-shoreline plains, it cannot remove shoreline sand (h<=SEA always sand)."
+    },
+    {
+     "feature": "Surface soil layering (core)",
+     "verdict": "pass",
+     "evidence": "Round-3 column dig (grass y28 -> dirt -> stone y24) carried; tp/un layering and the b=3-below-h-4 column code untouched by lane 3; probe dug grass at (116,28,115) again this round for the save test."
+    },
+    {
+     "feature": "Large explorable world (core)",
+     "verdict": "pass",
+     "evidence": "This round's teleports to (264,424), (104,264), and the (535-590, 85-145) scan all hit fully generated terrain; carried 1600x1600 grid coverage and bedrock floor."
+    },
+    {
+     "feature": "Seamless chunk borders (core)",
+     "verdict": "pass",
+     "evidence": "Multiple cold teleports to structure sites and the 56x61 desert scan produced zero seam/hole observations; mesher untouched this round; carried round-3 explicit no-seams check."
+    },
+    {
+     "feature": "Safe solid spawn (core)",
+     "verdict": "pass",
+     "evidence": "Fresh ?test=1 load spawned standing at exactly (116.5, 29.02, 115.5) on the beach, seed 1337 in HUD; deterministic spawn search (lines 473-477) re-verified post-rebaseline."
+    },
+    {
+     "feature": "Stable revisited terrain (core)",
+     "verdict": "pass",
+     "evidence": "Save/load round-trip: dug block still air after reload with full inventory/clock restored; chunk regen + editB re-apply (line 309) proven again; identical spawn vista across two loads."
+    },
+    {
+     "feature": "Biome-specific terrain shapes (stretch)",
+     "verdict": "unverified",
+     "evidence": "Mountain window/amp widened (sst(.48,.78), 46*mtn, lines 221-222) and builder node-verified max h=49 within 500 of spawn, but no peak, stone band, or steep terrain has ever been screenshotted in three probe rounds; node execution locates, play must credit."
+    },
+    {
+     "feature": "Coherent blended biome regions (stretch)",
+     "verdict": "unverified",
+     "evidence": "Round-3's fail basis (single-column biome islands, sand-painted plains) was fixed by the 2-octave de-jitter + beach clamp and node-verified (0 islands on a 64x64 border grid, 0/3022 plains sand), but the probe took no biome-border walk or HUD-vs-ground observation this round; previous fail evidence is obsolete, fresh pass evidence absent."
+    },
+    {
+     "feature": "Underground caves (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-2 shaft exposing cave air at y~14 (depth >3 below surface, unaffected by the new h-y>=3 gate); cave() tunnel/cavern noise (lines 250-254) otherwise unchanged."
+    },
+    {
+     "feature": "Ore blocks in stone (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried: coal drops from dug stone (round 2), distinct coal/iron textures in world and inventory, hardness 2.8/3.5 timed (round 3); ore placement code (line 266) untouched this round."
+    },
+    {
+     "feature": "Bedrock bottom layer (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-2 verification (5x brk() refused at the floor, id 9 at d[base], line 262); code untouched."
+    },
+    {
+     "feature": "Flowers and grass tufts (stretch)",
+     "verdict": "pass",
+     "evidence": "Re-observed this round: ruin sits on a flowered meadow in the screenshot; round-2 scatter verification carried."
+    },
+    {
+     "feature": "Per-biome tree variants (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried oak-vs-conifer round-2 verification; this round's desert screenshots show cacti and zero trees among dunes; tree-type selection now follows the de-jittered label but type code unchanged."
+    },
+    {
+     "feature": "Seeded world regeneration (stretch)",
+     "verdict": "pass",
+     "evidence": "Seed 1337 visible in HUD, ?seed override exists, fresh load reproduced exact spawn (116.5, 29.02, 115.5) and beach vista; save/load probe confirmed deterministic chunk regen beneath the edit diff."
+    },
+    {
+     "feature": "Overhangs and ledges (stretch)",
+     "verdict": "unverified",
+     "evidence": "Generation remains heightmap + cave carve; the new h-y>=3 gate makes surface-breaching carves rarer, so true overhangs are even less likely; none observed in three rounds despite the file header advertising them."
+    },
+    {
+     "feature": "Ocean biome expanse (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-2 deep-ocean measurement (floor ~10 below sea level at (0,0)); ocean re-observed this round in the night-sky screenshot; cont*17 ocean shaping and SEA unchanged by lane 3."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "Cold teleports to both structure sites and the desert scan region meshed without freezes or missing patches; budgeted queue (7ms/frame, lines 818-824) untouched."
+    },
+    {
+     "feature": "Vegetation placement rules (stretch)",
+     "verdict": "pass",
+     "evidence": "FLIPPED from round-3 fail: probe scanned x535-590/z85-145 to h+20 and found 0 non-foliage floating blocks (round 3's two grass islets gone \u2014 the h-y>=3 carve gate works); cacti-on-desert-sand re-observed in the well screenshot."
+    },
+    {
+     "feature": "Altitude snow line (stretch)",
+     "verdict": "unverified",
+     "evidence": "snow=h>=45 coded (line 234) and node runs found 12 columns h>=46 within 500 of spawn, but no snow-capped peak has ever been observed in play; pure verification debt now that terrain provably reaches the line."
+    },
+    {
+     "feature": "Surface cave entrances (wow)",
+     "verdict": "fail",
+     "evidence": "No walkable cave mouth observed in three rounds; the mesher still has no skylight model (face brightness x AO only, lines 416-432), so 'dark interiors visible' is structurally unattainable, and the new carve gate further suppresses surface breaches."
+    },
+    {
+     "feature": "Rivers crossing terrain (wow)",
+     "verdict": "unverified",
+     "evidence": "River carve widened to sst(.06,.02) (line 225) per the round-3 gap, but still zero winding-channel sightings in any screenshot across three probe rounds; advertised in the header, never witnessed."
+    },
+    {
+     "feature": "Biome-tinted foliage (wow)",
+     "verdict": "unverified",
+     "evidence": "Smooth wet/dry/cold tint blending coded (lines 238-241) and retained on 3-octave fields, but no within-shot grass/leaf hue shift has ever been captured."
+    },
+    {
+     "feature": "Depth-based ore rarity (wow)",
+     "verdict": "unverified",
+     "evidence": "Coal y>8 / iron y<=14 split coded (line 266); coal verified shallow in round 2 but iron has never been found by digging in three rounds, so the depth contrast remains unobserved in play."
+    },
+    {
+     "feature": "Horizon fog veil (wow)",
+     "verdict": "pass",
+     "evidence": "Every screenshot this round (dusk band, night ocean, desert teleports) shows terrain dissolving into sky-matched fog with no generation edge; fog setup unchanged."
+    },
+    {
+     "feature": "Villages or structures (43+ family, weight 3)",
+     "verdict": "pass",
+     "evidence": "FIRST CREDIT after three rounds at zero \u2014 partial (~1 of 3 weights): findStructures(300) listed 2 ruins + 3 wells; ruin at (264,28,424) verified by block reads (16 stone wall blocks + central crafting table) with screenshot on flowered plains; well at (104,30,264) verified (12 stone rim/posts + exactly 1 water id 5 over sand) with screenshot; deterministic 1-in-37 seeded placement (line 296). Micro-structures, not villages \u2014 no multi-building settlements, no loot containers."
+    },
+    {
+     "feature": "World save/load over deterministic regen (43+ family, weight 2, worldgen-coupled)",
+     "verdict": "pass",
+     "evidence": "Re-verified this round: dug block persisted as air through reload ?test=1&load=1 with inventory/durability/clock restored; edits layer over deterministic chunk regen (editB re-apply line 309); structures generate before the edit re-apply so player edits win."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+ family, weight 1, worldgen-coupled spawn rules)",
+     "verdict": "unverified",
+     "evidence": "Night-only zombie waves and day-pigs-on-grass-columns (ci.tp===1, lines 733-740) read clean and use worldgen column data correctly, but the probe's short frame pumps could not observe a natural spawn tick; per the probe's explicit instruction, neither awarded nor docked."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Skylight darkening so caves read dark (light family seed)",
+     "detail": "The mesher (index.html:416-432) still bakes face brightness x AO with no sky-exposure term, so cave interiors render fully daylit: the surface-cave-entrances wow is structurally unattainable, the weight-3 light-propagation family sits at zero, and light-linked spawning (weight 1) has nothing to link to. A per-column depth-below-heightmap factor folded into vertex colors, plus one torch block with local BFS brightening, converts a family plus two wow items and unlocks dark-cave atmosphere. Touches buildChunk and every remesh path \u2014 the verified zero-seam/AO record is at stake, so it needs its own isolated lane.",
+     "mps_gain": 1.2,
+     "risk": "high"
+    },
+    {
+     "title": "Grow micro-structures toward an actual village",
+     "detail": "Structures finally banked this round but at roughly 1 of 3 family weights: wells and ruin rings are charming single-chunk flavor. A small seeded hamlet (2-3 huts with walls/roofs/doorways on a flat plains site, dirt paths, one loot container block) reusing the same 1-in-37 hash + flatness gate (index.html:296-299) but at a rarer cadence would move the family toward full credit and give exploration a destination; keep all writes chunk-local or use the tree-style -3..18 overlap loop to span two chunks safely.",
+     "mps_gain": 0.8,
+     "risk": "medium"
+    },
+    {
+     "title": "Convert mountains, snow line, and coherent regions \u2014 pure probe work",
+     "detail": "Lane 3 made all three provable and nobody looked: node runs confirm max h=49 within 500 of spawn (12 columns >=46, so the h>=45 snow cap and h>=42 stone band exist), and the de-jitter was node-verified at 0 single-column islands. One probe transect using __vox.colInfo to locate the peak, a teleport screenshot of the white cap and stone band, and a biome-border walk with HUD-vs-ground agreement converts two stretch items and removes the coherent-regions stain that has carried since round 2. Zero code change.",
+     "mps_gain": 0.7,
+     "risk": "low"
+    },
+    {
+     "title": "Biome-coupled weather (rain/snow) \u2014 weight-2 family at zero",
+     "detail": "Still no precipitation code anywhere. A camera-local particle volume (rain over plains/forest, snowfall in snowy biome and above the h>=45 line, none in desert) keyed off the existing CI biome field, with fog/sky dimming and a rain-noise audio bed through the existing master gain, banks the family and is the strongest remaining pure-atmosphere add. Medium risk: touches updSky and the particle budget that has passed two stress rounds.",
+     "mps_gain": 0.7,
+     "risk": "medium"
+    },
+    {
+     "title": "Evidence path for natural mob spawning (worldgen-coupled spawn rules)",
+     "detail": "The spawner's worldgen coupling (pigs only on ci.tp===1 grass columns, spawn at CI.h+1, water/solid rejection at line 738) is exactly my domain's contract, and it went unverified because spawn ticks need >1s of continuous sim the harness can't pump. Add a __vox.spawnTick() that runs one spawner pass synchronously (or a TEST multiplier on mobSpawnT) so the probe can verify night-zombie/day-pig placement rules deterministically; converts the light-linked weight-1 family leg and shores up both mob families against next round's harsher scrutiny.",
+     "mps_gain": 0.4,
+     "risk": "low"
+    },
+    {
+     "title": "Ore-depth and foliage-tint conversions",
+     "detail": "Both wow items remain coded-never-observed after three rounds: no iron ever found by digging (coal y>8 / iron y<=14 split, line 266) and no in-shot tint shift captured (lines 238-241). Have the probe dig two timed shafts (y~20 vs y~10) counting ore encounters via __vox.block, and screenshot one forest/plains border for hue shift; optionally enlarge iron veins slightly. Two wow points for near-zero code risk.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Make one river findable",
+     "detail": "The channel window was widened to sst(.06,.02) per the round-3 gap and still no river has appeared in any screenshot \u2014 the feature stays dead code from the scorecard's perspective for a third round. Either add a __vox helper that scans rawH/rv for the nearest channel and have the probe fly it, or widen the threshold again until a river demonstrably crosses the spawn-500 region; converts a wow item and feeds the rivers-feed-seas claim the file header makes.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 4 finally moved my domain after two stagnant rounds: the floating-islet regression is verifiably dead (0 non-foliage floaters in a 56x61 scan where round 3 found two), vegetation rules flips back to pass, and the villages/structures family banks its first credit ever \u2014 wells and ruin rings verified block-for-block at two sites with screenshots, deterministically seeded and layered under player edits. The de-jitter, beach clamp, and mountain boost also landed and were node-execution-verified, but the probe never play-converted them, so coherent regions, biome shapes, and the snow line stay uncredited alongside the perennially unobserved rivers/tint/iron-depth \u2014 roughly 1.5 MPS of pure verification debt sitting in my domain. Build-wide through my lens, the delta is +2 over the round-3 panel's 35: the crafting reachability fix and the live-verified pig/zombie layer complete the 50-band ingredient list (inventory, crafting, health, basic mobs all now play-proven), worth roughly +8 systems family weights, tempered by the player-knockback fail, the unverified natural-spawn/sun-burn legs, and the still-absent light, weather, smelting, farming, and redstone families. I land at 37 with ties broken downward: the world now has destinations and inhabitants, but caves still render daylit, no mountain or river has ever been witnessed, and structures are flavor-grade rather than village-grade."
+  },
+  {
+   "domain": "player",
+   "mps": 38,
+   "confidence": "Medium-high. The interaction substrate (break/place, hold-to-mine, inventory/crafting UI, vitals, mob combat both directions) now rests on live play evidence with exact numbers, and the round-3 headline bug is probe-proven fixed. Residual swing ~+/-1.5: the pointer-lock/collision cluster (real lock cycle, strafe, wall, ceiling, context menu, swim-up - roughly 10 checklist points) is dark for a fourth consecutive round and could convert either way, and the panel's pricing of the partially verified mob families (natural spawn ticks, sun-burn, despawn never observed live due to ~0.1s frame pumps) is the main judgment call. I credited ~5 of the 7 passive+hostile weights; full credit would add ~1, a harsher void of unspawned-mob evidence would cost ~1.5.",
+   "item_verdicts": [
+    {
+     "feature": "Pointer lock with re-lock (core)",
+     "verdict": "unverified",
+     "evidence": "Headless probes cannot engage real pointer lock; lock()/.catch hardening and the pause-as-lock-lost overlay exist (index.html:539-545) but no live lock/Esc/re-lock cycle has been observed in four rounds."
+    },
+    {
+     "feature": "Smooth clamped mouse look (core)",
+     "verdict": "pass",
+     "evidence": "NEW conversion: probe drove the handler body via __vox.look - look(100,50) moved yaw/pitch exactly -0.22/-0.11 (0.0022/px) and extreme input pinned pitch at +/-1.55, never past; the real mousemove is a one-line wrapper around the same applyLook (line 548), leaving only the lock flag itself (item above) unproven."
+    },
+    {
+     "feature": "Camera-relative WASD (core)",
+     "verdict": "unverified",
+     "evidence": "Held-W toward view proven (round-3 sneak-lip test) but A/D strafe and correctness-after-turning were never exercised even though look()+sample() now make it scriptable; half-verified, no credit."
+    },
+    {
+     "feature": "Calibrated jump with gravity arc (core)",
+     "verdict": "pass",
+     "evidence": "Round-3 sample(): vy0=8.4, peak +1.50 blocks (mounts one, never two), re-jump only after ground contact; physics() untouched by all three round-4 lanes."
+    },
+    {
+     "feature": "Solid floor collision (core)",
+     "verdict": "pass",
+     "evidence": "Deterministic spawns standing at (116.5,29.02,115.5) across fresh load, save/load, and respawn this round; player and 8 mobs traversed varied terrain steps with zero sink-throughs all session."
+    },
+    {
+     "feature": "Wall collision without clipping (core)",
+     "verdict": "unverified",
+     "evidence": "No horizontal wall-push test in four rounds; coll() per-axis resolve (lines 479-486) remains play-unproven despite being scriptable today."
+    },
+    {
+     "feature": "Ceiling collision (core)",
+     "verdict": "unverified",
+     "evidence": "Never jumped under a roof or pillared into a ceiling in any probe session; the coll(1,amt>0) clamp is code-read only."
+    },
+    {
+     "feature": "Reach-limited block targeting (core)",
+     "verdict": "pass",
+     "evidence": "Round-2 empirical boundary ~5.5 blocks from eye (within 4-6 spec); ray() t>5.5 unchanged (line 583); every observed interaction this round hit the exact aimed block or mob."
+    },
+    {
+     "feature": "Targeted block outline (core)",
+     "verdict": "pass",
+     "evidence": "Wireframe outline on the exact crosshair block re-confirmed in round-3/4 screenshots; updHL tracks per frame (line 636)."
+    },
+    {
+     "feature": "Left-click breaks block (core)",
+     "verdict": "pass",
+     "evidence": "Hold-to-mine at per-block hardness carried (0.84s log / 2.22s stone bare / 0.72s picked); probe dug grass at (116,28,115) this round for the save test; the new attackMob-first gate (line 552) only intercepts when a mob is under the crosshair."
+    },
+    {
+     "feature": "Right-click places on targeted face (core)",
+     "verdict": "pass",
+     "evidence": "Round-2 face-correct placement plus round-3 pillar persisted through save/load; tryPlace cell/face path untouched this round."
+    },
+    {
+     "feature": "No placing inside player (core)",
+     "verdict": "pass",
+     "evidence": "overlaps() guard (line 602) intact and live-refused in round 2; no self-entombment across stress bursts; code unchanged."
+    },
+    {
+     "feature": "Multi-type hotbar (core)",
+     "verdict": "pass",
+     "evidence": "9 textured, counted, named slots with selection indicator; sticks gained an icon + label this round (probe-observed in the crafting screenshots)."
+    },
+    {
+     "feature": "Hotbar switching works 1-9 AND wheel (core)",
+     "verdict": "pass",
+     "evidence": "NEW conversion: dispatched WheelEvents through the real listener (gate now locked||TEST, line 555) cycled selection 1->2->3->2->1; key('3') jumped selection; round-2 digit placements matched selection. Item's both legs finally evidenced."
+    },
+    {
+     "feature": "Centered readable crosshair (core)",
+     "verdict": "pass",
+     "evidence": "Adaptive crosshair carried from round-2 verification; visible against day, dusk, and night skies in this round's screenshots."
+    },
+    {
+     "feature": "No right-click context menu (core)",
+     "verdict": "unverified",
+     "evidence": "document-level preventDefault present (line 538) but no real right-click has ever been performed; the synthetic right-mousedown used for stack splitting cannot trigger a native menu."
+    },
+    {
+     "feature": "Sprint speed boost (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-3: sprint:true under held keys with FOV 75->86.9 and hunger drain, ending exactly on release; shared speed formula (sprint?7:4.4) sample-measured."
+    },
+    {
+     "feature": "Wall sliding on contact (stretch)",
+     "verdict": "unverified",
+     "evidence": "No diagonal wall push performed in four rounds of probing."
+    },
+    {
+     "feature": "Diagonal speed normalized (stretch)",
+     "verdict": "unverified",
+     "evidence": "hypot normalization coded (line 494) but W+D vs W speed never sampled."
+    },
+    {
+     "feature": "No interaction through walls (stretch)",
+     "verdict": "unverified",
+     "evidence": "DDA stops at first solid block (line 585) and every observed break hit the aimed block, but an explicit break-through-a-wall attempt was never made."
+    },
+    {
+     "feature": "Clean fall when undermined (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-2 30-block shaft repeated the undermined fall 30 times without snap or clip; round-3 dug holes; physics path unchanged."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "The round-4 session ran visibility-hidden with ~0.05-0.15s pumps; every resume was clean across two loads, a death, and 8 simultaneous mobs; zero __vox.errors and zero console errors (dt clamp .05)."
+    },
+    {
+     "feature": "Hold-to-break mining (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-3 timings matched the HARD table within frame tolerance; release/target-change resets verified; mineTick untouched this round."
+    },
+    {
+     "feature": "Pillar jumping (stretch)",
+     "verdict": "unverified",
+     "evidence": "The jump-place-beneath-rise sequence has never been performed; a pillar was only built statically for the round-3 save test."
+    },
+    {
+     "feature": "Fly mode toggle (stretch)",
+     "verdict": "pass",
+     "evidence": "key(F) toggle with FLY HUD tag carried; the standing judges' caution (toggle fly before setCam or fall) re-confirms gravity restoration is real."
+    },
+    {
+     "feature": "Swimming in water (stretch)",
+     "verdict": "unverified",
+     "evidence": "Slowed movement and gentle sink verified round 2, but Space swim-up (line 505, vel.y+=30dt) remains untested after four rounds; two-thirds verified gets no credit, ties down."
+    },
+    {
+     "feature": "Sprint FOV kick (wow)",
+     "verdict": "pass",
+     "evidence": "Round-3: fov eased 75->86.9 sprinting and back to exactly 75 within ~0.5s of release; code unchanged."
+    },
+    {
+     "feature": "Sneak mode with edge guard (wow)",
+     "verdict": "pass",
+     "evidence": "Round-3: eyeH 1.62->1.31, max speed 1.7 vs walk 4.4, ledge-lip freeze over 90 frames while the same un-sneaked walk fell; sneak code untouched."
+    },
+    {
+     "feature": "Ghost placement preview (wow)",
+     "verdict": "pass",
+     "evidence": "Translucent preview tracking the crosshair verified rounds 2-3; id<100 gating intact (line 639); no regression in any round-4 screenshot."
+    },
+    {
+     "feature": "Inventory with stacking - 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "36-slot model with drag, shift-click, and NEW right-click half-stack splitting verified via real mousedown (cursor 4/slot 4, place-one on empty); full inventory round-tripped save/load (same slots, dur 60) and death (kept)."
+    },
+    {
+     "feature": "Crafting table and recipes - 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "Round-3's load-bearing fail is FIXED and probe-proven: >= matching (line 913) with exact-amount consumption and leftovers; full log->planks->sticks->wood-pick choreography via real mouse events with leftovers 1/4/2 and dur-60 pick screenshot. Only unverified leg: right-clicking a placed table to open the 3x3 (line 605)."
+    },
+    {
+     "feature": "Tools with durability and mining speeds - 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "Carried timed mechanics (2.22s bare vs 0.72s picked stone, dur decrement persisting through save/load, tier-gated drops); the crafted pick this round showed its green durability bar - and the acquisition path is now reachable in normal play."
+    },
+    {
+     "feature": "Health, damage, and fall damage - 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Zombie melee chunked hp 20->18 then pack volleys 18->4->0 at exactly 2/hit with full-frame red flash (two screenshots); death overlay + Respawn restored hp 20/hunger 20 at exact spawn; fall damage carried from round 2."
+    },
+    {
+     "feature": "Hunger and food - 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Porkchop ate for exactly +8 (FOOD[106]) with item consumed and eat sfx; drain/sprint-gate/apples/starvation carried from round 3; the food chain now includes a mob drop, and eat-anywhere works aiming at sky (line 607)."
+    },
+    {
+     "feature": "Passive mobs - 43+ family, weight 3",
+     "verdict": "pass",
+     "evidence": "Pig spawn-placement on grass, terrain-aware wander, hurt-flash, flee with knockback, death burst, and porkchop drop->ground->magnet all verified live via the spawn hook; natural spawn ticks unverified (probe env could not sustain >1s sim) - I credit ~2 of 3 weights."
+    },
+    {
+     "feature": "Hostile mobs and combat - 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "Zombie night chase (position monotonically closing, yaw facing), melee at exactly 2/hit, 8-mob pack kill and respawn loop, player attack with damage/knockback/flee on mobs - all live; holes: no player knockback (filed fail), sun-burn and natural night waves unverified - I credit ~3 of 4 weights."
+    },
+    {
+     "feature": "Light-linked mob spawning - 43+ family, weight 1",
+     "verdict": "fail",
+     "evidence": "The spawner keys on global daylight gDL only (line 733); no per-block light values exist anywhere, so a dark cave can never spawn a mob at noon - day/night gating is a coarse proxy, not light-linking."
+    },
+    {
+     "feature": "Player knockback when hit by a zombie",
+     "verdict": "fail",
+     "evidence": "Probe-verified: a landed zombie hit left player pos/vel bit-identical; damage() (line 980) applies hp/flash/thump only, while mobs hit by the player get vx/vz=6, vy=4 (line 722) - the asymmetry reads as a scope choice but fails the explicit round ask."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Collision/movement verification micro-suite (2 cores + 4 stretch, fourth round dark)",
+     "detail": "Wall push, ceiling bump, strafe-after-turn, diagonal-speed sampling, pillar jumping, and Space swim-up are ALL scriptable today with the existing key()+look()+sample()+place() hooks - build a 2-high wall and push diagonally, jump under a roof, run the jump-place-rise sequence, swim up from the round-2 pond. coll() (index.html:479-486) reads correct; ~8 checklist points convert with zero gameplay code touched. This is the cheapest MPS in the build and it has been left on the table four rounds running.",
+     "mps_gain": 1.4,
+     "risk": "low"
+    },
+    {
+     "title": "Real pointer-lock + context-menu headed pass",
+     "detail": "Pointer lock with re-lock and native right-click suppression are the only two player cores that cannot be scripted headless (synthetic events cannot engage document.pointerLockElement or trigger a native menu). One human or headed-browser pass - click to lock, Esc, re-lock, right-click during play - converts both 2-pt cores and retroactively hardens the entire look/wheel cluster's evidence. Zero code risk.",
+     "mps_gain": 0.9,
+     "risk": "low"
+    },
+    {
+     "title": "Mob-life evidence path: batch-sim hook for natural spawn, sun-burn, despawn",
+     "detail": "The spawner (night zombies <=4 at r18-32, day pigs on grass), 1.5s daylight burn, pd>56 despawn, and the 0.8s drop-pickup-to-inventory completion all need >1s of continuous sim that ~0.1s frame pumps cannot deliver. Add an additive TEST-only __vox.step(seconds) that runs the active-branch updates (physics/updDrops/updMobs/gt) in a fixed-dt loop without rendering; one probe call then converts the remaining ~2 mob-family weights and closes the drop-collection loop. Keep it idempotent per the zombie-eval trap.",
+     "mps_gain": 0.7,
+     "risk": "low"
+    },
+    {
+     "title": "Player knockback when hit by mobs",
+     "detail": "The round's only filed fail: damage() (index.html:980) applies hp/flash/thump with zero impulse while attackMob gives mobs vx/vz=6, vy=4 (line 722). Pass an optional source position into damage(), apply a small horizontal impulse + vy pop to vel when present (zombie contact at line 751 supplies M.x/M.z), leave fall/starve/cactus calls sourceless. Restores combat symmetry and the read of being hit; tiny, isolated, and the mob side already proves the pattern.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Combat and food-chain depth toward a complete 50-band loop",
+     "detail": "Basic mobs landed; what keeps the survival loop thin is one weapon class and one more animal: a sword recipe (planks/stone/iron + stick, higher attackMob damage via a SWORDT table next to PICKT), a zombie drop (rotten flesh - food with risk), and a sheep or cow reusing the pig substrate (MOBDEF entry + drop). Rounds the hostile family toward full weight, makes tool tiers matter in combat, and widens the porkchop-only meat economy.",
+     "mps_gain": 1.2,
+     "risk": "medium"
+    },
+    {
+     "title": "In-world crafting table 3x3 verification",
+     "detail": "The crafting family's last unverified leg: place a table block (id 17), right-click it (tryPlace branch at index.html:605), confirm the CRAFTING TABLE 3x3 header and craft something through it. Ruins already drop tables as loot flavor, so exploration feeds it. Pure probe work today; optionally add one 3x3-only recipe so the table is mechanically meaningful rather than cosmetic.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Death item scatter (parity decision)",
+     "detail": "Respawn keeps the full inventory (index.html:985-987) where Minecraft scatters it at the death point - and this round proved zombie packs genuinely kill. Spawn inv as item drops at death position via the existing spawnDrop (dur already round-trips), clear on respawn. Small, self-contained, and converts death from a teleport into stakes - feeds the open-dimension story now that night is dangerous.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 4 is the round the survival loop closed through the player lens: the round-3 probe-proven crafting blocker is fixed exactly as specced (>= matching, exact consumption, right-click stack splitting, all verified end-to-end via real mouse events), and the first mobs land directly into the already-verified health/hunger pipeline - pig wander/flee/death/porkchop and zombie chase/melee/pack-kill/respawn all observed live, with the porkchop eating for exactly +8. Two long-dark cores (clamped mouse look, wheel hotbar switching) finally converted via the TEST input paths built for that purpose, taking my domain to 11/16 cores. The remaining debt is unchanged in shape: the pointer-lock/collision cluster (real lock cycle, strafe, wall, ceiling, context menu, swim-up, pillar jump - roughly 10 checklist points) is dark for a fourth consecutive round, natural mob spawning/sun-burn are probe-environment-blind, and the one filed fail is combat asymmetry (mobs take knockback, the player does not). Against round 3's merged 35 I read +3 to 38: roughly +1.3 from the crafting family flip, +2.5 from partially-credited mob families (~5 of 7 weights), +0.5 from input-core conversions, held down by the unverified cluster and the spawner evidence gap with ties broken downward."
+  },
+  {
+   "domain": "rendering",
+   "confidence": "Medium-high. 21 of my 33 domain verdicts now rest on live play evidence and the two new conversions (cloud drift, dusk/night tinting) plus the crafting-UI fix were probe-verified with screenshots this round. Residual swing ~\u00b11.5 MPS: audio audibility remains structurally unhearable headless (3 items), z-fighting and the controls-overlay reopen are dark for a fourth round, natural mob spawning / zombie sun-burn were unverifiable in this round's tiny frame pumps (I priced them neutrally per the probe's instruction), and the panel could price the partial passive/hostile/structures family credit anywhere from ~5 to ~7 of their combined 10 weights.",
+   "mps": 37,
+   "item_verdicts": [
+    {
+     "feature": "Procedural block textures (core)",
+     "verdict": "pass",
+     "evidence": "Rounds 2-3 verified per-type pixel detail across ~14 screenshots; round 4 adds the spinning textured porkchop drop (screenshot at the pig death spot) and a new stick hotbar icon + label noted by the probe."
+    },
+    {
+     "feature": "Per-face directional shading (core)",
+     "verdict": "pass",
+     "evidence": "FACES light table (1/.85/.78/.7/.62/.5) unchanged; round-4 mobs bake the same per-face table into vertex colors (index.html:678) and read as properly shaded boxy bodies in the pig/zombie screenshots."
+    },
+    {
+     "feature": "No seams or cracks (core)",
+     "verdict": "pass",
+     "evidence": "Carried rounds 2-3 zero-seam record; round-4 teleports to the ruin (264,28,424), well (104,30,264), and the 56x61 desert scan all rendered with no seam observations; mesher untouched this round."
+    },
+    {
+     "feature": "Break reveals solid faces (core)",
+     "verdict": "pass",
+     "evidence": "Carried 30-block-shaft evidence; round 4 dug grass at (116,28,115) for the save test with clean interior, no sky/void holes in any screenshot."
+    },
+    {
+     "feature": "No z-fighting flicker (core)",
+     "verdict": "unverified",
+     "evidence": "Fourth consecutive round with no motion-burst test; stills cannot capture shimmer and the coplanar fixes (ghost .96, crack 1.004) are code-read only, which cannot credit."
+    },
+    {
+     "feature": "Distance fog (core)",
+     "verdict": "pass",
+     "evidence": "Fog near/far and per-frame sky-matched color (index.html:836-837) unchanged; round-4 dusk and night screenshots show graded fade with no hard world edge."
+    },
+    {
+     "feature": "Transparent water with visible floor (core)",
+     "verdict": "pass",
+     "evidence": "Carried rounds 2-3 (blue tint, continuous bed, from-below ripples); round 4 adds the desert well's 1-deep water reading correctly in its screenshot and the night ocean vista; no regression."
+    },
+    {
+     "feature": "Controls help overlay (core)",
+     "verdict": "unverified",
+     "evidence": "Real-bindings overlay observed at every clean boot and dismissed by play start, but the H-key reopen leg has never been exercised in four rounds; handler (index.html:562) is not lock-gated, so this is pure unharvested verification."
+    },
+    {
+     "feature": "Working pause mode (core)",
+     "verdict": "pass",
+     "evidence": "Round-3 probe verified gt + cloud offset frozen bit-identical with overlay, resume restoring; code unchanged and the round-4 probe deliberately skipped re-verification (listed as a carried pass)."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "Main-loop FPS truth: 120 whenever the page actually renders; round 4 read 60 on fresh visible load (visibility-throttle artifact per the ledger) and the probe found 'no sign of regression even with 8 zombies + particle bursts'; HUD counter live."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Carried 170-rapid-op stress with zero errors; round 4 ran the full crafting choreography, digging, and two loads with zero console errors and zero __vox.errors; remesh path unchanged."
+    },
+    {
+     "feature": "Grass multi-face texturing (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-2 verification (green top, dirt-fringed sides); T(1) texture path untouched."
+    },
+    {
+     "feature": "Ambient occlusion corners (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-3 screenshot isolated concave-corner darkening in desert sand and canopy crevices; AO code unchanged and the probe deliberately did not re-verify (carried pass)."
+    },
+    {
+     "feature": "Fog-sky horizon blend (stretch)",
+     "verdict": "pass",
+     "evidence": "scene.fog.color.copy(skyC) per frame unchanged; round-4 dusk (#3c2019) and night (#03050e) screenshots show fog matching the horizon sky with no gray band at either extreme."
+    },
+    {
+     "feature": "Day-night cycle with sun disc (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-2 (live clock, N +6h skip, sun disc at 08:37); round 4 drove the cycle live via setTime to dusk and midnight and the dusk clock persisted through save/load."
+    },
+    {
+     "feature": "Drifting clouds (stretch)",
+     "verdict": "pass",
+     "evidence": "NEW conversion: skyInfo().cloudOx moved 0.33286 -> 0.34143 -> -0.93 (wrapped) across the session's sim time with the cloud layer visible in every sky screenshot - the active-play drift evidence round 3 lacked."
+    },
+    {
+     "feature": "Underwater view effect (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-3 screenshot (full-frame blue tint, short fog, rippled surface from below, submerged-only bubbles); code unchanged, probe deliberately skipped re-verify."
+    },
+    {
+     "feature": "Block-break particles with physics (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried leaf-storm and sand-in-hole evidence; round 4's pink pig-death particle bursts (screenshot) confirm the particle pipeline is live and shared with the new mob layer."
+    },
+    {
+     "feature": "Hotbar textured icons (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried textured thumbnails with names/counts and color-coded durability bars; round 4 adds the new stick icon + label observed by the probe."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-3 bit-identical freeze verified; this round's new mobs and drops gate on the same observed 'active' flag (index.html:997-998) so the freeze surface grew without regression; probe carried it as a round-3 pass."
+    },
+    {
+     "feature": "Break and place sounds (stretch)",
+     "verdict": "unverified",
+     "evidence": "Event-level only for a third round: __vox.sfx fires break/place at exactly the right moments with distinct generators, but headless AC is null so nothing was ever audible; no audibility evidence path was added this round."
+    },
+    {
+     "feature": "Night sky and dusk tinting (wow)",
+     "verdict": "pass",
+     "evidence": "NEW conversion, both legs landed: setTime(0) gave sky #03050e, starOp 1, sunVis false with scattered stars in the screenshot; setTime(18.4) gave warm #3c2019 with a sunset-brown band and early stars (screenshot)."
+    },
+    {
+     "feature": "Animated water surface (wow)",
+     "verdict": "pass",
+     "evidence": "Carried: wtex offset animation unchanged, round-2 in-play verification plus round-3 from-below ripple shot stand."
+    },
+    {
+     "feature": "Mining crack progress (wow)",
+     "verdict": "pass",
+     "evidence": "Round-3 verified denser crack web between timed screenshots with reset-on-release; mining/crack code unchanged this round, probe deliberately skipped."
+    },
+    {
+     "feature": "Held-block viewmodel (wow)",
+     "verdict": "fail",
+     "evidence": "Still confirmed absent in the full-file read: scene graph holds sky objects, highlight, ghost, crack, particles, drops, chunk meshes, and mob groups - no hand or held-item mesh."
+    },
+    {
+     "feature": "Footstep audio (wow)",
+     "verdict": "unverified",
+     "evidence": "Step events fire only while walking on ground (correct silent-idle/airborne semantics in the round-3 log), but audibility remains structurally untestable headless."
+    },
+    {
+     "feature": "Ambient audio with mute (wow)",
+     "verdict": "unverified",
+     "evidence": "Progress but half-verified: round 4 live-verified the M mute toggle with the HUD '| muted' tag appearing and clearing, and chirp/cricket events fire at the right day phase - but the audible-ambience leg has never been heard; ties down."
+    },
+    {
+     "feature": "Emissive light blocks (wow)",
+     "verdict": "fail",
+     "evidence": "No torch/glowstone block exists and vertex color is still face light x AO x global day tint only - nothing can brighten nearby faces."
+    },
+    {
+     "feature": "Centered readable crosshair (Player core, UI-shared)",
+     "verdict": "pass",
+     "evidence": "Difference-blend adaptive crosshair carried from round-2 verification and visible in this round's screenshots across sky, dusk, and night scenes."
+    },
+    {
+     "feature": "Ghost placement preview (Player wow, rendering-shared)",
+     "verdict": "pass",
+     "evidence": "Carried main-loop verification; .96 geometry and id<100 validity gating unchanged; no regression in any round-4 screenshot."
+    },
+    {
+     "feature": "Horizon fog veil (Worldgen wow, fog-shared)",
+     "verdict": "pass",
+     "evidence": "Round-4 teleports to structures and the desert scan meshed behind the veil with no visible generation edge, consistent with two prior rounds."
+    },
+    {
+     "feature": "Mob visual presentation (entity rendering, new, rendering-shared)",
+     "verdict": "pass",
+     "evidence": "Per-face-shaded vertex-colored box mobs that tint with the day cycle (matMob.color tracks matO), walk-bob animation, yaw facing, full red hurt-flash material swap (screenshot), pink death bursts, and the textured porkchop drop - all probe-screenshotted; mobs never sank or wedged."
+    },
+    {
+     "feature": "Damage/death/respawn overlays (UI-shared)",
+     "verdict": "pass",
+     "evidence": "Full-frame red damage flash captured in two screenshots during zombie volleys; 'You died' overlay + Respawn button screenshot, with respawn restoring hp/hunger at exact spawn and inventory kept."
+    },
+    {
+     "feature": "Light propagation engine + torch light + cave darkness (43+ family, weight 3)",
+     "verdict": "fail",
+     "evidence": "Full-file read confirms no skylight or blocklight model; the mesher bakes face brightness x AO only, caves render fully daylit, and no placeable light source exists - unchanged for a third round."
+    },
+    {
+     "feature": "Weather (43+ family, weight 2)",
+     "verdict": "fail",
+     "evidence": "Zero rain/snow/storm code anywhere in the file; updSky still handles only day/night, clouds, stars, and underwater fog."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Convert the two four-round-stale UI cores: controls-overlay reopen + z-fight motion burst",
+     "detail": "Both 2-pt cores are pass-by-construction but have now been dark for four rounds. Controls overlay: key('H') twice + screenshots proves dismiss/reopen - the handler at index.html:562 is not lock-gated and works headless today. Z-fighting: the coplanar offenders are fixed (ghost .96, crack 1.004), so a 10-frame screenshot burst strafing along a wall face should be clean. Pure probe work, zero code touched, highest value-per-risk on the board.",
+     "mps_gain": 1,
+     "risk": "low"
+    },
+    {
+     "title": "Skylight darkness + one torch block (light-propagation family seed)",
+     "detail": "My domain's biggest 43+ ceiling: the mesher (index.html:391-432) has no light model, so caves render fully daylit, killing the emissive-blocks wow, the surface-cave-entrances wow, and cave dread exactly when night zombies finally make darkness mean something. A heightmap-depth sky-exposure factor folded into vertex colors plus a torch block with a small BFS brighten banks the weight-3 family plus two wow items and feeds the torch-crafting loop. Touches buildChunk and every remesh path - the riskiest lane available; sequence it alone and re-verify the zero-seam/AO record.",
+     "mps_gain": 1.3,
+     "risk": "high"
+    },
+    {
+     "title": "Weather family: biome-aware rain/snow with fog dimming and rain audio bed",
+     "detail": "Confirmed absent (weight 2). A camera-local particle volume (rain in plains/forest, snow in snowy biome), sky/fog darkening during storms via the existing updSky color pipeline, and a filtered-noise rain layer through the existing master gain. Strongest remaining pure-atmosphere add now that mobs populate the world. Medium risk: touches updSky and the particle budget, both currently verified clean.",
+     "mps_gain": 0.7,
+     "risk": "medium"
+    },
+    {
+     "title": "Audio audibility evidence path",
+     "detail": "Three sound items (break/place stretch, footstep wow, ambient-with-mute wow, ~0.75 itemized MPS) are permanently invisible to headless probes: triggers are event-verified and the mute HUD tag converted this round, but nothing has ever been audible (AC stays null without a gesture). Add a TEST-mode OfflineAudioContext self-render asserting non-silent buffers from sBreak/sPlace/chirp, or expose AC/master state post-init for the probe; alternatively one human listen pass closes all three at once.",
+     "mps_gain": 0.6,
+     "risk": "low"
+    },
+    {
+     "title": "Deterministic sim-step hook so time-dependent evidence stops starving",
+     "detail": "This round's frame pumps (~0.05-0.15s each) made natural mob spawning, the 1.5s zombie sun-burn, and the 0.8s drop-pickup window unobservable, leaving the light-linked-spawning family (weight 1) and parts of both mob families unverified live. Add a TEST hook like __vox.step(seconds) that runs the fixed-dt update loop N times synchronously inside one eval (no rendering needed), then re-render once. Converts natural spawn/despawn, sun-burn with its particle burst, and drop auto-collect in a single probe call.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Held-item viewmodel with swing animation",
+     "detail": "Still confirmed absent and now worth more than a wow point: combat exists but punches have no first-person feedback. A camera-attached cube textured from the selected stack's tile (reuse dropGeo/ITILE so picks and porkchops show correctly), with a click swing-dip, rendered last with depth cleared so it never clips terrain. One wow item plus outsized perceived life across mining, combat, and eating.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Mob voice: oinks, groans, hurt/death sounds",
+     "detail": "The mob layer is visually alive but silent: pigs should oink occasionally, zombies should groan within earshot at night (real dread through the existing distance-free mono bus is still effective), plus hurt/death stings reusing the sfx/thump generators and logS for probe evidence. Cheap atmosphere multiplier on the round's biggest feature and direct open-dimension credit.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Player knockback impulse on zombie hits",
+     "detail": "The round's one verified fail: damage() applies hp loss + red flash + thump but zero impulse, while mobs do get knockback (vx/vz=6, vy=4), so being hit reads flat. Pass an optional source position into damage() and add a small velocity push + brief upward pop on the player. Self-contained in the already-verified damage path; fixes the asymmetry the probe flagged and sharpens combat stakes for the 50-band story.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 4 through the rendering/UI/audio lens is worth 35 -> 37: the round-3 headline fail lived in my domain and is now fixed beautifully (>=-count matching with exact consumption, leftovers, right-click half-stack splitting, all verified end-to-end with the grid-leftovers-plus-durability-bar money shot), and the new mob layer is the run's largest atmosphere gain - day-tinted, per-face-shaded box mobs with hurt-flash material swaps, death particle bursts, walk-bob, and textured porkchop drops that make the world read inhabited for the first time. My checklist column also converted three stale items (cloud drift via cloudOx reads, dusk #3c2019 and night #03050e tinting with screenshots, M-mute HUD tag), putting my domain at 30/39 itemized with zero regressions and zero console errors across a death, 8 simultaneous mobs, and two loads. What caps the score: light propagation and weather remain confirmed absent (5 family weights of pure atmosphere), caves still render daylit just as night zombies made darkness matter, audio is event-verified but structurally unhearable headless, and the z-fight/controls-overlay cores are dark for a fourth round purely for lack of a probe script. I land at 37 rather than 38 by ties-down: natural spawning and the zombie sun-burn went unverified in this round's starved frame pumps, the player-knockback fail flattens combat feel, and the structures/mob families earn only partial credit at their current micro scale."
+  },
+  {
+   "domain": "systems",
+   "mps": 40,
+   "confidence": "Medium-high. The survival core now rests on two probe rounds of live evidence: crafting end-to-end via real mouse events, tool timings to the decimal, hunger math exact (porkchop +8 = FOOD[106]), save/load round-trips, and the mob layer observed in render/AI/combat/drops/death-respawn. Residual swing is about +/-1.5, concentrated in three places: the unverified mob ecology (natural spawn ticks, despawn, zombie sun-burn were unobservable under this round's tiny frame pumps - per probe neutrality I neither awarded nor docked them, but a harsher panel could zero ~1.5 weights there), the never-live-opened in-world crafting-table 3x3, and how the panel prices the verified player-knockback fail against an otherwise complete combat loop.",
+   "item_verdicts": [
+    {
+     "feature": "Systems family: inventory with stacking (weight 2)",
+     "verdict": "pass",
+     "evidence": "36-slot UI with drag/shift-click (r2-r3); r4 probe added right-click half-stack splitting (8-plank stack -> cursor 4 / slot 4) and save/load restoring exact slots and counts."
+    },
+    {
+     "feature": "Systems family: crafting table and recipes (weight 4)",
+     "verdict": "pass",
+     "evidence": "Round-3's only probe-proven fail is fixed and live-verified: full chain 10 logs -> 4 planks -> sticks -> wood pick via real mousedown on .islot, >=-count matching with exact consumption (3 planks + 2 sticks) and leftovers 1/4/2 in screenshot; crafted pick lands with dur 60 and durability bar. Docked half a weight: in-world table right-click 3x3 still never opened live."
+    },
+    {
+     "feature": "Systems family: tools with durability and mining speeds (weight 4)",
+     "verdict": "pass",
+     "evidence": "r3 timed 2.22s bare vs 0.72s pick on stone with tier-gated drops; r4 crafted pick at dur 60 with green bar, durability persisting through save/load reload."
+    },
+    {
+     "feature": "Systems family: health, damage, and fall damage (weight 2)",
+     "verdict": "pass",
+     "evidence": "r4: zombie melee exactly 2/hit (hp 20->18), full-frame red damage flash in two screenshots, pack volleys to 0, death overlay + respawn restoring 20/20; fall damage and drowning verified r1-r2."
+    },
+    {
+     "feature": "Systems family: hunger and food (weight 2)",
+     "verdict": "pass",
+     "evidence": "r3: drain under sprint, sprint gate at hunger<=6, starvation death; r4: porkchop eat() restored hunger 10->18 (+8 exactly), item consumed, 'eat' sfx logged."
+    },
+    {
+     "feature": "Systems family: world save/load (weight 2)",
+     "verdict": "pass",
+     "evidence": "r4 regression: dug block stayed air after ?test=1&load=1 reload, full inventory (sticks 2/planks 9/logs 9/pick dur 60) in same slots, position and dusk clock persisted, 0 errors."
+    },
+    {
+     "feature": "Systems family: passive mobs (weight 3)",
+     "verdict": "pass",
+     "evidence": "Pig is real, not a stub: spawned standing exactly on grass, terrain-aware wander with direction changes, red hurt-flash + flee on punch, death into pink burst + spinning porkchop drop (all screenshotted). Discounted ~0.5w: natural day-spawn ticks unobservable under this round's frame pumps."
+    },
+    {
+     "feature": "Systems family: hostile mobs and combat (weight 4)",
+     "verdict": "pass",
+     "evidence": "Zombie chased straight at player at midnight, melee'd for exactly 2/hit, 8-mob pack killed the player into a working respawn loop; mobs take knockback (vx/vz=6, vy=4) with stun. Discounted ~1w for the verified no-player-knockback fail plus unverified night-wave spawning and sun-burn."
+    },
+    {
+     "feature": "Systems family: light-linked mob spawning (weight 1)",
+     "verdict": "fail",
+     "evidence": "No block-light engine exists; zombie spawn gating is global time-of-day (gDL<.12 at index.html:733), not light level - torches don't exist, caves never spawn mobs (spawn y is always surface h+1), and even the time-gated tick went unobserved live."
+    },
+    {
+     "feature": "Systems family: smelting (weight 2)",
+     "verdict": "fail",
+     "evidence": "Grep-proven absent; the file's own comment at index.html:212 concedes it ('iron pick takes iron ORE, not ingots - smelting doesn't exist yet')."
+    },
+    {
+     "feature": "Systems family: farming and crop growth (weight 2)",
+     "verdict": "fail",
+     "evidence": "No seeds, tilling, growth ticks, or crop blocks anywhere in the file; food comes only from leaf-drop apples and pig porkchops."
+    },
+    {
+     "feature": "Systems family: light propagation engine (weight 3)",
+     "verdict": "fail",
+     "evidence": "Only per-face directional shading + AO + a single global day/night tint on matO; no per-block light data, no torch/glowstone, caves are not dark, zero emissive gameplay light (grep: no torch/glow hits)."
+    },
+    {
+     "feature": "Systems family: weather (weight 2)",
+     "verdict": "fail",
+     "evidence": "No rain, snowfall, storms, or weather state machine in the file (grep clean); clouds are a static drifting texture layer only."
+    },
+    {
+     "feature": "Seeded micro-structures: ruins + desert wells (partial credit toward villages/structures, weight 3)",
+     "verdict": "pass",
+     "evidence": "findStructures(300) listed 2 ruins + 3 wells; block reads confirmed 16-stone wall ring + crafting-table centerpiece at (264,28,424) and 3x3 stone rim + 1 water at (104,30,264); both screenshotted. Credited ~1 of 3 weights."
+    },
+    {
+     "feature": "Systems family: villages or richer structures at full weight",
+     "verdict": "fail",
+     "evidence": "Micro-ruins and wells are the floor of this family; no multi-building sites, no inhabitants, no loot, no interiors - ~2 of 3 weights unearned."
+    },
+    {
+     "feature": "Systems family: redstone-like logic (weight 4)",
+     "verdict": "fail",
+     "evidence": "Grep-proven absent: no levers, wires, doors, pistons, or any powered-state machinery."
+    },
+    {
+     "feature": "Mob family is real, not a stub (round-4 mandate check)",
+     "verdict": "pass",
+     "evidence": "Shared entity substrate (MOBDEF/spawnMob/updMobs at index.html:674-770) with per-type geometry, full AABB world collision mirroring the player's, AI states, hurt-flash material swap, knockback+stun, typed drops, melee cooldown, MOBMAX cap - and the probe observed render, wander, flee, chase, melee, both death directions, and the drop live."
+    },
+    {
+     "feature": "Pig death yields porkchop; porkchop is food",
+     "verdict": "pass",
+     "evidence": "dropList -> {id:106} at death spot with texture and ground rest; eat() restored +8 hunger exactly and consumed the item."
+    },
+    {
+     "feature": "Item drops: spawn, ground rest, magnet pickup, auto-collect",
+     "verdict": "pass",
+     "evidence": "r4 observed porkchop spawn/rest/magnetize toward player; auto-collect into inventory verified r3 for apples (frame budget cut r4 short of the 0.8s immunity window; addItem proven via give())."
+    },
+    {
+     "feature": "Apples from leaves (~10%) close the food loop",
+     "verdict": "pass",
+     "evidence": "r3 probe verified apple drops from leaf-breaking plus eating; mechanism unchanged this round (h3f<.1 at index.html:595)."
+    },
+    {
+     "feature": "Q-drop item throw with pickup-immunity window",
+     "verdict": "pass",
+     "evidence": "Builder live check in round-3 lanes: drop spawns 2.40 blocks along view, 0.8s immunity holds, re-collected to original count, tool drop preserves dur."
+    },
+    {
+     "feature": "Eat-anywhere via right-click (including aiming at sky)",
+     "verdict": "pass",
+     "evidence": "Builder live check: sky-aimed eat moved hunger 10->14 and decremented the apple; r4 probe re-confirmed eatFood path with porkchop via eat()."
+    },
+    {
+     "feature": "Right-click stack splitting in inventory UI",
+     "verdict": "pass",
+     "evidence": "r4: right-click mousedown on 8-plank stack picked up half (cursor 4/slot 4) and placed as a separate stack - round 3's blocker is gone."
+    },
+    {
+     "feature": "Crafting inputs decrement exactly; closing UI returns grid items",
+     "verdict": "pass",
+     "evidence": "r4 arithmetic exact after close: planks 9 (10+4-2-3), logs 9, sticks 2, pick dur 60; grid leftovers auto-returned to inventory."
+    },
+    {
+     "feature": "In-world crafting table placement + right-click opens 3x3",
+     "verdict": "unverified",
+     "evidence": "Code path exists (tryPlace h.b===17 -> openInv(true) at index.html:605) and ruins contain tables, but no probe has ever right-clicked a placed table; all crafting ran through the E-key 2x2."
+    },
+    {
+     "feature": "Natural mob spawning (day pigs on grass, night zombie waves <=4 at r18-32)",
+     "verdict": "unverified",
+     "evidence": "Probe's frame pumps (~0.05-0.15s sim) could not cover the 1s spawn tick; all observed mobs were manual spawnMob calls. Code reads clean at index.html:730-740 but rubric forbids crediting from code."
+    },
+    {
+     "feature": "Mob despawn at distance >56",
+     "verdict": "unverified",
+     "evidence": "Simple pd>56 check at index.html:745; never observed live this round."
+    },
+    {
+     "feature": "Zombie daylight sun-burn (1.5s burn + particle burst)",
+     "verdict": "unverified",
+     "evidence": "gDL>.5/sunT>=1.5 path at index.html:746 unobservable under sub-second frame pumps; do-not-award per probe."
+    },
+    {
+     "feature": "Player knockback when hit by a zombie",
+     "verdict": "fail",
+     "evidence": "Probe verified position and velocity bit-identical after a landed zombie hit - damage() at index.html:980 applies hp loss + flash + thump only, while mobs DO receive impulse. Asymmetric combat feel; the round prompt asked explicitly."
+    },
+    {
+     "feature": "Mob knockback + flee + hurt-flash when struck",
+     "verdict": "pass",
+     "evidence": "r4: bare-hand punches chunked pig hp 5->3->1->-1, screenshot caught full red tint mid-flee (0.45 blocks), 'hit' sfx per punch."
+    },
+    {
+     "feature": "Mobs never sink, wedge, or fall through terrain",
+     "verdict": "pass",
+     "evidence": "All observed pigs/zombies kept y exactly at ground level across wander/chase/flee; zombie descended a 1-block step cleanly via the entColl resolver."
+    },
+    {
+     "feature": "Tool-tier attack bonus (pick 3 dmg vs hand 2)",
+     "verdict": "unverified",
+     "evidence": "Probe only verified bare-hand 2/hit; the PICKT?3:2 branch at index.html:720 has never been exercised live."
+    },
+    {
+     "feature": "Cactus contact damage",
+     "verdict": "unverified",
+     "evidence": "Carried unverified from r3; cacT loop at index.html:526-528 never triggered in any probe."
+    },
+    {
+     "feature": "Drowning: air meter then hp drain",
+     "verdict": "pass",
+     "evidence": "Verified live in r2 (bubbles deplete, then 2 dmg/s); code path unchanged since."
+    },
+    {
+     "feature": "Death and respawn loop with kept inventory",
+     "verdict": "pass",
+     "evidence": "r4: 8-zombie kill -> 'You died' overlay -> Respawn restored hp/hunger 20 at exact spawn (116.5,29.02,115.5) with full inventory retained."
+    },
+    {
+     "feature": "Hold-to-break mining with per-block hardness (scorecard stretch)",
+     "verdict": "pass",
+     "evidence": "r3 timed per-hardness mining with pick multipliers; crack overlay + reset on look-away verified."
+    },
+    {
+     "feature": "Mining crack progress stages (scorecard wow)",
+     "verdict": "pass",
+     "evidence": "r3 verified 4-stage crack tiles advancing with mineT/need; unchanged this round."
+    },
+    {
+     "feature": "Hotbar switching works: 1-9 AND scroll wheel (scorecard core)",
+     "verdict": "pass",
+     "evidence": "r4: dispatched WheelEvent deltaY +/-120 cycled selection 1->2->3->2->1 and key('3') jumped - the same handler serves the locked path."
+    },
+    {
+     "feature": "Multi-type hotbar with textured icons and durability bars",
+     "verdict": "pass",
+     "evidence": "r2-r4: 9 textured slots, selection raise, stick icon + label added r4, color-coded dur bars on tools."
+    },
+    {
+     "feature": "Tier-gated drops (stone/ore require sufficient pick)",
+     "verdict": "pass",
+     "evidence": "r3: bare-hand stone broke with no drop, picked stone dropped; TOOLREQ gating verified empirically."
+    },
+    {
+     "feature": "Hunger-gated sprint both directions",
+     "verdict": "pass",
+     "evidence": "r3: sprint refused at hunger<=6, restored after eating."
+    },
+    {
+     "feature": "Seeded determinism + fresh-world regeneration (systems-coupled regression)",
+     "verdict": "pass",
+     "evidence": "r4: fresh ?test=1 spawned at exactly (116.5,29.02,115.5) facing the same beach vista as rounds 2-3, seed 1337 in HUD."
+    },
+    {
+     "feature": "Combat/eat audio events",
+     "verdict": "pass",
+     "evidence": "__vox.sfx logged 'hit' x3 and 'eat' at exact interaction moments; attack has a dedicated 260Hz generator."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Mob ecology evidence hooks + player knockback fix",
+     "detail": "Cheapest real MPS on the board: (1) give damage() an optional attacker position and apply a vel impulse away from it at the zombie call site (index.html:751) - a ~4-line fix clearing the round's only verified fail; (2) make the ecology probe-observable despite sub-second frame pumps: add __vox.tickSpawns(n) that runs the mobSpawnT block n times synchronously, plus a __vox.advance(seconds) that steps updMobs/gt in fixed dt slices, so natural day-pig/night-wave spawning, pd>56 despawn, and the 1.5s sun-burn convert from unverified to banked. Converts the ~1.5 mob-family weights I withheld plus the knockback fail.",
+     "mps_gain": 1.2,
+     "risk": "low"
+    },
+    {
+     "title": "Smelting: furnace block + ore-to-ingot + cooked food",
+     "detail": "The first named 65-band family still absent. Add a furnace block (new texture + BL entry, placeable, drops itself), right-click opens a 3-slot furnace UI reusing the existing islot substrate (input/fuel/output), fuel values for logs/planks/coal, recipes iron ore->ingot and porkchop->cooked porkchop, then switch the iron-pick recipe to ingots (deleting the index.html:212 substitution). Banks weight-2 smelting and legitimizes the iron tool tier.",
+     "mps_gain": 1.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Farming: seeds, tilled soil, wheat growth, bread",
+     "detail": "Lowest-risk untouched family: grass tufts (id 14) drop seeds, right-click dirt/grass with a new hoe (or any tool) makes tilled soil, wheat as a cross-rendered block (the cr: path already renders flowers/tufts) with 2-3 gt-driven growth stages, harvest -> wheat -> bread recipe into the existing FOOD table. Banks weight-2 farming and deepens the food loop beyond apples/porkchops.",
+     "mps_gain": 1.2,
+     "risk": "low"
+    },
+    {
+     "title": "Real light propagation + torches + light-linked spawning",
+     "detail": "The biggest single unlock and the heart of the 65-band: per-block skylight/blocklight flood fill folded into buildChunk's vertex-color pass, torch item/block with emissive falloff, genuinely dark caves, and hostile spawns gated on computed light level instead of gDL (banks weight-3 light engine + weight-1 light-linked spawning + the scorecard emissive-blocks wow). High risk: touches every remesh, and a perf regression in the rAF-starved harness would contaminate the whole panel's evidence.",
+     "mps_gain": 2.5,
+     "risk": "high"
+    },
+    {
+     "title": "Weather: rain/snow with sky integration",
+     "detail": "Seeded rain events on the gt cycle: stretched particle quads above the player (extend the existing 320-cap particle system), fog/sky dimming during rain via the updSky hooks already in place, snow instead of rain in the snowy biome, and a CI(x,z).h heightmap check so precipitation stops indoors/under overhangs - skipping occlusion would read half-working and fail harsh. Banks weight-2 weather.",
+     "mps_gain": 1,
+     "risk": "medium"
+    },
+    {
+     "title": "Combat depth: swords, attack damage table, zombie drops",
+     "detail": "Round the verified combat loop to full family weight: sword recipes per tier (the pickT texture generator generalizes), an attack-damage table replacing the binary PICKT?3:2 at index.html:720, zombie death drop (rotten flesh as risky FOOD), and verify the tool-bonus branch that has never run live. Cheap because attackMob/drops/FOOD substrates all exist.",
+     "mps_gain": 0.8,
+     "risk": "low"
+    },
+    {
+     "title": "Villages: multi-hut clusters on the structure system",
+     "detail": "Upgrade the proven micro-structure machinery (index.html:295-308) from single-chunk ruins to rarer 2-4 hut clusters: plank walls, log corners, door gaps, a gravel path, torch posts once lighting exists; optionally a villager reskin on the mob substrate wandering between huts. Moves the weight-3 family from ~1 to ~2+ credited. Cross-chunk placement is the risk - the current candidate-at-(8,8) trick avoids it and a naive expansion breaks chunk-border determinism.",
+     "mps_gain": 1.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Redstone-like logic v0: lever, wire, lamp/door",
+     "detail": "Weight-4 family at zero, but defer behind the light engine (a lamp without emissive light reads as a stub): lever block toggling a powered flag, wire blocks flood-filling power like the light BFS, a door block that opens and a lamp that lights. Even a minimal verified loop banks ~1.5; attempting it before light propagation halves its value and doubles its risk.",
+     "mps_gain": 1.5,
+     "risk": "high"
+    }
+   ],
+   "summary": "Round 4 is the band-50 round through my lens: the weight-4 crafting family converted from the run's only probe-proven fail to a fully live-verified chain (log to planks to sticks to pick, real mouse events, exact consumption, leftovers, splitting), and the mob family is demonstrably real rather than a stub - pig and zombie share a genuine entity substrate with world collision, AI states, bidirectional combat, hurt-flash, knockback, typed drops, and a verified death-by-pack respawn loop. I place the whole build at 40, a +5 delta over the merged 35: roughly +1.5 crafting, +3.2 from the two mob families (discounted because natural spawn/despawn/sun-burn were unobservable under this round's tiny frame pumps and the player-knockback fail is verified), +0.9 from live-verified micro-structures (ruins with crafting tables, desert wells), and +0.4 from input-cluster and conversion spillover. The survival loop the 50-anchor describes - inventory, crafting, health/damage, basic mobs - is now substantively satisfied; what caps the score is the still-imperfect sub-43 checklist plus 18 of 40 family weights provably unbanked: smelting, farming, light propagation, weather, and redstone are grep-proven absent, light-linked spawning has no light to link to, and villages are only embryonic. Next round's highest-leverage order is the cheap ecology-evidence + knockback lane first (converts withheld credit), then smelting and farming as low-risk named families, with the light engine as the big high-risk swing that unlocks two families plus cave atmosphere at once."
+  },
+  {
+   "domain": "perf",
+   "confidence": "Medium-high. The stability floor is the best-evidenced part of the build: zero console errors and zero __vox.errors across a session including two loads, a player death, 8 simultaneous mobs with particle bursts, and the full crafting choreography; boot gate PASS; reload artifacts conclusively exonerated as harness noise. The mob layer \u2014 my round-3 'highest risk to the zero-error streak' warning \u2014 landed with visible allocation discipline (module-level scratch vars, shared geometries, material-swap caching, MOBMAX 8 + despawn radius) and no observed regression. Residual swing ~\u00b11.5: FPS was unmeasurable live this round (visibility throttling; main-loop evidence asserts 120 when rendering, 60/0 readings are artifacts), natural spawn ticks / light-linked gating / zombie sunburn could not be observed in <1s frame pumps, and the panel's pricing of micro-structures against the weight-3 villages family is a judgment call.",
+   "mps": 38,
+   "item_verdicts": [
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "Main-loop evidence: 120 whenever the page actually renders; probe saw no regression even with 8 zombies + particle bursts; 60/0 readings are preview-tab visibility throttling, not the game; loop body unchanged except the bounded updMobs/updDrops calls."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Full crafting choreography, hold-mining, structure block-scans and mob combat all ran with zero errors this round; per-edit cost still bounded at <=3 chunk rebuilds via touched(); round-3's 170-op/91ms stress burst carried on an unchanged mesher."
+    },
+    {
+     "feature": "Working pause mode (core)",
+     "verdict": "pass",
+     "evidence": "Carried round-3 live verification (gt and cloud offset bit-identical over 2s, overlay shown/dismissed); pause/testPaused code path unchanged this round; probe deliberately did not re-verify."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-3 bit-identical freeze proof; updMobs and updDrops are inside the same `active&&!dead` gate (index.html:998), so the new entities inherit the proven freeze semantics."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "Session was continuous hidden-resume cycles with even smaller frame pumps than round 3 (~0.05-0.15s); player AND mobs resumed cleanly every time \u2014 probe confirmed mobs kept y exactly at ground level across pumps, never sank or embedded; dt clamp .05 + 0.9-block vertical substepping now applied to both player and mob paths."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "Teleports to structures at (264,28,424) and (104,30,264) and the floater-scan region around (560,115) all meshed and screenshot clean; 7ms/frame budget queue unchanged."
+    },
+    {
+     "feature": "Seamless chunk borders (core)",
+     "verdict": "pass",
+     "evidence": "56x61-block floater scan found 0 non-foliage anomalies; structure rings and well screenshots show no seams; carried multi-region evidence on an unchanged mesher."
+    },
+    {
+     "feature": "Stable revisited terrain (core)",
+     "verdict": "pass",
+     "evidence": "Save/load round-trip re-verified this round: dug block still air after reload, inventory slots identical, dusk clock persisted; chunks memoization + edits-diff re-apply (editB at genChunk) proven again in play."
+    },
+    {
+     "feature": "Large explorable world (core)",
+     "verdict": "pass",
+     "evidence": "Carried \u00b1800 coverage plus this round's structure hunts across a 600-block radius (findStructures(300) -> 5 sites, two visited and block-verified)."
+    },
+    {
+     "feature": "Safe solid spawn (core)",
+     "verdict": "pass",
+     "evidence": "Fresh ?test=1 load spawned at exactly (116.5, 29.02, 115.5) standing on beach sand, matching rounds 2-3; deterministic across loads."
+    },
+    {
+     "feature": "Boot gate / zero console errors (domain)",
+     "verdict": "pass",
+     "evidence": "Boot gate PASS on ?test=1; zero console errors and zero __vox.errors across the whole session including two loads, a death, 8 simultaneous mobs, and the full crafting flow; file ends </html>."
+    },
+    {
+     "feature": "Crash/reload stability (domain)",
+     "verdict": "pass",
+     "evidence": "Reloads exonerated (no reload machinery in file, main-loop evidence); every reboot clean with deterministic spawn; mob death mid-updMobs (splice in reverse loop), pack-volley player death, and respawn all executed without a single window error."
+    },
+    {
+     "feature": "Hold-to-break mining timing substrate (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-3 timed verification (2.22s bare vs 0.72s pick on stone); mineTick's independent clamped clock (mdt<=.05) unchanged this round."
+    },
+    {
+     "feature": "Entity memory bounding \u2014 drops + mobs (domain)",
+     "verdict": "pass",
+     "evidence": "Drops: 64-cap with shift-eviction + 60s TTL + per-id cached geometries (index.html:644-660); mobs: MOBMAX 8, despawn at pd>56, shared geometries/materials with deliberate no-dispose on rmMob (line 701), hurt-flash swaps a shared material reference cached in userData; probe ran 8 mobs + bursts with no sign of degradation."
+    },
+    {
+     "feature": "Timestep clamping under pathological scheduling (domain)",
+     "verdict": "pass",
+     "evidence": "dt=min(dt,.05) in loop, mdt clamp in mineTick, vel.y clamp -45, vertical substepping for player (line 515) and mobs (line 764); an entire probe session of irregular ~0.05-0.15s pumps produced zero physics anomalies."
+    },
+    {
+     "feature": "Inventory with stacking (systems family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Right-click half-stack splitting verified live (8-plank stack -> cursor 4 / slot 4); exact decrement arithmetic confirmed (planks 9, logs 9, sticks 2 after the choreography); UI rebuilt only on open, memory-bounded."
+    },
+    {
+     "feature": "Crafting table and recipes (systems family, weight 4)",
+     "verdict": "pass",
+     "evidence": "Round-3's load-bearing fail FIXED and probe-proven via real mousedown events: >= matching with exact-amount consumption and leftovers (10 logs -> 4 planks with 9 left; pick crafted consuming exactly 3 planks + 2 sticks); closing UI returns grid items."
+    },
+    {
+     "feature": "Tools with durability and mining speeds (systems family, weight 4)",
+     "verdict": "pass",
+     "evidence": "Carried timed verification (3.1x pick speedup, tier-gated drops); this round the crafted pick showed its green durability bar and dur 60 persisted through save/load; acquisition path now reachable in normal play."
+    },
+    {
+     "feature": "Health, damage, fall damage (systems family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Zombie melee chunked hp in exact 2s (20->18, volleys to 0) with full-frame damage flash; death overlay + Respawn restored hp/hunger at exact spawn with inventory kept; fall/drowning carried from rounds 2-3 on unchanged code."
+    },
+    {
+     "feature": "Hunger and food (systems family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Porkchop eat() restored exactly +8 (hunger 10->18) with item consumed and 'eat' sfx; drain/sprint-gate/starvation carried from round-3 live verification on unchanged code."
+    },
+    {
+     "feature": "World save/load (systems family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Round-trip re-verified: edit persisted, full inventory with pick dur 60 in same slots, dusk clock persisted, 0 errors on ?test=1&load=1."
+    },
+    {
+     "feature": "Passive mobs (systems family, weight 3)",
+     "verdict": "pass",
+     "evidence": "Pig loop verified end-to-end via spawnMob: terrain-aware wander, hurt-flash, flee with knockback, death burst, porkchop drop, food restore; natural day-spawn ticks unverified live (frame pumps <1s; code reads clean) per probe instruction \u2014 neither awarded nor docked on that clause."
+    },
+    {
+     "feature": "Hostile mobs and combat (systems family, weight 4)",
+     "verdict": "pass",
+     "evidence": "Zombie night chase (position series converging on player, yaw facing), melee for exactly 2/hit, 8-mob pack death and respawn loop all probe-verified; mob-side knockback works (vx/vz=6, vy=4, stun); docked inside the family for the player-knockback fail and unverified sunburn."
+    },
+    {
+     "feature": "Player knockback when hit by a zombie (round-prompt item)",
+     "verdict": "fail",
+     "evidence": "Probe verified_fail: zombie hit left player position and velocity bit-identical (vel {0,0,0}); damage() applies hp loss + flash + thump only \u2014 no impulse path exists in the function (index.html:980-982)."
+    },
+    {
+     "feature": "Light-linked mob spawning (systems family, weight 1)",
+     "verdict": "unverified",
+     "evidence": "Night-only zombie waves / day-pig gating coded via gDL thresholds (index.html:733-740) but natural spawn ticks need >1s continuous sim, unobservable in this round's ~0.1s frame pumps; no live evidence either way."
+    },
+    {
+     "feature": "Villages or structures (systems family, weight 3)",
+     "verdict": "pass",
+     "evidence": "First family evidence banked: ruin at (264,28,424) confirmed by block reads (16 stone + crafting table) and screenshot; desert well at (104,30,264) (12 stone + exactly 1 water id 5); micro-structures only \u2014 partial family credit, not villages."
+    },
+    {
+     "feature": "Light propagation engine (systems family, weight 3)",
+     "verdict": "fail",
+     "evidence": "Vertex colors remain face-brightness x AO only; cave interiors render daylit; no emissive block exists in the 1061-line file."
+    },
+    {
+     "feature": "Smelting (2) / farming (2) / weather (2) / redstone (4) (systems families)",
+     "verdict": "fail",
+     "evidence": "All absent from the file \u2014 no furnace, crop, rain, or logic block code paths exist; confirmed by full code read."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Deterministic sim-advance test hook (__vox.tick)",
+     "detail": "The probe environment can no longer sustain >1s of continuous sim (~0.05-0.15s per pump), which left natural spawn waves, the gDL light-linked gate, zombie sunburn, and the 0.8s drop-pickup window all unverifiable \u2014 real banked weight is being left on the table every round. Add a __vox.tick(seconds) hook that steps physics/updMobs/updDrops/gt in fixed 16ms slices synchronously inside one eval (idempotent, no background pumping \u2014 that wedged the renderer in round 3). Converts the weight-1 light-linked family plus the unverified mob clauses for zero gameplay-code risk.",
+     "mps_gain": 0.7,
+     "risk": "low"
+    },
+    {
+     "title": "Player knockback impulse on zombie hit",
+     "detail": "The round's only verified fail: damage() (index.html:980) applies hp/flash/thump with no impulse, while mobs hit by the player DO get vx/vz=6,vy=4. Pass an optional attacker position into damage() and apply a scaled impulse to vel \u2014 the physics integration (clamps, substepping) already handles it safely. Small, self-contained, completes the hostile-mob family's combat-with-stakes story.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Chunk-data eviction using the proven edits diff",
+     "detail": "chunks Map (index.html:255) still grows ~16KB per visited chunk forever \u2014 carried unaddressed for a third round, and mob spawn checks now call getB on far columns too. The blocker was solved in round 2: editB already reconstructs player edits per chunk at genChunk (line 309), and this round's save/load probe re-proved regeneration+diff correctness. Evict pristine far Uint8Arrays alongside dropMesh's radius logic.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Frame-guard granularity and recovery",
+     "detail": "loop()'s single try/catch (index.html:1007) warns once then swallows forever, and the protected body now contains five subsystems (physics, particles, mining, drops, mobs) plus renderer.render \u2014 a persistent throw in updMobs silently freezes sim AND render with one console line. Split sim/render guards, reset frameErr on a timer, and push frame errors into __vox.errors so probes see them. Carried from round 3; the surface it protects doubled since.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "CCmap scoped eviction instead of cliff clear()",
+     "detail": "CI() still nukes all 400k cached column structs at the threshold (index.html:249) \u2014 tens of MB resident, then a multi-octave fbm recompute storm across every loaded chunk. The cache is now hit by the per-second mob spawner, HUD, structure scans, and genChunk's 484-call tree pass, so both the ceiling and the cliff grew this round. Key entries by chunk and evict with dropMesh radius.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Per-type AI function table before mob #3",
+     "detail": "updMobs (index.html:727-770) inlines zombie/pig behavior as if-else branches inside the shared movement/collision loop. Fine at 2 types; a third (skeleton, creeper, sheep) starts multiplying branch surface inside the hot per-frame loop. Extract MOBDEF[type].ai(M,dt) returning desired wScx/wScz \u2014 pure refactor, zero behavior change, keeps the otherwise excellent entity substrate (shared entColl, caps, scratch vars) extensible.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Pooled remesh scratch buffers",
+     "detail": "buildChunk (index.html:391-445) still allocates fresh JS arrays and new GPU buffers per remesh, up to 3 chunks per edit \u2014 carried from round 2, verified non-biting at 120 FPS, but farming/smelting/light lanes will multiply rebuild frequency. Reuse module-level typed-array scratch with a high-water mark before GC bursts surface as hitching.",
+     "mps_gain": 0.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Autosave cost and quota visibility",
+     "detail": "save() (index.html:469) JSON.stringifies the entire edits Map + inventory every 15s on the main thread, and quota failures are silently swallowed \u2014 invisible data loss on long sessions. Debounce on edit-count delta and surface one HUD warning when setItem throws. Carried from round 3, unchanged.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Through the perf/stability lens this round is the strongest delta yet: my round-3 'highest risk' warning \u2014 that entity AI would break the zero-error/120-FPS streak \u2014 did not materialize, because the mob layer landed as the best-engineered subsystem in the file (MOBMAX 8 + despawn radius, shared geometries/materials with no-dispose churn, module-level scratch vars, material-swap caching, the same clamp+substep physics discipline as the player), and the session banked zero console errors through 8 simultaneous zombies, a player death, and the full crafting choreography. The round-3 load-bearing crafting fail is fixed and probe-proven end-to-end, flipping the weight-4 family and closing the survival loop (mine -> craft -> hunt -> eat -> night threat -> death -> respawn) in verified play, which with the pig/zombie/structures evidence moves my estimate from 35 to 38 \u2014 held down from 39 by the player-knockback fail, the unverifiable spawn-tick/light-linked clauses, and harsh ties-down. The debit side of my domain is stagnation: all five carried engineering gaps (unbounded chunks Map, CCmap cliff-clear, warn-once frame guard, unpooled remeshes, autosave serialization) went unaddressed for another round, so the feature surface is growing faster than the foundations under it, and the single try/catch now silently protects five subsystems. The most valuable next-round perf-lane spend is a deterministic __vox.tick hook \u2014 the probe environment's shrinking frame pumps are now the binding constraint on converting real, already-coded behavior into bankable evidence."
+  }
+ ],
+ "lanes": [
+  {
+   "name": "lane-1-knockback-and-evidence-hooks",
+   "goal": "Fix the round's only probe-verified fail (no player knockback) and add the deterministic sim/audio test hooks that convert ~2.5 MPS of already-coded-but-unobservable behavior: natural mob spawning, zombie sun-burn, distance despawn, drop auto-collect, and audio audibility. All five judges flagged the shrinking frame pumps as the binding constraint on banking real credit; this lane removes it permanently. Est. +1.7 MPS, low risk.",
+   "spec": "All edits in game/index.html. Touches: damage()/physics() impulse path, a simStep extraction from loop(), spawnTick extraction from updMobs, and the __vox TEST API. Do NOT touch the mesher, worldgen (CI/genChunk/rawH), textures, or the inventory/crafting UI.\n\n(1) PLAYER KNOCKBACK. The player's horizontal vel is overwritten from input every frame (physics(), line 503: vel.x=(-sn*f+cs*s)*sp), so a one-shot impulse would be erased next frame \u2014 add a decaying impulse channel instead. Next to the player state declarations (~line 452) add: let kbx=0,kbz=0;. In physics(), immediately after the vel.x/vel.z assignment at line 503, add: vel.x+=kbx;vel.z+=kbz;const kdec=Math.min(1,dt*5);kbx-=kbx*kdec;kbz-=kbz*kdec;. Change damage(n) (line 980) to damage(n,sx,sz): after the hp deduction, if sx!==undefined { const kl=Math.hypot(pos.x-sx,pos.z-sz)||1; kbx=(pos.x-sx)/kl*7; kbz=(pos.z-sz)/kl*7; if(!fly)vel.y=Math.max(vel.y,3.4); }. Update ONLY the zombie melee call site (line 751) to damage(2,M.x,M.z); fall/drown/starve/cactus calls stay 1-arg (no impulse \u2014 intentional). In the respawn handler (line 985) add kbx=kbz=0;.\n\n(2) simStep EXTRACTION + __vox.step(seconds). Extract the active-branch body of loop() (line 998: gt+=dt;physics(dt);updParts(dt);mineTick(now);updDrops(dt);updMobs(dt);) into function simStep(dt,now){...} and have loop() call simStep(dt,now) under the same active&&!dead guard \u2014 bit-identical behavior, the pause/freeze gate (line 997) is untouched. Add to __vox: step:(secs)=>{secs=Math.max(0,Math.min(30,+secs||0));const t0=performance.now();const fx=1/60;let t=0,i=0;while(t<secs&&i<1800){if(dead)break;if(i%15===0)updSky();simStep(fx,t0+t*1000);t+=fx;i++;}updSky();return {t:+t.toFixed(3),mobs:mobs.length,hp,dead};}. Synchronous, idempotent, returns when done \u2014 no background pumping (the round-3 zombie-eval trap). Passing synthetic now values is safe: mineTick computes mdt from now-mtLast and clamps to .05, and nextPlace compares against the same monotonic series. The periodic updSky() keeps gDL current so sun-burn (line 746, gDL>.5 for 1.5s) actually fires during stepped time.\n\n(3) spawnTick EXTRACTION + __vox.tickSpawns(n). Extract the body of the if(mobSpawnT>=1) block in updMobs (lines 731-740, WITHOUT the !TEST||spawnOn gate) into function spawnTick(){...}; updMobs keeps the timer and gate and calls spawnTick(). Add to __vox: tickSpawns:(n)=>{updSky();for(let i=0;i<Math.min(60,n||1);i++)spawnTick();return mobs.map(M=>({type:M.type,x:+M.x.toFixed(1),z:+M.z.toFixed(1)}));}. Keep the per-candidate validation (ci.h<=SEA reject, SOLID-above reject, ci.tp===1 for pigs, counts/caps) exactly as-is so lane 3 can later wrap it.\n\n(4) AUDIO AUDIBILITY PROBE. Add to __vox: audioCheck:async()=>{...} \u2014 if typeof OfflineAudioContext==='undefined' return null. For each of [sBreak,sPlace,chirp]: create a fresh OfflineAudioContext(1,22050,44100); save oldAC=AC,oldM=master,oldN=nbuf; point AC at the offline ctx, create master=oac.createGain() (gain .7, connect to destination), build nbuf as a 2s noise buffer on the offline ctx (same fill as audioInit line 776); call the generator; RESTORE the three globals immediately (before awaiting); const buf=await oac.startRendering(); scan channel 0 for peak |amplitude|. Return {break:pk1,place:pk2,chirp:pk3} with 4-decimal peaks. Wrap the global swap in try/finally so a throw can never leave AC pointing at a dead offline context.\n\nConstraints: zero new per-frame allocations in physics/updMobs hot paths (kbx/kbz are module-level scalars); no change to spawn-search determinism (lines 473-477); ?test=1 must still boot with spawn exactly (116.5, 29.02, 115.5) on seed 1337.",
+   "acceptance": "All via ?test=1 + __vox, in order: (a) Boot gate: fresh load, getState() spawn exactly x=116.5, y\u224829.02, z=115.5, errors []. (b) Knockback: setTime(0); spawnMob('zombie', px+0.8, undefined, pz); record p0=getState(); step(1.5); assert hp < 20 AND horizontal displacement from p0 > 0.5 directed away from the zombie AND a vel.y pop was observable (sample() during step or y rose above start); then with no zombies, step(2) and assert walk speed normal (impulse fully decayed, |vel|\u2248input-driven). (c) Fall damage still impulse-free: fly up 10, drop, hp loss with no horizontal displacement. (d) Natural spawns: clearMobs(); setTime(0); tickSpawns(5) \u2192 1-4 zombies, every one at horizontal distance 18-32 from player, each standing on a solid non-water column (block(x,h,z) solid, colInfo h>SEA); setTime(12); clearMobs(); teleport to plains (tp===1); tickSpawns(5) \u2192 only pigs, \u22644. (e) Sun-burn: spawnMob('zombie') at noon, step(2) \u2192 mobs() empty and a particle burst occurred (screenshot or parts spike). (f) Despawn: spawnMob, setCam 60+ blocks away, step(1.1) \u2192 mobs() empty. (g) Drop auto-collect: brk() a grass block, step(1.2) \u2192 dropList() empty and inventory count incremented (the 0.8s immunity then magnet+pickup completed). (h) audioCheck() \u2192 all three peaks > 0.01. (i) Regressions: pause() then step(0) untouched/gt frozen via skyInfo; save/load round-trip still passes; __vox.errors and console both empty after the whole script; FPS unchanged when rendering."
+  },
+  {
+   "name": "lane-2-farming-family",
+   "goal": "Bank the weight-2 farming family (grep-proven absent for four rounds): seeds from grass tufts, till-and-plant on dirt/grass, 3-stage wheat growth, harvest, and bread into the existing FOOD pipeline. Also performs the one-time texture-atlas expansion (the atlas is 31/32 tiles full) that lane 3 reuses. Lowest-risk untouched family per the systems judge. Est. +1.3 MPS, low risk.",
+   "spec": "All edits in game/index.html. Touches: texture atlas constants, block/item data tables, doBreak/tryPlace farming branches, a new updFarm ticker, boot rebuild, __vox hooks. Do NOT touch genChunk/CI/rawH (no natural crops \u2014 determinism stays bit-identical), the mesher, mobs, damage, or audio.\n\n(1) ATLAS EXPANSION (one-time, shared with lane 3). Line 131: TC.height=64 \u2192 128. Line 373 tuv(): second component divisor /4 \u2192 /8 (1-((t>>3)+.02+(1-v)*.96)/8). Lines 176-178 avg block: getImageData(0,0,128,64) \u2192 (0,0,128,128) and loop t<32 \u2192 t<64. Everything else (T(), drawIcon, setCrackTile, dropGeo) already derives from t&7 / t>>3 and keeps working; crack tiles 21-24 and all existing tile rows are unmoved. Verify visually after this step before continuing.\n\n(2) NEW TILES (32-38) via T(): 32 farmland top (dirt base ~140,100,68 with darker furrow rows every 4px, like tile 19's banding but brown); 33 wheat sprout (sparse short green shoots from bottom, transparent elsewhere \u2014 use alpha like tile 16's style); 34 wheat mid (taller green-yellow stalks); 35 wheat mature (full-height golden stalks ~200,170,60 with seed heads); 36 seeds item icon (scatter of 6-8 small pale dots); 37 wheat item icon (tied golden sheaf); 38 bread icon (rounded loaf ~170,120,60 with lighter top). Transparent = simply don't P() the pixel (canvas starts clear; matO alphaTest .4 and cr-quads handle it, same as flowers).\n\n(3) DATA REGISTRATION. BL (line 186): 18:{t:[32,2,2]} farmland (dirt sides/bottom), 19:{cr:33},20:{cr:34},21:{cr:35} wheat stages. Replace SOLID (line 189) with: const NSOLID={5:1,13:1,14:1,19:1,20:1,21:1};const SOLID=b=>b>0&&!NSOLID[b]; (OPQ alias unchanged \u2014 lane 3 will append its torch id here). NAMES: 18:'Farmland',19:'Wheat',20:'Wheat',21:'Wheat',107:'Seeds',108:'Wheat',109:'Bread'. DROPS: 18:2 (dirt), 19:107, 20:107, 21:108. HARD: 18:.45, 19:.05, 20:.05, 21:.05. ITILE: 107:36,108:37,109:38. FOOD (line 971): add 109:5. RECIPES (line 213): add {in:{108:3},out:109,n:1}.\n\n(4) SEED SOURCES. In doBreak (line 594 area), after the apple special-case add: if(h.b===14&&h3f(h.x,h.y,h.z)<.4)spawnDrop(h.x,h.y,h.z,107); (deterministic ~40% of grass tufts \u2014 position-hashed so the probe can pre-compute which tufts pay out). Mature wheat bonus: if(h.b===21)spawnDrop(h.x,h.y,h.z,107); (alongside the DROPS[21]=108 wheat).\n\n(5) TILL+PLANT. In tryPlace (line 604), insert BEFORE the it.id>=100 early-return at line 607: if(it&&it.id===107){const h2=ray();if(h2&&h2.n[1]===1&&(h2.b===1||h2.b===2||h2.b===18)&&getB(h2.x,h2.y+1,h2.z)===0){if(h2.b!==18)setB(h2.x,h2.y,h2.z,18);setB(h2.x,h2.y+1,h2.z,19);farm.set(h2.x+','+(h2.y+1)+','+h2.z,gt+20+h3f(h2.x,h2.y,h2.z)*20);it.count--;if(it.count<=0)inv[slot]=null;touched(h2.x,h2.y,h2.z);updCounts();sPlace();}return;} Flag in a code comment: pragmatic substitution \u2014 seeds till on use, no hoe item (state it in the file header too).\n\n(6) GROWTH. Module-level: const farm=new Map();let farmT=0;. function updFarm(dt){farmT+=dt;if(farmT<1)return;farmT=0;for(const[k,due]of farm){if(gt<due)continue;const p=k.split(','),x=+p[0],y=+p[1],z=+p[2],b=getB(x,y,z);if(b===19||b===20){setB(x,y,z,b+1);touched(x,y,z);farm.set(k,gt+20+h3f(x,y+b,z)*20);}else farm.delete(k);}} Call updFarm(dt) by appending it inside simStep (lane 1 created it; if absent, append in the loop active branch at line 998). Crop-pop cascade: extend the support-removal loop in doBreak (line 597, ab===12||ab===13||ab===14) to also match 19,20,21 so breaking farmland/dirt pops the crop above (no drop, same as flowers \u2014 note it).\n\n(7) BOOT REBUILD. After the edits Map is populated from SV (line 464), add: for(const[ek,ev]of edits)if(ev===19||ev===20)farm.set(ek,gt+15); (mature 21 needs no timer) \u2014 crops persist and resume growing across save/load.\n\n(8) __vox HOOKS. growCrops:()=>{for(const k of farm.keys())farm.set(k,gt-1);farmT=1;updFarm(1);return [...farm.keys()].length;}, farmInfo:()=>[...farm.entries()].map(([k,d])=>({k,due:+d.toFixed(1)})).\n\nConstraints: farm Map is bounded by player planting (no natural generation); updFarm is throttled to 1Hz; no per-frame allocations beyond the existing iterator. Seeds are id 107 \u2265100 so the generic block-place path can never place them as a block; the ghost preview's id<100 gate already excludes them.",
+   "acceptance": "Via ?test=1 + __vox: (a) Atlas regression FIRST: screenshots of the spawn beach vista, a stone wall, the hotbar with all 9 starter icons, and a mid-mine crack overlay \u2014 all visually identical in character to round 4 (UV divisor change is the highest-risk edit; verify before anything else). (b) Seeds: locate a grass tuft (block id 14) whose h3f(x,y,z)<.4 by scanning blocks near a plains teleport, brk() it \u2192 dropList contains id 107. (c) Plant: give(107,4); aim at the top face of a grass block with air above; place() \u2192 block(x,y,z)===18 and block(x,y+1,z)===19, seed count decremented, 'place' sfx logged. (d) Growth: growCrops() \u2192 block becomes 20; growCrops() again \u2192 21; farmInfo() drops the entry after maturity. (e) Harvest: brk() the mature wheat \u2192 drops include one id 108 AND one id 107. (f) Bread: give(108,3); craft(109) returns true; eat() with bread selected \u2192 hunger rises exactly +5, count decremented, 'eat' sfx logged. (g) Cascade: plant on dirt, brk() the farmland block \u2192 crop above is gone (block(x,y+1,z)===0), no floating cross. (h) Persistence: plant a stage-19 crop, __vox.save(), reload ?test=1&load=1 \u2192 crop block persists and growCrops() still advances it. (i) Regressions: fresh ?test=1 spawn exactly (116.5, 29.02, 115.5); findStructures(300) returns the same 2 ruins + 3 wells; full crafting choreography (log\u2192planks\u2192sticks\u2192pick) still passes; zero console errors, __vox.errors empty."
+  },
+  {
+   "name": "lane-3-cave-light-and-torches",
+   "goal": "Seed the weight-3 light-propagation family \u2014 the build's biggest 43+ ceiling, flagged by all five judges: depth-based skylight so caves finally render dark, a craftable/placeable torch with a local light pool, torch-suppressed zombie spawning (converts the weight-1 light-linked family leg), and a __vox.lightAt evidence hook. Isolated as its own lane because it touches buildChunk and every remesh path \u2014 the verified zero-seam/AO record is at stake. Est. +2.5 MPS, high risk, sequenced last.",
+   "spec": "All edits in game/index.html. Runs after lanes 1-2 (relies on lane 1's spawnTick extraction and lane 2's expanded atlas). Touches: one new tile, torch block registration, a torch registry, buildChunk vertex-color math, setB/doBreak torch handling, dropGeo cr-fix, one light gate inside spawnTick, __vox hooks. Do NOT touch CI/genChunk/rawH terrain logic (spawn determinism), the player physics, the inventory UI, or audio.\n\n(1) TORCH CONTENT. Tile 39 via T(): vertical 2px-wide stick (~124,84,46) rising from bottom-center to y\u22485, topped with a 3x3 glowing head (255,220,90 core, 255,160,40 fringe), transparent elsewhere. BL[22]={cr:39}; add 22:1 to lane 2's NSOLID set (non-solid, non-opaque); NAMES 22:'Torch'; HARD 22:.05; DROPS 22:22; RECIPES add {in:{100:1,10:1},out:22,n:4} (stick + coal-ore \u2192 4 torches; comment the ore-not-coal-item pragmatic substitution, same as the iron pick at line 212). CRITICAL dropGeo FIX (line 647): tile selection currently reads bl.t[...] which is undefined for cr-blocks and would throw the moment a torch drop spawns \u2014 change to: const tile=id>=100?ITILE[id]:(bl.cr!==undefined?bl.cr:bl.t[f===2?0:f===3?1:2]);.\n\n(2) TORCH REGISTRY. const torchR=new Map(); // chunkKey 'cx,cz' -> Map(localIdx -> [wx,wy,wz]). In setB (line 316), before the write read const old=d[i]; after the write: if(old===22||v===22){const tk=(x>>4)+','+(z>>4);let s=torchR.get(tk);if(v===22){if(!s){s=new Map();torchR.set(tk,s);}s.set(i,[x,y,z]);}else if(s){s.delete(i);if(!s.size)torchR.delete(tk);}}. Boot rebuild: after the edits Map loads (line 464), for(const[ek,ev]of edits)if(ev===22){parse x,y,z from ek and register the same way}. No genChunk hook needed \u2014 torches are never naturally generated.\n\n(3) MESHER LIGHT (the high-risk core \u2014 keep it exactly this shape). At the top of buildChunk (line 391), precompute once per build: (a) const hcol=new Int16Array(18*18); for lx -1..16, lz -1..16: hcol[(lx+1)*18+(lz+1)]=CI(wx0+lx,wz0+lz).h; (b) const tlist=[]; for the 9 chunk keys (cx-1..cx+1)\u00d7(cz-1..cz+1), push every torchR entry's [wx,wy,wz]. Helper inside buildChunk: function lightOf(lx,ly,lz){const d2=hcol[(lx+1)*18+(lz+1)]-ly;let L=d2<=0?1:Math.max(.1,1-d2*.16);for(let q=0;q<tlist.length;q++){const T2=tlist[q],dx=wx0+lx+.5-T2[0]-.5,dy=ly+.5-T2[1]-.5,dz=lz+.5-T2[2]-.5;const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);if(dist<7){const t3=1-dist/7;if(t3>L)L=t3;}}return L;} \u2014 pure local-array reads, zero string keys, zero allocation in the face loop. Solid faces: at line 427 change const li=F.l*AOT[a]; to const li=F.l*AOT[a]*lightOf(qx,qy,qz); (qx/qy/qz are the face-adjacent cell, already in scope; compute lightOf ONCE per face before the 4-vertex loop, not per vertex). Cross-rendered blocks (line 402): multiply the .95 by (b===22?1:lightOf(x,y,z)) \u2014 torches render self-lit. Water quads: untouched. AO indices, seam-handling, and the index-flip heuristic (line 431) must not change.\n\n(4) TORCH REMESH RADIUS. A torch's 7-block pool can cross into neighbors that touched() won't rebuild. In doBreak and tryPlace's setB call sites \u2014 or cleanest, right after touched(x,y,z) wherever the placed/broken id is 22 \u2014 add: for(let cx2=(x-7)>>4;cx2<=(x+7)>>4;cx2++)for(let cz2=(z-7)>>4;cz2<=(z+7)>>4;cz2++)remesh(cx2,cz2); (\u22644 chunks, within the proven per-edit rebuild budget).\n\n(5) LIGHT-GATED SPAWNING. Module helper: function lightAtW(x,y,z){const d2=CI(Math.floor(x),Math.floor(z)).h-y;const sky=d2<=0?1:Math.max(.1,1-d2*.16);let tl=0;const ck=(Math.floor(x)>>4)+','+(Math.floor(z)>>4); /* check the 3x3 chunk neighborhood of torchR around x,z */ for each registered torch within dist<7: tl=max(tl,1-dist/7); return {sky,torch:tl,eff:Math.max(sky*gDL,tl)};}. Inside lane 1's spawnTick, in the zombie branch only, after the existing column checks (line 738) add: if(lightAtW(sx+.5,ci.h+1,sz+.5).eff>=.15)continue; \u2014 at an unlit surface column eff=gDL<.12 (night) so current behavior is preserved bit-for-bit; a torch-lit column is rejected. Pig branch untouched. Also extract the per-candidate validation into function trySpawnAt(type,sx,sz) returning 'ok'|'water'|'solid'|'light'|'biome'|'cap' and have spawnTick's random candidates call it, so the gate is probe-addressable.\n\n(6) __vox HOOKS. lightAt:(x,y,z)=>lightAtW(x,y,z), spawnAt:(type,x,z)=>{updSky();return trySpawnAt(type,Math.floor(x),Math.floor(z));}, torches:()=>{const o=[];for(const s of torchR.values())for(const t of s.values())o.push(t);return o;}.\n\nConstraints: lightOf must be allocation-free and array-backed (the mesher rebuilds up to 3 chunks per edit at 120fps \u2014 the perf judge's streak is the panel's evidence substrate); hcol covers exactly the -1..16 neighbor range the face loop can reference; no change to chunk data, CI, or spawn search means seed-1337 spawn and findStructures stay bit-identical.",
+   "acceptance": "Via ?test=1 + __vox: (a) Boot + determinism FIRST: fresh load spawns exactly (116.5, 29.02, 115.5); findStructures(300) unchanged; zero errors. (b) Skylight: at the spawn surface lightAt(x, h+1, z).sky === 1; dig or teleport into cave air \u22656 below the heightmap (verify depth via colInfo h minus y) \u2192 lightAt(...).sky \u2264 0.2; screenshot the cave interior vs a surface shot \u2014 interior visibly darker (the first dark cave in five rounds). (c) Torch: give(100,1) + give(10,1); craft(22) returns true yielding 4 torches with icon+name in hotbar; place one in the dark cave \u2192 block()===22, lightAt at distance 2 reports torch \u2265 0.7 and at distance 5 \u2265 0.25; screenshot shows a bright pool falling off into darkness. (d) Break the torch \u2192 lightAt torch component returns 0, remesh clean, torch drop spawns and is collectible (this exercises the dropGeo cr-fix \u2014 it must not throw). (e) Cross-chunk: place a torch \u22647 blocks from a chunk border, verify the neighbor chunk's adjacent faces brightened (screenshot, no light seam at the border). (f) Spawn gate: setTime(0); spawnAt('zombie', x, z) at a torch-lit column (eff\u2265.15) returns 'light'; the same call at an unlit valid column returns 'ok' and adds a mob; setTime(0) + tickSpawns(5) with no torches behaves exactly as lane 1's baseline (1-4 zombies at r18-32). (g) Persistence: place a torch, save(), reload ?test=1&load=1 \u2192 torches() still lists it and lightAt still reports its pool (boot registry rebuild). (h) Regression sweep, mandatory: re-shoot the desert 56x61 scan region and both structure sites for seams/holes; one concave-corner screenshot confirming AO survives the light multiply; 170-op rapid place/break burst with zero errors and no hitching; getState().fps sane while rendering; pause() still freezes; the full crafting choreography still passes."
+  }
+ ],
+ "built": [
+  {
+   "lane": "lane-1-knockback-and-evidence-hooks",
+   "changes_summary": "All edits in game/index.html. (1) Player knockback: added module-level `let kbx=0,kbz=0;` next to player state (~line 453); in physics(), right after the input vel.x/vel.z overwrite, added `vel.x+=kbx;vel.z+=kbz;` plus exponential decay (`kdec=Math.min(1,dt*5)`); damage(n) became damage(n,sx,sz) \u2014 when source coords are passed it writes a 7 m/s impulse away from the source and pops vel.y to >=3.4 when not flying; only the zombie melee call site passes coords (`damage(2,M.x,M.z)`), fall/drown/starve/cactus stay 1-arg; respawn handler clears kbx/kbz. (2) Extracted the active-branch body of loop() into `simStep(dt,now)` (bit-identical: gt+=dt;physics;updParts;mineTick;updDrops;updMobs) and loop() now calls it under the same active&&!dead guard; added `__vox.step(secs)` \u2014 synchronous fixed 1/60 stepping, 30s/1800-iter cap, dead-break, updSky() every 15 sub-steps + once at end so gDL-driven logic (sun-burn) fires during stepped time. (3) Extracted the spawn block body from updMobs into `spawnTick()` (per-candidate validation unchanged: SEA reject, SOLID-above reject, tp===1 for pigs, counts/caps); updMobs keeps the 1s timer and the !TEST||spawnOn gate; added `__vox.tickSpawns(n)` (updSky first, <=60 ticks, returns mob type/x/z list). (4) Added `__vox.audioCheck()` \u2014 per generator [sBreak,sPlace,chirp] builds a fresh OfflineAudioContext(1,22050,44100), swaps AC/master/nbuf globals inside try/finally (restored before awaiting startRendering), builds a 2s noise nbuf on the offline ctx, scans channel 0 for peak amplitude, returns {break,place,chirp} at 4 decimals; returns null when OfflineAudioContext is unavailable. Verified live via the running preview server (port 8911, ?test=1): boot spawn exactly (116.5, 29.02, 115.5) with errors []; knockback hp 20->16 with 2.69-block displacement directly away from the zombie and full decay after (vel 0 with no input); fall damage hpLoss 9 with horiz displacement 0.000; night tickSpawns(5) -> 4 zombies at distances 21.2/26.3/30.7/31.4 all on solid dry columns; noon plains tickSpawns(5) -> 4 pigs only; sun-burn zombie removed within step(2) at noon; pig despawned after step(1.1) at 70 blocks; grass brk + step(1.2) -> dropList empty, dirt count 10->11; audioCheck {break:.2814, place:.32, chirp:.0279} all > .01; pause+step(0) left gt and sky hex frozen; __vox.errors 0 and console clean (only the pre-existing three.js r160 classic-script deprecation warning) after the whole script.",
+   "static_ok": true,
+   "notes": "Static checks: file ends with </html>, inline script extracted and node --check passes. Risks/follow-ups: (1) step() advances mtLast into a synthetic future (t0+t*1000); mineTick clamps mdt to [0,.05] so the first real frame after a step simply sees mdt=0 \u2014 harmless, but any future code subtracting from mtLast without the max(,0) clamp would regress. (2) audioCheck logs break/place/chirp entries into __vox.sfx via logS \u2014 harmless for current acceptance (only errors are asserted empty) but a strict sfx-sequence assertion written later should account for it. (3) tickSpawns intentionally bypasses the spawnOn gate (it calls spawnTick directly), so a harness that wants gated behavior must keep using setSpawning + step. (4) spawnTick validation block kept verbatim for lane 3 to wrap. (5) FPS reads 60 in the preview tab because the browser vsync-caps rAF; no per-frame allocations were added to physics/updMobs hot paths (kbx/kbz are module scalars), so the headless 120 FPS budget is unaffected."
+  },
+  {
+   "changes_summary": "Lane-2 farming family banked in game/index.html (all line refs post-edit):\n\nATLAS EXPANSION (shared with lane 3): TC.height 64\u2192128 (line 135); tuv() v-divisor /4\u2192/8 (line 388); avg[] block getImageData(0,0,128,128) + loop t<64 (line 190). Crack tiles 21-24 and all existing rows unmoved; verified visually (vista, hotbar icons, mid-mine crack overlay all identical in character).\n\nNEW TILES 32-38 via T() (lines 187-197): 32 farmland top (furrowed dirt), 33/34/35 wheat sprout/mid/mature (alpha cross-quad style), 36 seeds icon, 37 wheat sheaf icon, 38 bread loaf icon.\n\nDATA: BL += 18:{t:[32,2,2]},19:{cr:33},20:{cr:34},21:{cr:35} (line 202). SOLID replaced with NSOLID={5,13,14,19,20,21} table + const SOLID=b=>b>0&&!NSOLID[b] (line 203); OPQ alias untouched for lane 3. NAMES += Farmland/Wheat x3/Seeds/Wheat/Bread; DROPS += 18:2,19:107,20:107,21:108; HARD += 18:.45,19-21:.05; ITILE += 107:36,108:37,109:38; FOOD += 109:5; RECIPES += {in:{108:3},out:109,n:1}.\n\nSEEDS: doBreak (lines 613-614) \u2014 grass tufts (14) drop seeds at h3f<.4 (position-hashed, deterministic); mature wheat (21) drops bonus seed. Cascade loop (line 616) extended to pop crops 19-21 above broken support, no drop (same as flowers).\n\nTILL+PLANT: tryPlace (lines 626-631) \u2014 seeds (107) on top face of grass/dirt/farmland with air above tills to 18 + plants 19, sets farm timer gt+20+h3f*20, decrements stack, sPlace(). Inserted before the id>=100 early-return; reused the existing ray hit h instead of the spec's redundant second ray() (identical semantics, one fewer DDA). Pragmatic substitution (no hoe) flagged in code comment + file header.\n\nGROWTH: farm Map + farmT + updFarm(dt) 1Hz ticker (lines 853-861), placed AFTER `let gt` init (line 852) rather than the spec's line-464 spot because gt is in TDZ there at module-eval time; this also makes saved-crop timers relative to the restored clock. Deviation 2: on 20\u219221 updFarm deletes the entry immediately instead of re-arming the timer (matches acceptance d 'farmInfo drops the entry after maturity'; spec code left a dangling entry for one extra cycle). updFarm(dt) appended to simStep (line 1027). Boot rebuild: for edits with value 19/20, farm.set(key, gt+15) (line 862).\n\n__vox HOOKS (lines 1092-1093): growCrops() and farmInfo() as specced.\n\nVERIFIED at runtime via preview + ?test=1: full acceptance sweep (a)-(i) passed \u2014 atlas regression screenshots, tuft seed drop, plant/grow/harvest/bread (+5 hunger exact, sfx logged), cascade pop, save/load persistence with growth resume, spawn bit-identical (116.5, 29.02, 115.5), findStructures(300) same 3 wells + 2 ruins, crafting choreography intact, 60 FPS, zero console errors, localStorage cleaned after test.",
+   "lane": "lane-2-farming-family",
+   "notes": "Risks/follow-ups: (1) Lane 3 should append its torch id to the NSOLID table at line 203 (not redefine SOLID) and draw its tiles at 39+ \u2014 rows 4-7 of the 128px atlas are now live. (2) Two flagged deviations from spec letter, both behavior-improving: boot farm-rebuild moved after gt init (TDZ at the spec'd location would have thrown at boot), and mature crops drop their farm entry immediately on the 20\u219221 transition. (3) growCrops only matures a 19-stage crop to 21 after two calls by design (one stage per call). (4) Water faces still don't render against crop blocks (19-21) \u2014 crops can't legally occupy water cells via the till path, so unreachable; noted in case a future lane adds water-adjacent planting. (5) The farm Map self-cleans stale entries on the next 1Hz tick after a crop is broken/popped, so farmInfo() can briefly show an entry for a destroyed crop between ticks \u2014 harmless and bounded. fps occasionally reads 0 immediately after synchronous __vox eval bursts (sampling-window artifact, recovers to 60 next frame); pre-existing, not introduced by this lane.",
+   "static_ok": true
+  },
+  {
+   "lane": "lane-3-cave-light-and-torches",
+   "changes_summary": "All edits in game/index.html (+38/-13 lines, single file).\n\n(1) CONTENT: Tile 39 torch texture (2px stick rising to y=5, 3x3 glowing head 255,220,90 core / 255,160,40 fringe) added after T(38), before the avg[] computation so burst particles get correct colors. BL[22]={cr:39}; NSOLID +22:1; NAMES 22:'Torch'; DROPS 22:22; HARD 22:.05; RECIPES +{in:{100:1,10:1},out:22,n:4} with the ore-not-coal pragmatic-substitution comment. dropGeo cr-fix applied: tile selection now falls back to bl.cr for cr-blocks (torch is the first cr-block with a self-drop; the old bl.t[...] read would have thrown).\n\n(2) REGISTRY: const torchR Map (chunkKey -> Map(localIdx -> [wx,wy,wz])) declared above setB. setB reads old value, writes, then registers/deregisters id-22 cells. Boot rebuild added inside the existing SV edits loop (registers ev===22 entries alongside the editB push).\n\n(3) MESHER: buildChunk precomputes an 18x18 Int16Array of CI heights (-1..16 range) plus a flat tlist from the 3x3 torchR neighborhood; inner lightOf(lx,ly,lz) is allocation-free (skylight: 1 at/above heightmap, -0.16/block below, 0.1 floor; torch: linear 7-block falloff, max-combine). Solid faces: lf computed once per face, li=F.l*AOT[a]*lf. Cross blocks: .95 multiplied by lightOf (torches self-lit, b===22 exempt). Water quads, AO indices, seam handling, index-flip heuristic untouched. NOTE: corrected an obvious spec typo in lightOf (dz needed wz0+lz, mirroring dx's wx0+lx) \u2014 without it torch light would be wrong in every chunk except cz=0.\n\n(4) REMESH RADIUS: remeshTorch(x,z) rebuilds the <=4 chunks within x\u00b17,z\u00b17; doBreak and tryPlace route id-22 edits through it instead of touched() (strict superset, avoids double-building the home chunk).\n\n(5) SPAWN GATE: module-level lightAtW(x,y,z) returning {sky,torch,eff:max(sky*gDL,torch)}; per-candidate validation extracted to trySpawnAt(type,sx,sz) -> 'ok'|'water'|'solid'|'light'|'biome'|'cap' with the zombie-only eff>=.15 light gate; spawnTick now calls it (identical RNG consumption, counts, and caps).\n\n(6) __vox: lightAt, spawnAt (with updSky refresh), torches() added.\n\nRUNTIME-VERIFIED via the live preview (?test=1, fresh save-cleared boots): spawn exactly (116.5, 29.02, 115.5) with 0 errors twice; surface sky===1; 6-below sky=0.1; craft(22)=true yielding 4 with icon+name; placed torch reports .714 at dist 2 / .286 at dist 5; spawnAt='light' at the torch column, 'ok' + real zombie at an unlit column, 'water' over the sea; setTime(0)+tickSpawns(5) baseline intact (4 zombies, r20.6-28.3); break -> drop id 22 spawns WITHOUT throwing, registry empties, torch light component 0, drop collected (count 3->4); save -> reload ?load=1 -> torches() lists (116,28,114) and pool intact (boot rebuild); 60 rapid torch place/break ops straddling the x=127/128 chunk border at 7.1ms/op with 0 errors and clean registry. Page left pristine (save cleared, plain ?test=1).",
+   "static_ok": true,
+   "notes": "Static: file ends with </html>; extracted main script passes node --check. Risks/follow-ups for the probe: (1) Visual screenshots (cave darkness, torch pool falloff, border seam check, concave-corner AO) still need the panel's eyes \u2014 my preview viewport rendered squashed, though terrain/water/grass all rendered normally and numeric light values are exact. (2) Skylight is heightmap-depth based by design: player-dug shafts darken (depth below CI.h) but player-built roofs do NOT create darkness, and breaking surface blocks doesn't brighten caves below \u2014 consistent with the spec, worth a sentence in any judge brief. (3) Breaking the block UNDER a torch leaves it floating (the plant-pop loop doesn't include 22) \u2014 minecraft-parity gap, deliberate scope hold. (4) Torch edits cost ~7ms (up to 4 chunk rebuilds) \u2014 fine at 120fps but a burst of torch ops mid-combat could hitch one frame; remeshTorch could be made async via the pend queue later. (5) Spec's lightOf snippet had dz missing wz0; corrected (flagged in changes_summary). (6) tlist is rebuilt per chunk build from up to 9 map lookups \u2014 negligible now, revisit only if torch counts reach hundreds per chunk neighborhood."
+  }
+ ]
+}

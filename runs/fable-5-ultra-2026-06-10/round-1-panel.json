@@ -1,0 +1,864 @@
+{
+ "round": 1,
+ "round_mps": 30,
+ "derivation": "Panel estimates: player 29, perf 30, worldgen 31, systems 31, rendering 36. Median = 31. Four of five judges cluster tightly at 29-31; rendering's 36 is an outlier whose surplus rides on the same uncredited code-read \"leaning pass\" items every other judge refused to credit under the no-code-credit rule, so it gets discounted rather than averaged in. Trimmed mean of the middle three (30, 31, 31) = 30.67. Applying the panel's own harsh ties-broken-downward convention (explicitly invoked by the worldgen and player judges), the merged round score lands at 30: a strong one-shot creative sandbox with near-zero verified play evidence and zero progress on any survival-systems family. Lane 1 (observability) buys back the verification discount next round; lanes 2-3 attack the two highest mps_gain/risk-ratio systems gaps the judges converged on (drops+inventory ~1.8 player / 1.0 systems; health ~1.8 player / 1.0 systems, both echoed by the systems judge as the correct round-1 sequence ahead of tools/crafting which depend on drops existing).",
+ "panel": [
+  {
+   "domain": "worldgen",
+   "confidence": "Medium-low: only the ocean, one beach, the seed line, and a biome readout were actually observed this round, so all terrain-shape, cave, ore, and vegetation verdicts rest on code reading and my MPS leans on an assumed pass rate I cannot yet defend with play evidence.",
+   "mps": 31,
+   "item_verdicts": [
+    {
+     "feature": "Rolling multi-scale terrain",
+     "verdict": "unverified",
+     "evidence": "index.html:153-154 sums continental fbm + .013 hill fbm + .055 detail fbm with biome-modulated amp; vista shows terrain but nothing was walked."
+    },
+    {
+     "feature": "Four-plus distinct biomes",
+     "verdict": "unverified",
+     "evidence": "index.html:158 defines exactly four (snowy/desert/forest/plains) at ~220-block wavelength; HUD showed only 'forest'; finding 4 palettes within minutes is spawn/seed-dependent."
+    },
+    {
+     "feature": "Trees with trunk and canopy",
+     "verdict": "unverified",
+     "evidence": "index.html:203-218 force-set log trunks (b=6) under leaf canopies (7/15) with corner trimming; not in the observed vista."
+    },
+    {
+     "feature": "Sea-level water bodies",
+     "verdict": "pass",
+     "evidence": "Vista shows ocean filling to one flat horizon level; global SEA=26 fill at index.html:193 makes the level world-consistent."
+    },
+    {
+     "feature": "Sand beaches at shorelines",
+     "verdict": "pass",
+     "evidence": "Vista shows a sand strip at the land/water interface; tp=4 whenever h<=SEA+1 (index.html:161). Caveat: steep coasts above SEA+1 can skip sand."
+    },
+    {
+     "feature": "Surface soil layering",
+     "verdict": "unverified",
+     "evidence": "index.html:189: y==h surface block, 3 sub-layers of biome underblock (dirt), stone below; digging never play-tested."
+    },
+    {
+     "feature": "Large explorable world",
+     "verdict": "unverified",
+     "evidence": "Unbounded procedural chunks with RD=6 streaming (index.html:501-518); no 2-minute walk performed."
+    },
+    {
+     "feature": "Seamless chunk borders",
+     "verdict": "unverified",
+     "evidence": "Mesher samples neighbors cross-chunk via getB (index.html:286-287), trees use a +/-3 overlap pass (198), heights come from global CI, so seams are unlikely by construction; unwalked."
+    },
+    {
+     "feature": "Safe solid spawn",
+     "verdict": "unverified",
+     "evidence": "Spiral search rejects water/trees/cacti/caves (index.html:347-351); HUD showed y=29 above sea, but physics never ran because pointer lock never engaged."
+    },
+    {
+     "feature": "Stable revisited terrain",
+     "verdict": "unverified",
+     "evidence": "Chunk data is cached permanently in a Map (index.html:179,182) and edits write into that cache (225); meshes rebuild deterministically; the 100-block round trip was not played."
+    },
+    {
+     "feature": "Biome-specific terrain shapes",
+     "verdict": "unverified",
+     "evidence": "amp=(5+8*wet+38*mtn)*(1-.55*dry) at index.html:153 flattens deserts and raises cold/continental mountains; unobserved."
+    },
+    {
+     "feature": "Coherent blended biome regions",
+     "verdict": "unverified",
+     "evidence": "Low-frequency t/m fields (index.html:150) give large regions and tints blend smoothly (162-165), but surface-block types switch on hard thresholds (158-161): confetti risk near borders."
+    },
+    {
+     "feature": "Underground caves",
+     "verdict": "unverified",
+     "evidence": "Dual-ridge spaghetti tunnels plus deep caverns (index.html:174-178) carved in genChunk (191); never dug into."
+    },
+    {
+     "feature": "Ore blocks in stone",
+     "verdict": "unverified",
+     "evidence": "h3i%131 veins place coal (tile 12) and iron (tile 13) in stone below the soil cap (index.html:190, ore textures 119-120); unseen in play."
+    },
+    {
+     "feature": "Bedrock bottom layer",
+     "verdict": "unverified",
+     "evidence": "y=0 set to block 9 (index.html:186), tryBreak refuses b===9 (443), setB guards y<1 (225), getB returns 9 below 0 (221); unbreakability untested."
+    },
+    {
+     "feature": "Flowers and grass tufts",
+     "verdict": "unverified",
+     "evidence": "fl/tf scatter on plains/forest grass via column hash (index.html:168-169) rendered as cross quads (292-297); not observed."
+    },
+    {
+     "feature": "Per-biome tree variants",
+     "verdict": "unverified",
+     "evidence": "Oak in forest/plains vs taller conical spruce with distinct leaf block in snowy (index.html:168-170, 211-218); deserts get cacti only, never trees."
+    },
+    {
+     "feature": "Seeded world regeneration",
+     "verdict": "unverified",
+     "evidence": "Seed shown on start screen and HUD (observed) and every worldgen hash mixes WS with no Math.random (index.html:87-89); no same-seed reload comparison was run."
+    },
+    {
+     "feature": "Overhangs and ledges",
+     "verdict": "unverified",
+     "evidence": "Leaning fail: terrain is strictly heightmap (index.html:188-192); only cave carving can undercut a slope, so true overhangs are incidental, not designed."
+    },
+    {
+     "feature": "Ocean biome expanse",
+     "verdict": "unverified",
+     "evidence": "Ocean observed to the horizon in the vista, but floor depth is unmeasured and the base is only ~SEA-7+noise (index.html:154), so 'several blocks down' is seed-dependent."
+    },
+    {
+     "feature": "Streaming chunk loading",
+     "verdict": "unverified",
+     "evidence": "Distance-sorted builder with 7ms/frame budget and far-chunk dropping (index.html:503-517); boot progress bar observed but no walk-and-stream test."
+    },
+    {
+     "feature": "Vegetation placement rules",
+     "verdict": "unverified",
+     "evidence": "Cacti require desert sand above sea (index.html:171), plants spawn only on intact surface blocks (194), and breaking support clears plant/cactus stacks (446-447); untested in play."
+    },
+    {
+     "feature": "Altitude snow line",
+     "verdict": "unverified",
+     "evidence": "Global snow cap at h>=45 with a stone band at 42-44, plus snowy-biome snow above sea (index.html:159-161); consistent line by construction, unobserved."
+    },
+    {
+     "feature": "Surface cave entrances",
+     "verdict": "fail",
+     "evidence": "Caves do open at the surface (cOK gate, index.html:187,191) but the mesher has no light or depth darkening at all (309-325, face light x AO only), so interiors render fully lit: 'dark interiors visible' cannot be met."
+    },
+    {
+     "feature": "Rivers crossing terrain",
+     "verdict": "unverified",
+     "evidence": "Ridged noise channels (rv<.05) carve lowlands to ~SEA-2.5 and fade out above SEA+22, feeding seas (index.html:155-157); winding shape unobserved."
+    },
+    {
+     "feature": "Biome-tinted foliage",
+     "verdict": "unverified",
+     "evidence": "Per-column grass/leaf tint smoothly blended by wet/dry/cold (index.html:162-165) and applied to grass tops and leaves in the mesher (312); subtle shift not observed."
+    },
+    {
+     "feature": "Depth-based ore rarity",
+     "verdict": "unverified",
+     "evidence": "Coal anywhere below the soil cap (y>8), iron restricted to y<=14 (index.html:190): correct shallow/deep split, only two ores, untested."
+    },
+    {
+     "feature": "Horizon fog veil",
+     "verdict": "unverified",
+     "evidence": "Fog far (88) sits inside the mesh radius (96) and fog color is synced to the sky every frame (index.html:235, 529); the vista did not isolate pop-in."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Darken cave interiors with a depth/sky-exposure term",
+     "detail": "The wow item 'surface cave entrances' requires dark interiors and is currently unattainable: the mesher (index.html:309-325) colors vertices only by face light x AO, with no light model. A cheap heightmap-distance or flood-fill sky-light factor multiplied into vertex colors fixes the item now and is the seed of the light-propagation family (weight 3) needed past 43.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "Add 1-2 biomes and soften biome borders",
+     "detail": "Exactly four biomes (index.html:158) is the bare minimum for the 4+ core item, and surface-block types flip on hard t/m thresholds, risking confetti against the 'coherent blended regions' stretch. Add birch forest or savanna and dither/hysteresis the tp transition so borders read gradual.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Real overhang density term",
+     "detail": "Terrain is pure heightmap (index.html:188-192); the 'overhangs and ledges' stretch item currently depends on a cave mouth happening to undercut a slope. Add a small 3D noise carve on steep slopes only, keeping the spawn search and tree base checks aware of it.",
+     "mps_gain": 0.25,
+     "risk": "medium"
+    },
+    {
+     "title": "Guarantee beaches on steep shores",
+     "detail": "Sand applies only when h<=SEA+1 (index.html:161), so cliffs and steep grass coasts can meet water with no sand, threatening the core 'wherever land meets water' wording. Make any column adjacent to sea-level water within ~2 height also sand.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Deepen ocean basins",
+     "detail": "Ocean floors average only a few blocks below SEA (base SEA-7+cont*17 at index.html:154), so the 'ocean biome expanse' stretch ('floor several blocks down') is seed-dependent. Push low-continentalness columns down an extra 4-8 blocks for a real shelf-and-basin profile.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "Seed A/B determinism proof via the observability hook",
+     "detail": "'Seeded world regeneration' is fully deterministic in code (WS-mixed hashes, index.html:87-89, no Math.random in gen) but unproven. With round 2's hook, auto-capture a spawn-area height hash for same-seed and different-seed loads to convert this from unverified to pass cheaply.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "First generated structures toward the villages family",
+     "detail": "Nothing exists above trees and cacti: no ruins, wells, dungeons, or villages, and no world save/load. In the checklist band this only buys open-dimension modifier ('alive world'), but villages/structures carry weight 3 in the 43+ systems bands, so a small seeded ruin/well generator is the highest-leverage forward bet in this domain.",
+     "mps_gain": 0.5,
+     "risk": "medium"
+    }
+   ],
+   "summary": "Worldgen is the strongest subsystem in this build on paper: biome-modulated multi-octave terrain, winding rivers, dual-ridge caves with caverns, depth-gated ores, bedrock, an altitude snow line, deterministic seeding with zero Math.random, overlap-pass trees, and budgeted distance-sorted chunk streaming that is seam-consistent by construction. However, only the ocean, one beach, the seed display, and a biome readout were actually observed this round, so 25 of my 28 items remain unverified under the evidence rule, and one (dark cave interiors) fails outright because the mesher has no light model. Code-grounded risks include heightmap-only terrain with no real overhangs, a bare-minimum four biomes with hard borders, shallow oceans, beach gaps on steep coasts, and zero structures or persistence for the 43+ families. Through this domain the build profiles as a strong one-shot clone whose worldgen would likely clear most checklist items in play, but with everything beyond the vista unproven I score it 31, ties broken downward."
+  },
+  {
+   "domain": "player",
+   "confidence": "Medium-low: 28 of my 29 checklist items sit behind pointer lock and are code-judged only this round, so my 29 could swing roughly \u00b14 once round-2 observability lets me actually play; the code reads clean enough that my downside risk is mostly in feel items (look smoothness, wall sliding, re-lock cadence).",
+   "mps": 29,
+   "item_verdicts": [
+    {
+     "feature": "Pointer lock with re-lock",
+     "verdict": "unverified",
+     "evidence": "lock()/pointerlockchange wiring at lines 398-404 (pause-click and canvas-click re-lock paths) looks correct, but bare requestPointerLock with no .catch risks Chrome's post-Esc cooldown rejection; headless preview could not engage lock."
+    },
+    {
+     "feature": "Smooth clamped mouse look",
+     "verdict": "unverified",
+     "evidence": "mousemove handler lines 405-407: yaw/pitch at 0.0022 sensitivity, pitch clamped to +/-1.55 rad (~88.8 deg), rotation order YXZ; leaning pass, unplayed."
+    },
+    {
+     "feature": "Camera-relative WASD",
+     "verdict": "unverified",
+     "evidence": "Lines 374-375 rotate input by yaw (vel.x=(-sin*f+cos*s)*sp, vel.z=(-cos*f-sin*s)*sp), correct for three.js -Z forward; leaning pass."
+    },
+    {
+     "feature": "Calibrated jump with gravity arc",
+     "verdict": "unverified",
+     "evidence": "v=8.4, g=25 (lines 378-379) gives 1.41-block apex: mounts one, never two; jump gated on onGround so no double-jump; leaning pass."
+    },
+    {
+     "feature": "Solid floor collision",
+     "verdict": "unverified",
+     "evidence": "Axis-separated coll() lines 352-359 with y substepping line 386-387 (max 0.75/substep at capped dt); getB generates chunks on demand so borders always have collision data; leaning pass."
+    },
+    {
+     "feature": "Wall collision without clipping",
+     "verdict": "unverified",
+     "evidence": "Same coll() resolves x and z separately to face +/-(0.3+e); max move/frame 0.85 (fly sprint) < 1 block so no tunneling; leaning pass."
+    },
+    {
+     "feature": "Ceiling collision",
+     "verdict": "unverified",
+     "evidence": "coll(1,amt>0) sets pos.y=by-1.8-e (line 357); camera at pos.y+1.62 stays 0.18 below ceiling face, beyond the 0.08 near plane; leaning pass."
+    },
+    {
+     "feature": "Reach-limited block targeting",
+     "verdict": "unverified",
+     "evidence": "DDA ray returns null at t>5.5 (line 434), inside the 4-6 block spec; leaning pass."
+    },
+    {
+     "feature": "Targeted block outline",
+     "verdict": "unverified",
+     "evidence": "updHL() lines 459-464 repositions an EdgesGeometry box on the exact ray hit every frame, hidden when unlocked; leaning pass."
+    },
+    {
+     "feature": "Left-click breaks block",
+     "verdict": "unverified",
+     "evidence": "tryBreak() lines 442-448: setB(0), neighbor-chunk remesh via touched(), plant-support cleanup, particles, sound; bedrock protected; leaning pass."
+    },
+    {
+     "feature": "Right-click places on targeted face",
+     "verdict": "unverified",
+     "evidence": "placeCell() adds the DDA face normal (line 450); only fills air/water/plant cells; leaning pass."
+    },
+    {
+     "feature": "No placing inside player",
+     "verdict": "unverified",
+     "evidence": "overlaps() line 449 rejects any cell intersecting the 0.6x1.8 player AABB before setB; leaning pass."
+    },
+    {
+     "feature": "Multi-type hotbar",
+     "verdict": "pass",
+     "evidence": "Observed live this round: 7-slot hotbar with textured thumbnails on the start screen; .sel styling (white border, raised slot) applied deterministically in buildHotbar (lines 552-565)."
+    },
+    {
+     "feature": "Hotbar switching works",
+     "verdict": "unverified",
+     "evidence": "Digit1-7 (line 421) and wheel (line 413) both set slot; placement reads HOT[slot] (line 456) so selection matches; interaction unplayed."
+    },
+    {
+     "feature": "Centered readable crosshair",
+     "verdict": "unverified",
+     "evidence": "Fixed-center #xh with mix-blend-mode:difference (lines 30-33) should read on sky and dark terrain; not explicitly captured in this round's probes."
+    },
+    {
+     "feature": "No right-click context menu",
+     "verdict": "unverified",
+     "evidence": "document-level contextmenu preventDefault (line 397) covers locked and unlocked states; leaning pass."
+    },
+    {
+     "feature": "Sprint speed boost",
+     "verdict": "unverified",
+     "evidence": "7 vs 4.4 walk (line 372); ends on W release / stop / sneak (lines 369-370, 422), Minecraft-like Ctrl latch; leaning pass."
+    },
+    {
+     "feature": "Wall sliding on contact",
+     "verdict": "unverified",
+     "evidence": "Per-axis move-then-resolve (lines 382-385) zeroes only the blocked axis, preserving the tangential component; leaning pass."
+    },
+    {
+     "feature": "Diagonal speed normalized",
+     "verdict": "unverified",
+     "evidence": "Input vector normalized via L=Math.hypot(f,s) at line 367; leaning pass."
+    },
+    {
+     "feature": "No interaction through walls",
+     "verdict": "unverified",
+     "evidence": "DDA terminates on first non-air non-water block (line 436); break/place both derive from that single hit; leaning pass."
+    },
+    {
+     "feature": "Clean fall when undermined",
+     "verdict": "unverified",
+     "evidence": "setB updates collision data instantly; next physics frame finds no support and gravity applies, no snap (coll only fires on actual overlap); leaning pass."
+    },
+    {
+     "feature": "Tab-away physics stability",
+     "verdict": "unverified",
+     "evidence": "dt=Math.min(dt,.05) at line 572 caps the resume step; lock loss also freezes physics behind the pause gate (line 574); leaning pass."
+    },
+    {
+     "feature": "Hold-to-break mining",
+     "verdict": "unverified",
+     "evidence": "mL latch + mineTick repeats tryBreak every 290ms (lines 408-412, 457); leaning pass."
+    },
+    {
+     "feature": "Pillar jumping",
+     "verdict": "unverified",
+     "evidence": "Apex 1.41 clears the 1.0 needed for the feet cell to pass overlaps(); ~0.36s placement window vs 260ms repeat; new block top lands under feet, no clip; leaning pass."
+    },
+    {
+     "feature": "Fly mode toggle",
+     "verdict": "unverified",
+     "evidence": "F toggles fly with vel.y reset (line 417); fly branch gives Space/Shift vertical (line 376); toggling off re-enters the gravity branch; leaning pass."
+    },
+    {
+     "feature": "Swimming in water",
+     "verdict": "unverified",
+     "evidence": "inW check line 371: speed x0.45, gentle 9.5 sink, Space +30dt clamped to 3.2 up (line 377); exiting onto a 1-block shore may stall (no edge boost), which could fail this in harsh play."
+    },
+    {
+     "feature": "Sprint FOV kick",
+     "verdict": "unverified",
+     "evidence": "camera.fov eased toward 87 sprinting / 75 walking at dt*7 (line 393); leaning pass."
+    },
+    {
+     "feature": "Sneak mode with edge guard",
+     "verdict": "unverified",
+     "evidence": "Sneak 1.7 speed, eyeH lerps to 1.3 (line 390), x/z reverted when sup() loses corner support (lines 383-385); guard only checks Left Shift; leaning pass."
+    },
+    {
+     "feature": "Ghost placement preview",
+     "verdict": "unverified",
+     "evidence": "Translucent 0.15-opacity box positioned at the validated place cell in updHL (lines 255, 461-463); leaning pass."
+    },
+    {
+     "feature": "Inventory with stacking (systems, weight 2)",
+     "verdict": "fail",
+     "evidence": "Absent: breaking yields no items, hotbar is an infinite 7-block creative palette (HOT array line 145), no counts, no stacking, no collection."
+    },
+    {
+     "feature": "Health, damage, fall damage (systems, weight 2)",
+     "verdict": "fail",
+     "evidence": "Absent: no health state anywhere; landing from any height (vel.y to -45) applies zero damage; no hearts UI."
+    },
+    {
+     "feature": "Hunger and food (systems, weight 2)",
+     "verdict": "fail",
+     "evidence": "Absent: no hunger variable, no food items, nothing edible in the block set."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Item drops, collection, and stacking inventory",
+     "detail": "Breaking a block should spawn a pickup that lands in a counted, stacking hotbar/inventory; placement should consume from the stack. This is the gate to the 50-band survival loop and the first systems family in my domain (weight 2). Touches tryBreak, tryPlace, HOT/hotbar UI, and HUD, so it is the largest single player-domain change.",
+     "mps_gain": 1.8,
+     "risk": "medium"
+    },
+    {
+     "title": "Health, damage, and fall damage",
+     "detail": "Add HP state, a hearts bar, fall damage derived from impact velocity at the moment coll(1) sets onGround (vel.y is already available, line 357), drowning timer while inW, and a death/respawn flow. Weight-2 family, mostly additive to existing physics, low blast radius.",
+     "mps_gain": 1.8,
+     "risk": "low"
+    },
+    {
+     "title": "Tools with durability and per-block mining speeds",
+     "detail": "Replace the flat 290ms mineTick cadence with per-block hardness and tool multipliers plus durability. Heaviest-weighted family touching my domain (weight 4) and a prerequisite for crack-stage rendering, but it rewires the hold-to-break loop that currently passes, so isolate behind the existing timing as a fallback.",
+     "mps_gain": 3.7,
+     "risk": "medium"
+    },
+    {
+     "title": "Hunger and food",
+     "detail": "Hunger bar that drains with sprinting/jumping, gates sprint when low, and refills from a food item (e.g. apples from leaves). Weight-2 family; pairs naturally with health regen. Hollow without item drops, so sequence after the inventory gap.",
+     "mps_gain": 1.8,
+     "risk": "low"
+    },
+    {
+     "title": "Progressive mining cracks with cancel-on-look-away",
+     "detail": "Hold-to-break currently deletes a block instantly every 290ms with no progress feedback. Add crack-stage overlay on the targeted block, resetting when the ray target changes or the button releases. Worth the 1-pt wow item alone and de-risks the tools family above.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "Pointer-lock cooldown handling on re-lock",
+     "detail": "lock() at line 401 calls requestPointerLock bare; Chrome enforces ~1.25s cooldown after Esc, so a fast pause-click rejects with an unhandled promise error and a dead-feeling click. Add .catch with a short retry and a 'click again' hint. Protects the 2-pt pointer-lock core item from failing the harsh 'repeatedly' test.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Water-edge exit assist",
+     "detail": "Swim-up clamps at 3.2 (line 377) and jump requires onGround, so climbing out of water onto a 1-block bank can stall, which would fail the swimming stretch item in harsh play. Give a small upward boost when horizontally pressing against a solid block while near the surface.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    }
+   ],
+   "summary": "Through the player and interaction lens this is a strong one-shot clone in code: axis-separated AABB collision with y-substepping, a calibrated 1.41-block jump, DDA raycast with 5.5 reach and face-normal placement, self-entombment rejection, sneak edge guard, fly, swim, sprint FOV, ghost preview, and a working 7-slot hotbar (the one player item verified live this round). All 28 lock-gated items read as leaning-pass with no half-implementations found, but under the integrity rule none can be credited yet, so my 29 estimate sits just below the band-30 anchor with ties broken downward. The real ceiling is structural: zero progress on the 43+ player systems, since there is no item collection, stacking, health, or hunger, and the hotbar is an infinite creative palette. Round-2 priority should be the inventory/health pair plus the cheap robustness fixes (pointer-lock cooldown, water-edge exit) that protect already-passing items from failing in harsh verified play."
+  },
+  {
+   "domain": "rendering",
+   "mps": 36,
+   "confidence": "Medium-low: only boot, HUD probe, hotbar, and the pause-veil vista are observed; roughly 85 percent of my domain rides on code reading this round, so a play-breaking surprise (z-fight, hitching, audio timing) could swing me 3-4 MPS either way and I biased the estimate downward accordingly.",
+   "item_verdicts": [
+    {
+     "feature": "Procedural block textures (core)",
+     "verdict": "pass",
+     "evidence": "Observed: 7 distinct textured hotbar thumbnails at boot plus distinct sand/water/grass vista; 20-tile painter atlas at index.html lines 103-128."
+    },
+    {
+     "feature": "Per-face directional shading (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: FACES brightness top 1.0 / bottom .5 / sides .62-.85 baked into vertex colors, lines 274-281; not seen in play."
+    },
+    {
+     "feature": "No seams or cracks (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: mesher samples neighbor chunks through getB (lines 286-287) and CI-deterministic cross-chunk trees (lines 198-218); needs in-play camera sweep."
+    },
+    {
+     "feature": "Break reveals solid faces (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: touched() remeshes the edited chunk plus edge neighbors at lx/lz 0 and 15 (lines 438-441); unexercised without pointer lock."
+    },
+    {
+     "feature": "No z-fighting flicker (core)",
+     "verdict": "unverified",
+     "evidence": "Real risk: water top lowered (tH=.9, line 299) avoids coplanar surfaces, but the ghost preview is an exact 1.0 box (line 255) whose faces sit coplanar with neighboring block faces, a likely shimmer whenever a placement preview shows."
+    },
+    {
+     "feature": "Distance fog (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: THREE.Fog 48 to 88 inside the 96-block mesh radius (line 235), color synced to sky every frame (line 529)."
+    },
+    {
+     "feature": "Transparent water with visible floor (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: matW opacity .62 depthWrite:false (line 243) over generated sea-floor sand; vista showed ocean but transparency itself unconfirmed."
+    },
+    {
+     "feature": "Controls help overlay (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: overlay with real bindings observed at boot and bindings cross-check against handlers; H toggle (line 420) and reopen never exercised headless."
+    },
+    {
+     "feature": "Working pause mode (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: pointerlockchange shows #pause and zeroes keys/mouse state (lines 398-400); resume-by-click re-lock untestable this round."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "Observed: HUD probe read FPS 120 with the full chunk radius meshed; post-load gen budget capped at 7 ms/frame (line 513), so sprint/spin headroom is large."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: an edit rebuilds at most 3 small 16x16x64 chunks (lines 343, 438-441); cheap on paper, unmeasured under rapid clicking."
+    },
+    {
+     "feature": "Grass multi-face texturing (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: grass maps t:[0,2,1], green top, dirt bottom, green-fringed side tile T1 (lines 108, 139)."
+    },
+    {
+     "feature": "Ambient occlusion corners (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: per-vertex AO with AOT table and the correct quad-diagonal flip (lines 281, 314-325); a genuinely correct implementation on read."
+    },
+    {
+     "feature": "Fog-sky horizon blend (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: scene.fog.color.copy(skyC) and background set to the same color each frame (line 529), so a gray band is impossible by construction."
+    },
+    {
+     "feature": "Day-night cycle with sun disc (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: 600 s cycle with moving sun/moon billboards and world-light tint (lines 522-535), N skips a quarter day (line 418); gt only advances while locked so it could not run headless."
+    },
+    {
+     "feature": "Drifting clouds (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: cloud texture offset drifts at -gt*.004 plus camera anchoring (lines 252-253, 539)."
+    },
+    {
+     "feature": "Underwater view effect (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: #uw blue overlay plus fog 2-22 and sky shift keyed on the eye block being water (lines 526-528)."
+    },
+    {
+     "feature": "Block-break particles with physics (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: burst() with gravity -22, ground damping, sub-second lifetimes, block-average colors (lines 262-272)."
+    },
+    {
+     "feature": "Hotbar textured icons (stretch)",
+     "verdict": "pass",
+     "evidence": "Observed: textured atlas-drawn thumbnails in the 7-slot hotbar on the start screen (built at lines 553-563, biome-tint multiplied for grass/leaves)."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: gt, physics, particles, and mining all gate on locked (line 574); water/cloud animation are gt-driven so they freeze too. Wind ambience keeps playing, but the item's list does not name audio."
+    },
+    {
+     "feature": "Break and place sounds (stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: distinct sBreak (noise burst + thump) vs sPlace (thump + click) at lines 488-489; AudioContext initialized on the Play click (line 401) so first-click audio should work; inaudible headless."
+    },
+    {
+     "feature": "Night sky and dusk tinting (wow)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: 500-star Points fading with daylight, moon disc, warm horizon lerp toward (.95,.46,.24) (lines 247-251, 524-525, 536)."
+    },
+    {
+     "feature": "Animated water surface (wow)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: water UV offset advances .05/.032 per second (line 540) over a baked ripple texture (line 133)."
+    },
+    {
+     "feature": "Mining crack progress (wow)",
+     "verdict": "fail",
+     "evidence": "Confirmed absent: no crack stages anywhere in the file; breaking is instant per 290 ms hold tick (lines 442-448, 457)."
+    },
+    {
+     "feature": "Held-block viewmodel (wow)",
+     "verdict": "fail",
+     "evidence": "Confirmed absent: no hand or held-block mesh exists in the scene graph; only highlight, ghost, particles, and sky objects are added."
+    },
+    {
+     "feature": "Footstep audio (wow)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: sStep fires from a distance accumulator only while onGround and moving (lines 388-389, 490), silent when idle or airborne by construction."
+    },
+    {
+     "feature": "Ambient audio with mute (wow)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: LFO-filtered wind noise loop plus day birds / night crickets (lines 470-500); M zeroes master gain (line 419) and HUD appends 'muted'."
+    },
+    {
+     "feature": "Emissive light blocks (wow)",
+     "verdict": "fail",
+     "evidence": "Confirmed absent: no torch/glowstone block type and no light values; shading is fixed per-face brightness plus AO only, so nothing can brighten nearby faces."
+    },
+    {
+     "feature": "Horizon fog veil (worldgen wow, fog shared with my domain)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: fog far 88 sits inside the 96-block mesh radius (lines 235, 505-506) so chunk pop-in happens behind the veil; flagged as shared with the worldgen judge."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Per-voxel lighting engine (skylight flood + emissive torch block)",
+     "detail": "There is no light model: faces use fixed directional brightness plus AO, so cave interiors render fully daylit. A column-skylight flood baked into vertex colors plus one torch block would win the 'Emissive light blocks' wow (0.25), rescue the worldgen 'dark cave interiors' wow (0.25), feed the open-dimension modifier now, and bank the weight-3 light-propagation systems family for the 43+ bands. Touches the mesher and edit-time relight, so it is the riskiest single change.",
+     "mps_gain": 1,
+     "risk": "high"
+    },
+    {
+     "title": "Fix ghost-preview coplanar z-fighting",
+     "detail": "The placement ghost is an exact 1.0 box (line 255) whose faces lie coplanar with adjacent visible block faces; under depthTest with depthWrite off this shimmers as you move, threatening the 2-pt core 'No z-fighting flicker' item. Scale the ghost to ~0.98 or add polygonOffset; a five-line defensive fix protecting ~0.5 MPS.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Weather: rain and snow with sky/fog dimming and audio",
+     "detail": "No weather exists. Biome-aware rain (snow in snowy biome) as a camera-local particle volume, sky/fog darkening, and a rain noise layer is the highest-leverage atmosphere add below 43 (open-dimension modifier) and pre-banks the weight-2 weather systems family above 43.",
+     "mps_gain": 0.5,
+     "risk": "medium"
+    },
+    {
+     "title": "Mining crack progress stages",
+     "detail": "Breaking is instant per 290 ms tick (lines 442-448, 457). Add a per-target hold timer driving 3-5 crack decals (overlay quad or texture swap) that cancels on release or look-away: wins a wow item now and is the natural seam for per-block hardness and tool mining speeds later.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Held-block viewmodel",
+     "detail": "No hand or held block is rendered. A small camera-attached cube textured from the selected hotbar tile, with a swing dip on click, wins the wow item and adds a lot of perceived life for ~40 lines. Keep it on a separate render order so it never clips terrain.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Audio and dusk polish: underwater muffle, splash, cloud tinting",
+     "detail": "Run master audio through a lowpass when the eye block is water, add a splash on water entry, and tint the cloud material toward the dusk hue instead of opacity-only. Pure open-dimension modifier credit, but cheap and zero-coupling.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "three.js CDN single point of failure",
+     "detail": "The build hard-depends on cdnjs at runtime (line 78) and throws a friendly error if offline, but the rubric boot gate is double-click in Chrome; an offline judging environment scores the whole run 0. Worth an explicit harness decision (vendored copy beside the file, or documented network requirement) before later rounds raise the stakes. Insurance, not points.",
+     "mps_gain": 0,
+     "risk": "low"
+    }
+   ],
+   "summary": "Through the rendering/UI/audio lens this is an unusually complete one-shot: a 20-tile procedural atlas, per-face shading with correct flipped-diagonal vertex AO, fog permanently color-locked to a 10-minute day/night sky with stars, moon, and dusk hues, lowered animated water with an underwater fog/tint mode, physical break particles, and a full procedural soundscape (wind, day birds, night crickets, footsteps, distinct break/place, mute). The only hard misses in my domain are mining crack progress, a held-block viewmodel, and any real light model, and the lighting gap also undercuts the worldgen cave-mouth wow since caves render fully daylit. Live evidence this round is thin (boot gate, HUD probe, textured hotbar, vista), so most of my verdicts are code-read leaning-pass, and the one concrete render defect I found is the exact-size ghost preview sitting coplanar with block faces, a likely z-fight shimmer. I estimate 36 MPS for the whole build, with a checklist ceiling near 39-40 plus modifier once the observability hook lets round 2 convert leaning-passes into credited passes."
+  },
+  {
+   "domain": "systems",
+   "confidence": "Medium \u2014 survival-family absence is provable from code (a grep and full read show zero inventory/crafting/health/mob/save code, and absence needs no play test), but my band placement for the whole build leans on unverified break/place/movement items, so the pointer-lock gap costs me roughly plus-or-minus 2 MPS.",
+   "mps": 31,
+   "item_verdicts": [
+    {
+     "feature": "Multi-type hotbar (Player core)",
+     "verdict": "pass",
+     "evidence": "Observed this round: 7-slot hotbar with textured thumbnails on start screen; HOT=[1,2,3,4,6,16,7] line 145, .slot.sel selection styling line 37."
+    },
+    {
+     "feature": "Hotbar switching works (Player core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: wheel handler line 413, Digit1-7 handler line 421, placement reads HOT[slot] line 456; switching not observable without pointer lock."
+    },
+    {
+     "feature": "Hotbar textured icons (Rendering stretch)",
+     "verdict": "pass",
+     "evidence": "Observed this round: textured thumbnails on start screen; buildHotbar draws atlas tiles plus tint multiply onto per-slot canvases, lines 553-563."
+    },
+    {
+     "feature": "Hold-to-break mining (Player stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: mineTick repeats tryBreak every 290ms while mL held, lines 457-458; rhythm unplayable headless."
+    },
+    {
+     "feature": "Ore blocks in stone (Worldgen stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: coal/iron embedded in stone at line 190, distinct ore textures via oreT lines 119-120; requires digging in play to credit."
+    },
+    {
+     "feature": "Depth-based ore rarity (Worldgen wow)",
+     "verdict": "unverified",
+     "evidence": "Code at line 190 puts coal at y>8 and iron only at y<=14 (rarer ore deeper, matching the item); never observed in play."
+    },
+    {
+     "feature": "Bedrock bottom layer (Worldgen stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: d[base]=9 floor at line 186, tryBreak refuses b===9 with a thud line 443, setB guards y<1 line 225; unbreakability untested in play."
+    },
+    {
+     "feature": "Seeded world regeneration (Worldgen stretch)",
+     "verdict": "unverified",
+     "evidence": "Seed 1337 visible on start screen and HUD (observed), ?seed=N parsed at line 83, all noise keyed on WS; same-seed spawn reproduction not yet play-verified."
+    },
+    {
+     "feature": "Stable revisited terrain (Worldgen core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: chunk block data persists in chunks Map (dropMesh disposes geometry only, lines 339-342; data map never evicted), so edits survive revisits within a session; walk-away-and-back untested."
+    },
+    {
+     "feature": "Mining crack progress (Rendering wow)",
+     "verdict": "fail",
+     "evidence": "Code-confirmed absent: breaks are instant on a fixed 290ms cadence (tryBreak line 442); no hardness, no crack stages, no cancel-on-look-away."
+    },
+    {
+     "feature": "Emissive light blocks (Rendering wow)",
+     "verdict": "fail",
+     "evidence": "Code-confirmed absent: no torch/glowstone block type in BL (lines 139-141) and no block-light engine; lighting is per-face shading + AO + global day tint only."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Item drops and stacking inventory",
+     "detail": "The hotbar is a fixed creative palette: infinite blocks, no counts, no pickup. Make tryBreak (line 442) spawn a collectible drop, add per-slot counts to the hotbar render (lines 551-565), decrement on place, pick up on walk-over. This is the inventory-with-stacking family (weight 2) and the hard prerequisite for crafting, tools, and smelting credit, so it should land first. Gain assumes the checklist band stays solid.",
+     "mps_gain": 1,
+     "risk": "medium"
+    },
+    {
+     "title": "Crafting grid and recipes",
+     "detail": "Heaviest single family (weight 4). 2x2 personal grid plus a placeable crafting-table block with 3x3; recipes for logs-to-planks, sticks, table, torches, and tool tiers. Main hazard: the pointerlockchange handler (lines 398-400) shows the pause overlay whenever the cursor unlocks, so a crafting UI needs a state flag or it will fight the pause screen and could break the working-pause core item.",
+     "mps_gain": 2,
+     "risk": "medium"
+    },
+    {
+     "title": "Tools, per-block mining speeds, durability",
+     "detail": "Weight-4 family plus it unlocks the mining-crack-progress wow item (+0.25). Add a hardness table on BL, hold-to-mine progress with crack decals replacing the flat 290ms cadence in mineTick (line 457), wood/stone/iron tiers consuming the ores already generated at line 190, and durability loss. Must keep hand-breaking of soft blocks fast so the 'left-click breaks: immediate removal' core item does not regress to half-working.",
+     "mps_gain": 2.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Health, fall damage, death and respawn",
+     "detail": "Weight-2 family, cheapest of the big ones, fully additive. Track fall height and apply damage in the landing branch of coll (a===1, line 357) for falls over 3 blocks, add drowning off the existing inW check (line 371), render a hearts row next to the hotbar, death screen respawning at the computed spawn (lines 347-351). No rendering-path changes, so low blast radius.",
+     "mps_gain": 1,
+     "risk": "low"
+    },
+    {
+     "title": "Passive mobs",
+     "detail": "Weight-3 family and the first entity system: 2-3 box-built animals (pig/sheep) wandering with simple steering, reusing the player gravity/collision helpers (coll/getB), spawning on grass near the player and despawning far away. Establishes the entity substrate hostile mobs need. Risks are frame cost from per-entity collision queries and chunk-border behavior.",
+     "mps_gain": 1.5,
+     "risk": "medium"
+    },
+    {
+     "title": "Hostile mobs, combat, light-linked spawning",
+     "detail": "Weights 4+1. Night-spawned zombies that path toward the player, melee damage against the new health system, click-to-attack with knockback, and spawn rules keyed to darkness (night surface, caves) for the light-link point. Depends on the health and passive-mob substrate landing first; the AI, animation, and combat feel are where a single lane most plausibly breaks the build or tanks FPS.",
+     "mps_gain": 2.3,
+     "risk": "high"
+    },
+    {
+     "title": "World save and load",
+     "detail": "Weight-2 family, isolated and cheap. genChunk is deterministic from WS, so persist only a sparse diff of setB edits per chunk key plus player position, time of day, and hotbar selection to localStorage keyed by seed; replay diffs after generation on boot. Storing full Uint8Array chunks would blow localStorage quota \u2014 diffs only.",
+     "mps_gain": 1,
+     "risk": "low"
+    },
+    {
+     "title": "Torches and block-light propagation",
+     "detail": "Light-propagation family (weight 3) plus the emissive-blocks wow item (+0.25). BFS flood-fill light values folded into the vertex colors in buildChunk (line 284), torch as a craftable non-solid block. Highest engineering risk on the list: cross-chunk light bleed forces remesh cascades and can wreck the no-hitching core item, so prototype behind the crafting work, not before it.",
+     "mps_gain": 1.6,
+     "risk": "high"
+    }
+   ],
+   "summary": "Through the survival lens this build is a zero: all fifteen systems families (inventory stacking, crafting, tools/durability, health, hunger, mobs, smelting, farming, light engine, weather, save/load, structures, redstone) are confirmed absent from the 37k-char file \u2014 the only hit for any survival keyword is the word 'craft' in the title. What exists is an unusually polished creative sandbox whose survival-adjacent scaffolding (ores with depth rules, unbreakable bedrock, seeded determinism, a clean 7-slot textured hotbar, persistent in-session chunk edits) is well positioned to support the climb. The whole build sits in the strong-one-shot band, around 31, with everything above the checklist cap untouched: roughly 20 MPS of systems weight is on the table. The highest-leverage sequence is drops-plus-stacking first (the gateway), then crafting and tools (8 weights, ~4 MPS combined), with health/fall damage and save/load as cheap low-risk fillers; mobs and light propagation are the big-payoff, high-breakage lanes to schedule once the entity and UI substrates exist."
+  },
+  {
+   "domain": "perf",
+   "confidence": "Boot, zero console errors, and the 120-FPS HUD were verified live, but every kinetic claim in my domain (edit hitching, sprint FPS, tab-away, re-lock cycling) is code-read only, so my estimate could swing roughly +/-3 MPS once the round-2 observability hook lands.",
+   "mps": 30,
+   "item_verdicts": [
+    {
+     "feature": "Steady FPS with live counter (R/UI/A core)",
+     "verdict": "unverified",
+     "evidence": "FPS 120 observed live in HUD via DOM probe at the start screen; MeshBasicMaterial + ~110 chunk meshes is cheap, but the '50+ while sprinting and spinning' clause was never exercised under pointer lock."
+    },
+    {
+     "feature": "No block-edit hitching (R/UI/A core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass from code: full-chunk rebuild per edit (buildChunk lines 284-338, touched() lines 438-441 remeshes up to 3 chunks) estimated 1-4ms per edit at 290ms mine cadence; never observed in play."
+    },
+    {
+     "feature": "Streaming chunk loading (Worldgen stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: distance-sorted pend queue with 7ms/frame build budget and RD+2 eviction (updChunks lines 503-517); generation completed to 100% live, but walking-ahead streaming was not observed."
+    },
+    {
+     "feature": "Tab-away physics stability (Player stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: dt clamped to 0.05s (line 572) and vertical collision sub-stepped at 0.9 blocks (lines 386-387), so a multi-second rAF gap cannot teleport or tunnel; not observed in play."
+    },
+    {
+     "feature": "Seamless chunk borders (Worldgen core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: mesher pulls cross-chunk neighbors via getB (lines 286-287) and trees use a deterministic -3..19 overscan (line 198) so border canopies match; the pause-veil vista showed no seams but only from one vantage."
+    },
+    {
+     "feature": "Stable revisited terrain (Worldgen core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: chunk voxel arrays are memoized forever in the chunks Map (lines 179-183) and CI() is pure-deterministic on seed, so revisits and edits persist exactly; never walked in play."
+    },
+    {
+     "feature": "Large explorable world (Worldgen core)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: fully procedural with no world bounds and bedrock floor (d[base]=9, line 186); the only long-range risks are unbounded chunks-Map memory and the CCmap full clear() at 4e5 entries (line 173)."
+    },
+    {
+     "feature": "Working pause mode (R/UI/A core)",
+     "verdict": "unverified",
+     "evidence": "Pause overlay and pointerlockchange wiring exist (lines 77, 398-404), but requestPointerLock has no .catch (line 401); Chrome's post-Esc cooldown can reject an immediate re-click, so the resume half of the cycle is a real flake risk until played."
+    },
+    {
+     "feature": "Pause freezes simulation (R/UI/A stretch)",
+     "verdict": "unverified",
+     "evidence": "Leaning pass: gt, physics, particles, and mining only advance inside the active gate (lines 573-575), and sky/clouds/water animation are all gt-driven so they freeze too; not observed through a lock/unlock cycle."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Pointer-lock re-lock guard",
+     "detail": "lock() (line 401) ignores the Promise Chrome returns; clicking resume within ~1.25s of Esc throws an unhandled rejection (console error, threatens the clean boot gate) and silently fails to re-lock, jeopardizing the 'pointer lock with re-lock, repeatedly' core item. Add .catch with a short retry timer and a 'click again' hint.",
+     "mps_gain": 0.5,
+     "risk": "low"
+    },
+    {
+     "title": "Pooled incremental remeshing",
+     "detail": "Each edit allocates fresh JS arrays, converts to new Float32BufferAttributes, and disposes/recreates GPU buffers (buildChunk/dropMesh, lines 284-343). Move to reusable typed-array scratch buffers and in-place geometry updates to cut GC bursts and protect 'no block-edit hitching' and steady-FPS cores as later rounds add lighting and more block types.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "Chunk-data eviction with dirty-set retention",
+     "detail": "The chunks Map (line 179) grows ~16KB per visited chunk forever; meshes evict but voxel data never does. Evict pristine chunks beyond a radius while pinning player-edited ones, or 'stable revisited terrain' (core) breaks. Caps memory for long autopilot play sessions in later rounds.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Entity/tick scaffolding for future systems lanes",
+     "detail": "Player state is all top-level globals (pos/vel/key at line 345-346) with physics hardwired to the camera. The highest-weight systems families above MPS 43 (hostile mobs 4, passive mobs 3, health 2) need an entity list with shared AABB collision; introducing a minimal Entity struct + fixed-tick update now is the cheapest moment to do it.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Replace CCmap threshold clear() with scoped eviction",
+     "detail": "CI() caches per-column structs and does a full CCmap.clear() at 400k entries (line 173), triggering a recompute storm (10-octave fbm per column) mid-trek. Key columns by chunk and evict alongside dropMesh, or use generation-stamped LRU. Protects the streaming-chunk stretch item on long walks.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Adaptive chunk-build budget",
+     "detail": "updChunks spends up to 7ms/frame (line 513) against an 8.3ms frame on the observed 120Hz display, so crossing a chunk border while sprinting can halve FPS for a dozen frames. Scale the budget to measured frame time (e.g. 40% of last frame) to protect the '50+ FPS while sprinting' core clause.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Exception guard on the main loop",
+     "detail": "loop() (lines 569-581) has no try/catch; one uncaught error from any future feature lane permanently freezes rendering with no message, which reads as a boot-gate failure to a judge. Wrap the per-frame body, log once, and keep rendering. Cheap insurance for an iterative benchmark.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Numeric keys for the getB hot path",
+     "detail": "getB builds a 'cx,cz' string per call (lines 221-224) and is hit by collision (up to ~36 calls/frame), the 60-step DDA raycast every frame, particle physics, and border AO. Pack cx/cz into one integer key and widen the single-entry cache to 2-4 entries to stop AO corner thrash; reduces steady-state GC pressure.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Through the performance/stability lens this is a strong round-1 build: clamped 50ms timestep with sub-stepped vertical collision, budgeted distance-sorted chunk streaming with proper mesh disposal, a fixed-size particle pool, shared materials, capped pixel ratio, and a live-verified 120 FPS HUD with zero console errors. The compact single file is genuinely well-sectioned with a data-driven block registry, so adding blocks and textures in future lanes is cheap. The main liabilities are unbounded chunk-data memory growth, per-edit full-chunk remesh garbage, a CCmap full-clear recompute storm on long treks, an uncaught-rejection-prone pointer-lock path, and an all-globals player that will resist the mob/health systems families above MPS 43. Nearly all of my domain's scorecard items lean pass from code but stay uncredited under the rubric's no-code-credit rule, so I land at 30: a strong one-shot clone whose engine has real headroom but whose kinetic guarantees remain unproven until the observability hook lands."
+  }
+ ],
+ "lanes": [
+  {
+   "name": "Lane 1 (mandated): ?test=1 observability hook + window.__vox",
+   "goal": "Headless evidence capture for judging: run the game unpaused without pointer lock and expose a scripted control/state API, with byte-identical behavior when the param is absent.",
+   "spec": "All edits in game/index.html, total addition must stay under ~120 lines (realistic: ~45). (1) Line 83, after `const WS=...`: add `const TEST=qs.get('test')==='1';` (qs already exists at line 82). (2) Main-loop gate, line 573: change to `const active=(locked||TEST)&&started;`. (3) Auto-start: in updChunks' ready branch (line 516), when `!pend.length`, if TEST set `started=true; ovEl.style.display='none';` and skip showing playBtn (do NOT call audioInit \u2014 no user gesture in headless, avoid suspended-AudioContext console noise); else keep existing behavior exactly. (4) Pause trap: line 400, change `else if(started){...}` to `else if(started&&!TEST){...}`. (5) Key gates: lines 417-418, change `&&locked` to `&&(locked||TEST)` for KeyF and KeyN. (6) Highlight ray: line 459, change `const h=locked?ray():null;` to `const h=(locked||TEST)?ray():null;`. (7) At the end of the script (after loop() definition), inside `if(TEST){...}` assign `window.__vox = {setCam, getState, hideUI, showUI, key, place, brk}` where: setCam(x,y,z,ya,pi) \u2014 CRITICAL: param names must NOT shadow the globals `yaw`/`pitch` (line 345) \u2014 sets pos.x/y/z, yaw=ya, pitch=Math.max(-1.55,Math.min(1.55,pi)), zeroes vel.x/y/z, onGround=false, then immediately `camera.position.set(pos.x,pos.y+eyeH,pos.z); camera.rotation.y=yaw; camera.rotation.x=pitch;` (chunk streaming follows automatically via updChunks/refreshPend reading pos). getState() returns `{fps:Math.round(fps), x:pos.x, y:pos.y, z:pos.z, biome:CI(Math.floor(pos.x),Math.floor(pos.z)).biome, time:gt, selected:HOT[slot], flying:fly}` reusing the existing fps (line 544), CI (line 149), HOT/slot, fly globals. hideUI() sets display:'none' on ids hud, xh, vig, hotbar, ov, pause; showUI() restores '' on hud, xh, vig, hotbar only (ov/pause stay hidden; leave #uw alone \u2014 updSky rewrites it every frame at line 527). key(name, down) maps name\u2192KeyboardEvent code: single letter \u2192 'Key'+upper, '1'-'9' \u2192 'Digit'+n, 'Space'/'Tab' as-is, 'Shift'\u2192'ShiftLeft', 'Ctrl'\u2192'ControlLeft'; dispatches `document.dispatchEvent(new KeyboardEvent('keydown',{code}))` when down!==false and the matching keyup when down!==true (handlers at lines 414-422 read only e.code; synthetic e.repeat is undefined\u2192falsy, fine). place: ()=>tryPlace() (line 451); brk: ()=>tryBreak() (line 442) \u2014 direct reuse, no duplicated logic. (8) Invariant: every new statement is inside `if(TEST)` or uses `||TEST`/`&&!TEST`, so with the param absent the file behaves bit-identically and window.__vox is undefined.",
+   "acceptance": "(a) Load index.html?test=1&seed=1337 headless: world renders past generation with no click, no start overlay, no pause overlay, zero console errors. (b) window.__vox exists; getState() returns numeric fps>0 and x/y/z/biome matching the HUD text; selected===1, flying===false initially. (c) setCam(100,40,100,0,-0.4) \u2192 next-frame getState().x===100 and a screenshot shows the new vantage with chunks streamed in. (d) Aim at ground via setCam pitch\u2248-1.2: place() adds a visible block of the selected type; brk() removes it (before/after screenshots differ at the crosshair). (e) key('N') advances getState().time by 150; key('F') flips flying to true; key('1') sets selected to HOT[0]. (f) hideUI() removes all HUD/crosshair/hotbar/overlay chrome from a screenshot; showUI() restores it. (g) Loading WITHOUT ?test=1: typeof window.__vox==='undefined', start screen still requires the Play click, Esc still shows pause \u2014 behavior unchanged."
+  },
+  {
+   "name": "Lane 2: block drops, pickup entities, counted stacking hotbar",
+   "goal": "Convert the infinite creative palette into a survival item loop: breaking spawns a collectible mini-block drop, collection increments a counted stacking hotbar, placement consumes from the stack (inventory-with-stacking family, weight 2; gateway to crafting/tools).",
+   "spec": "Edits confined to interaction/inventory/hotbar + a new drop-entity updater; do NOT touch physics(), coll(), updSky(), genChunk, or the mesher. (1) Hotbar grows to 9 slots: line 145 `HOT=[1,2,3,4,6,16,7,10,11]` (adds Coal Ore, Iron Ore); extend NAMES (line 144) with 10:'Coal Ore', 11:'Iron Ore'; update wheel handler line 413 `(slot+(...)+7)%7` \u2192 `%HOT.length` with `+HOT.length`, digit handler line 421 to accept 1-9, and help text line 67 '1-7' \u2192 '1-9'. Add `const CNT=HOT.map(()=>10);` (starting stack 10 each, cap 64) \u2014 keeps placement immediately demonstrable so the already-passing core items (multi-type hotbar, right-click place) cannot regress. (2) `const DROPS={1:2, 8:2, 2:2, 3:3, 4:4, 6:6, 7:7, 15:7, 16:16, 10:10, 11:11};` (grass and snowy-grass drop dirt, spruce leaves drop the leaf item; cactus 12 / flower 13 / tuft 14 / bedrock drop nothing). (3) In tryBreak (line 442-448), after `setB(h.x,h.y,h.z,0)`: `const di=DROPS[h.b]; if(di)spawnDrop(h.x,h.y,h.z,di);` \u2014 the plant-cascade loop at 446-447 spawns nothing. (4) In tryPlace (line 451-456): before setB, `if(CNT[slot]<=0){sfx(180,.08,.15,2);return;}`; after successful setB, `CNT[slot]--; updCounts();`. (5) Drop entities: array `drops` (cap 64, despawn at 60s). spawnDrop builds a THREE.Mesh from a per-id cached `dropGeo(id)`: 0.25-scale box whose 6 faces get atlas UVs by reusing tuv() (line 282), FACES (line 274) and BL[id].t \u2014 use a dedicated `matDrop=new THREE.MeshBasicMaterial({map:atlas})` (matO has vertexColors:true so it can't be shared without a color attribute). New `updDrops(dt)`: gravity vy-=22*dt; land on SOLID(getB(...)) resting at floor+0.13; spin mesh.rotation.y+=2*dt with a small sin bob; magnet toward (pos.x,pos.y+0.9,pos.z) when within 2.2; collect within 1.1 \u2192 si=HOT.indexOf(id), if si>=0&&CNT[si]<64 then CNT[si]++, updCounts(), sfx(2100,.05,.12), remove mesh+dispose nothing shared (geometry is cached per id \u2014 only scene.remove). Sync day/night tint once per frame inside updDrops via matDrop.color.copy(matO.color). Call `updDrops(dt)` from the loop inside the `if(active)` block (line 574), appended after mineTick(now). (6) Hotbar count UI: in buildHotbar (lines 553-563) add a count element per slot, CSS `.slot .cnt{position:absolute;right:3px;top:1px;color:#fff;font:bold 10px monospace;text-shadow:0 1px 1px #000}` (top-right; index span owns top-left, name owns bottom-right); new `updCounts()` rewrites each .cnt text and sets the slot canvas opacity .4 when its count is 0. (7) Test-hook integration (lane 1 already landed): add `inv:CNT.slice()` to the object returned by __vox.getState().",
+   "acceptance": "All via ?test=1 plus a normal-mode smoke check: (a) brk() on a stone/dirt target spawns a visible spinning textured mini-block that falls, slides to the player within ~1.5s, vanishes, and getState().inv shows the matching slot incremented (grass block yields dirt). (b) place() decrements the selected slot's inv count by 1 and the on-screen .cnt text matches. (c) Drain a slot to 0: place() becomes a no-op (thud sound, world unchanged, screenshot identical), slot icon dims. (d) key('9') and wheel both reach slots 8-9 (Coal Ore / Iron Ore). (e) Boot screen still shows a full row of textured slots, now 9, each with a visible count \u2014 the previously passing multi-type-hotbar item must not regress. (f) Spawn 20+ drops by rapid brk(): getState().fps stays \u226550 and drops despawn after 60s. (g) Zero console errors; without ?test=1 the loop works identically under pointer lock."
+  },
+  {
+   "name": "Lane 3: health, fall damage, drowning, death/respawn + hearts UI",
+   "goal": "Add the health family (weight 2, lowest-risk big gap): HP state with hearts UI, velocity-derived fall damage, drowning with an air bar, damage flash, and a death/respawn flow \u2014 purely additive to existing physics.",
+   "spec": "Edits confined to physics/vitals/new DOM; do NOT touch tryBreak/tryPlace/hotbar (lane 2 territory), the mesher, or worldgen. (1) State near lines 345-346: `let hp=20,air=10,dead=false,regenT=0,drownT=0;`. After the spawn spiral block (lines 347-351) snapshot `const SPAWN={x:pos.x,y:pos.y,z:pos.z};`. (2) Fall damage in physics(): before the y substep loop (line 386) record `const vy0=vel.y;`; after it, `if(onGround&&!wasG&&!fly&&!inW){const d=vy0*vy0/50; if(d>3.2)damage(Math.ceil(d-3));}` \u2014 fall distance = v\u00b2/(2g) with g=25 (line 378), MC rule dmg=blocks-3; inW (line 371) makes water landings safe; fly exempt. (3) damage(n): if(dead)return; hp=Math.max(0,hp-n); flash a new fixed full-screen #dmg div (rgba(255,0,0,.35) fading out ~300ms via CSS transition); thump(90,40,.15,.5); updHearts(); if(hp<=0)die();. (4) Drowning in physics(): `const sub=getB(Math.floor(pos.x),Math.floor(pos.y+1.5),Math.floor(pos.z))===5;` if sub air-=dt else air=Math.min(10,air+3*dt); when air<=0 accumulate drownT and call damage(2) each full second. Render a 10-segment bubble bar above the hearts only while air<10. (5) Regen: while 0<hp<20, regenT+=dt; every 4s hp=Math.min(20,hp+1)+updHearts(). (6) Optional if the pass is going fast: cactus contact damage \u2014 after the x/z moves, if any cell overlapped by the player AABB (reuse the bound math from coll(), line 353) is block 12, damage(1) rate-limited to 2/s. (7) Hearts UI: #hearts fixed div centered above the hotbar (bottom\u224870px, z-index 6, pointer-events none): 10 glyphs; heart i full when hp>=2i+2, half when hp===2i+1, else empty (color #e33 / half-dimmed / #333 with text-shadow matching the HUD). updHearts() rewrites them; call once at boot. (8) Death: die() sets dead=true, exits pointer lock (document.exitPointerLock&&...), shows new #death .ovl ('You died' + a Respawn button styled like #play). Respawn click: pos={x:SPAWN.x,y:SPAWN.y,z:SPAWN.z}, vel zeroed, hp=20, air=10, dead=false, hide #death, updHearts(), then lock() unless TEST. Gate gameplay: loop line 574 `if(active)` \u2192 `if(active&&!dead)` (rendering continues); pointerlockchange pause branch must also not cover the death screen: extend lane 1's condition to `else if(started&&!TEST&&!dead)`. (9) Test-hook integration: add `hp` and `air` to the object returned by __vox.getState().",
+   "acceptance": "All via ?test=1 plus a normal-mode smoke check: (a) setCam to ~25 blocks above ground, fall: getState().hp drops by ceil(blocks-3)\u00b11, hearts row shows the deficit, red flash visible in a screenshot taken within 300ms. (b) Identical fall ending in water: hp unchanged. (c) Submerge the eye in ocean >10s: bubble bar appears and depletes, then hp ticks down 2 per second. (d) Stay still on land below 20 hp: hp regenerates 1 per ~4s. (e) Repeated falls to hp 0: death overlay appears, world keeps rendering but physics/time freeze; clicking Respawn returns to the original spawn with 20 hp and 10 air. (f) key('F') fly mode: descents cause no damage. (g) Hearts and bubbles never overlap the hotbar at 1280x720; zero console errors; without ?test=1 pause/Esc flow is unchanged and hearts render in normal play."
+  }
+ ],
+ "built": [
+  {
+   "lane": "Lane 1: ?test=1 observability hook + window.__vox",
+   "changes_summary": "All edits in game/index.html, ~13 lines added net. (1) Added `const TEST=qs.get('test')==='1';` immediately after the WS constant (line 84). (2) Main-loop gate changed to `const active=(locked||TEST)&&started;`. (3) updChunks ready branch: in TEST sets `started=true; ovEl.style.display='none';` instead of showing playBtn (audioInit deliberately not called \u2014 no user gesture headless); non-TEST path byte-identical. (4) pointerlockchange pause trap now `else if(started&&!TEST)`. (5) KeyF/KeyN handlers gated on `(locked||TEST)`. (6) updHL highlight ray gated on `(locked||TEST)`. (7) New `if(TEST){window.__vox={...}}` block after `loop();` with setCam (params x,y,z,ya,pi \u2014 no shadowing of global yaw/pitch; zeroes vel, clamps pitch, snaps camera immediately), getState (fps/x/y/z/biome/time/selected/flying from existing globals), hideUI/showUI, key(name,down) (letter\u2192KeyN, digit\u2192DigitN, Shift\u2192ShiftLeft, Ctrl\u2192ControlLeft, Space/Tab as-is; keydown when down!==false, keyup when down!==true), place\u2192tryPlace, brk\u2192tryBreak (direct reuse). Verified statically (file ends with </html>; node --check on extracted script: OK) AND live in the running preview server: with ?test=1&seed=1337 the game auto-starts unpaused (time advances, fps 120, getState matches HUD, selected===1, flying===false), key('N') advances time by exactly 150, key('F') toggles fly both ways, key('3')/key('1') switch slots, setCam(100,40,100,...) lands at exact coords, place() wrote block 1 at (100,24,99) and brk() removed it, hideUI hides all six chrome ids and showUI restores hud/xh/vig/hotbar only; zero console errors (only the pre-existing three.js CDN deprecation warning). Without ?test=1: typeof window.__vox === 'undefined', start overlay shows with Play button, started=false \u2014 behavior unchanged.",
+   "static_ok": true,
+   "notes": "Risks/follow-ups: (a) In TEST mode a stray real click on the canvas would still call lock()\u2192audioInit (existing handler, untouched per scope) \u2014 harmless headless since no clicks occur. (b) place()/brk() are no-ops if the ray (5.5-block reach) hits nothing; judges should setCam near terrain (use pitch ~-1.2 from ~2 blocks above ground height) before calling \u2014 verified working that way. (c) showUI intentionally leaves ov/pause hidden and never touches #uw (updSky rewrites it every frame). (d) The three.js r160 'deprecated classic script' console warning predates this change and fires on every load; not an error. (e) Other builders edited the same file this round; line numbers in the spec had drifted by 0 at edit time \u2014 all anchors matched uniquely via Edit string matching."
+  },
+  {
+   "lane": "Lane 2: block drops, pickup entities, counted stacking hotbar",
+   "changes_summary": "All edits in game/index.html, confined to interaction/inventory/hotbar plus a new drops section; physics(), coll(), updSky(), genChunk, and the mesher untouched.\n\n1. Hotbar data (blocks section, ~line 145-149): NAMES extended with 10:'Coal Ore', 11:'Iron Ore'; HOT grown to 9 slots [1,2,3,4,6,16,7,10,11]; added `const CNT=HOT.map(()=>10)` (start 10 each, cap 64 at pickup) and `const DROPS={1:2,8:2,2:2,3:3,4:4,6:6,7:7,15:7,16:16,10:10,11:11}` (grass/snowy-grass drop dirt, spruce leaves drop oak-leaf item; cactus/flower/tuft/bedrock drop nothing).\n2. Input: wheel handler now `(slot+dir+HOT.length)%HOT.length`; digit handler accepts 1..HOT.length (1-9); help overlay text '1-7 / wheel' -> '1-9 / wheel'.\n3. tryBreak: after `setB(...,0)` added `const di=DROPS[h.b];if(di)spawnDrop(h.x,h.y,h.z,di);` \u2014 the plant-cascade loop spawns nothing.\n4. tryPlace: after the existing validity checks, `if(CNT[slot]<=0){sfx(180,.08,.15,2);return;}` (thud no-op); on success `CNT[slot]--;updCounts();`.\n5. New `/* ---------- drops ---------- */` section between updHL and audio: dedicated `matDrop=MeshBasicMaterial({map:atlas})` (matO has vertexColors so not shared); per-id cached `dropGeo(id)` building a 0.25-scale centered box with atlas UVs via FACES + tuv() + BL[id].t; `drops` array (cap 64 \u2014 oldest evicted; 60s despawn); `spawnDrop(bx,by,bz,id)` at block center with small upward pop; `updDrops(dt)` does gravity vy-=22*dt, rests at floor+0.13 via SOLID(getB(...)), spin rotation.y+=2*dt + sin bob, magnet toward (pos.x,pos.y+0.9,pos.z) within 2.2 (exponential pull), collect within 1.1 -> si=HOT.indexOf(id), CNT[si]++ if <64, updCounts(), sfx(2100,.05,.12), scene.remove only (geometry cached per id, material shared \u2014 nothing disposed); day/night tint synced once per call via matDrop.color.copy(matO.color).\n6. Hotbar count UI: CSS `.slot .cnt{position:absolute;right:3px;top:1px;color:#fff;font:bold 10px monospace;text-shadow:0 1px 1px #000}` (used a div, not span, to avoid the existing `.slot span` left/top rule); buildHotbar appends a .cnt div per slot; new `updCounts()` rewrites each .cnt and sets slot canvas opacity .4 when count is 0; `buildHotbar();updCounts();` at init.\n7. Loop: `updDrops(dt)` appended after mineTick(now) inside the `if(active)` block.\n8. Test hook: getState() now returns `inv:CNT.slice()`.\n\nStatic verification: file ends with </html>; inline script extracted (35,377 chars) and `node --check` passes; no stale `%7` / `n<=7` / '1-7' references remain.",
+   "static_ok": true,
+   "notes": "Risks/follow-ups: (1) Drop meshes use matDrop without per-vertex tint, so leaf-item drops render the untinted base leaf texture (slightly grayer than world leaves) \u2014 cosmetic, per spec's shared-material design. (2) Magnet range is exactly 2.2 per spec; a drop broken at max ray range (5.5) won't auto-slide until the player closes distance \u2014 acceptance test (a) should brk() a nearby block or walk forward. (3) When a stack is at 64, the drop persists (keeps bobbing) rather than being destroyed, mirroring Minecraft; it still despawns at 60s. (4) Drop bob phase uses Math.random() (runtime entity only, same as the existing burst() particles), so SEED-driven worldgen determinism is unaffected. (5) Cap-64 eviction removes the oldest drop's mesh from the scene without disposing the per-id cached geometry, as specified. Runtime/browser verification was out of scope for this builder (static checks only)."
+  },
+  {
+   "lane": "Lane 3: health, fall damage, drowning, death/respawn + hearts UI",
+   "changes_summary": "All edits in game/index.html, purely additive; tryBreak/tryPlace/hotbar, mesher, and worldgen untouched. (1) State: `let hp=20,air=10,dead=false,regenT=0,drownT=0,cacT=0;` added after the player-var line; `const SPAWN={x,y,z}` snapshot right after the spawn-spiral block. (2) physics(): recorded `const vy0=vel.y` before the y substep loop; after it added fall damage `if(onGround&&!wasG&&!fly&&!inW){const d=vy0*vy0/50;if(d>3.2)damage(Math.ceil(d-3));}` (v^2/2g with g=25, water landings safe, fly exempt), drowning (eye-level block===5 drains air 1/s, else refills 3/s; at air 0 drownT accumulates and damage(2) fires each full second), updAir() call, regen (regenT accumulates while 0<hp<20, +1 hp every 4s with updHearts), and optional cactus contact (slightly expanded AABB .32/.05 scan for block 12, damage(1) rate-limited via cacT=.5 i.e. 2/s). (3) New DOM: #hearts + #bubbles + #dmg divs after #hotbar, #death .ovl with #respawn button after #pause. CSS: #dmg full-screen rgba(255,0,0,.35) opacity-transition .3s z-7; #hearts centered bottom:70px z-6 pointer-events:none; #bubbles bottom:90px; #respawn shares #play button styles. (4) Vitals section after buildHotbar(): heartsEl/bubEl/dmgEl/deathEl refs; updHearts() renders 10 hearts (full #e33 when hp>=2i+2, half #933 when hp===2i+1, else #333); updAir() renders 10 bubbles (#8cf/#345), hidden when air===10, innerHTML rewritten only when segment count changes; damage(n) guards dead, clamps hp, retriggers the flash via transition-none/opacity-1/reflow/fade, thump(90,40,.15,.5), updHearts, die() at 0; die() sets dead, clears mL/mR/key/sprint, exits pointer lock, shows #death; respawn onclick restores pos from SPAWN, zeroes vel, hp=20/air=10, resets timers, hides overlay, updates UI, re-locks unless TEST; updHearts()+updAir() called once at boot. (5) Gating: main loop `if(active)` -> `if(active&&!dead)` (rendering/sky/HUD continue); pointerlockchange pause branch -> `else if(started&&!TEST&&!dead)` so pause never covers the death screen. (6) Test hook getState() now includes `hp,air`.",
+   "static_ok": true,
+   "notes": "File still ends with </html>; node --check on the extracted main script passed (37.5KB). Notes: (a) the file I read had no visible lane-1/lane-2 edits in my regions (pause branch was still the original `started&&!TEST`), so the spec's \"extend lane 1's condition\" was applied to the original line; if lane 1 lands later it must merge around `&&!dead`. (b) Cactus contact uses a slightly expanded AABB (.32 horizontal, -.05 feet) because coll() pushes the player fully out of solid cells, so the exact coll() bounds would never overlap a cactus; this is the minimal deviation needed to make contact detectable. (c) Acceptance test (a) at 25 blocks yields ~22 damage = instant death by the MC blocks-3 formula; smaller drops (e.g. 8-12 blocks) show the partial-deficit hearts case. (d) Drowning is not fly-exempt (spec didn't ask); flying with the camera eye inside water drains air. (e) hideUI() test hook does not hide #hearts/#bubbles so they remain visible in test screenshots; add them there if a clean-frame screenshot is ever needed."
+  }
+ ]
+}

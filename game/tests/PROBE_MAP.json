@@ -1,0 +1,214 @@
+{
+  "_meta": {
+    "protocol": "v3 probe map — record-and-replay ledger for delta-only probing",
+    "created": "2026-06-12",
+    "build": "round-12 retrofit close-out (post lane A/B/C + viewmodel fix)",
+    "seed": 1337,
+    "purpose": "One entry per feature area: the hook calls that verify it, the exact expected observations, and the gotchas that cost prior probers tool calls. Future probes verify NEW surface only and replay this map for everything else. Sources: round-9/10/11 panel probe sections + the round-12 retrofit session.",
+    "suite_baseline": "SUITE PASS 71/71, world_hash 911b6032, ~5.8s on fresh ?test=1&suite=1 (re-confirmed 2026-06-12)",
+    "global_quirks": [
+      "brk() is a creative-style instant break that BYPASSES the tool gate (doBreak drop=true). Never cite brk() for drop-gating claims — use mineHold + step (bare hand ~2.2s no drop on stone brick, wood pick ~0.7s with drop).",
+      "place() returns undefined, not a boolean — read the block id back to confirm. place() silently no-ops with zero items of the selected type, torches need a supporting face (shaft side-walls refuse), and placement rays hit non-solid deco (a grass tuft can eat the ray and the block lands ON TOP of the tuft).",
+      "rAF starvation (headless tab): native rAF fires ~never until a screenshot forces a BeginFrame. Recipe: replace window.requestAnimationFrame with a callback-capturing stub, take one screenshot to force a frame (the loop re-registers into your stub), then drive the captured callback synchronously with +16.7ms timestamps. __vox.step() advances the SIM but does NOT run chunk gen or render — boot gen and canvas updates need driven rAF frames. HUD FPS 0-18 in headless screenshots is an artifact; perf().build avg is the honest number.",
+      "setCam() does not suspend physics — toggle fly first (key('F')) or gravity pulls you off the staged position.",
+      "Shore columns near spawn reject spawnAt as 'water' (honest vocab, r10 caveat e; reconfirmed r12 at (120,112) and (150,140)). Gating tests need genuinely inland cells — (490,445) by the hamlet is proven dry.",
+      "Stale HUD frame: HUD text (clock, FPS, XYZ) only updates on rendered frames. After setTime/setCam without driving frames, screenshots show stale HUD values over a correct 3D scene — trust skyInfo()/getState(), not the HUD string.",
+      "eat(id) can return false for items give()'d into deep inventory (r12: give(119) then eat(119) false while invFull showed the item; berries give(118)+eat(118) worked). Prefer real drops/pickups or verify hotbar slot before citing an eat failure.",
+      "API drift history: findCavePocket returns an ARRAY of pockets; spawnCaveAt takes (x,z) not (type,x,y,z) (r9).",
+      "The suite (?suite=1) mutates the world — run it on a fresh page only, and never probe on a post-suite instance.",
+      "Viewport resize: the renderer picks up new dimensions only after a window resize event + a driven frame. The headless preview can boot at extreme aspect (147x899 observed r12) — resize to 1280x800 before judging visuals.",
+      "key('1'..'9') hotbar selection: getState().selected reports the selected ITEM ID, not the slot index."
+    ]
+  },
+  "map": [
+    {
+      "feature": "worldgen-determinism",
+      "hooks": ["getState() pos at boot", "findCaveMouth(300)", "findStructures()", "block(x,y,z) fingerprints", "suite world_hash"],
+      "expected": {
+        "spawn": [116.5, 29.02, 115.5],
+        "cave_mouths_within_300": 6,
+        "nearest_cave_mouth": [129, 32, 148],
+        "hamlet": [488, 440],
+        "world_hash": "911b6032",
+        "spawn_col": "grass(1) at y28, air at y29 at (116,115)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["bit-identical across r9-r12 despite the r11 breadth pack touching worldgen; any drift fails the suite world-hash first"]
+    },
+    {
+      "feature": "lighting-torch-occlusion",
+      "hooks": ["lightAt(x,y,z)", "torches()", "place torch + read", "findStructures for the hamlet A/B"],
+      "expected": {
+        "one_block_from_torch": 0.857,
+        "two_blocks": 0.714,
+        "falloff": "1 - d/7, open LOS unattenuated",
+        "one_wall": "x0.25 (e.g. 0.361 -> 0.090 at the hamlet)",
+        "two_plus_walls": "blocked (0 contribution)",
+        "hamlet_interior_AB_cell": "(485,34,437) reads 0.0903",
+        "cave_skylight_floor": 0.1
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["torch placement needs a supporting face — shaft side-walls silently refuse (aim at floor-adjacent cells)", "field-wide model: 96.9% exact agreement vs ray-march, disagreements are corner-graze oc-class boundaries only (r9)"]
+    },
+    {
+      "feature": "redstone",
+      "hooks": ["matchGrid", "craft", "place + interact + block id reads (synchronous, same eval)", "buttons()/buttonTimers", "pwrCalls()", "pause()/resume() for the button oracle"],
+      "expected": {
+        "ids": "lever 25/26, wire 27/28, lamp 29/30, door lower 31/33 upper 32/34, button 42/43, rs-torch 44/45",
+        "wire_decay": "source power 15, minus 1 per wire step: wires 1-14 powered (28), wire 15+ dead (27)",
+        "propagation": "instant on edit — read ids synchronously in the same eval as interact(), zero frames needed",
+        "button_release": "1.5 sim-seconds, timer rides simNow (held frozen 18.3 wall-clock s under pause, r11)",
+        "lamp_light": "lit lamp joins torch registry: torches() +1, 0.857 at 1 block, gates hostile spawns, persists save/reload",
+        "idle_cost": "pwrCalls 0 over 120-300 idle frames (edit-triggered only)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["any network update slams manually-opened doors toward dp (r11 hunter, documented substitution)", "wire can land on a grass tuft (non-solid support) if the placement ray grazes it"]
+    },
+    {
+      "feature": "crafting-recipes",
+      "hooks": ["matchGrid({id:count,...})", "craft(outId)", "invFull() to confirm consumption"],
+      "expected": {
+        "matrix": "{16:2}->100 sticks n4; {16:4}->17 table; {16:6}->115 plank armor; {16:5}->31 door; {16:3,24:3}->35 bed; {100:3,24:2}->117 bow; {3:5}->23 furnace; {3:4}->41 stone bricks n4; {4:4}->40 sandstone; {3:1}->42 button; {3:1,100:1}->25 lever; {10:1}->27 wire n4; {10:2,16:2}->29 lamp; 1 log->4 planks; picks 3 mat+2 stick; swords 2 mat+1 stick; 5 ingots->116 iron armor; stick+coal->4 torches; 3 wheat->bread",
+        "semantics": "most-specific-wins, zero shadowing (13+ recipe matrix re-resolved r11), exact input consumption"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["suite craft-matrix covers 23 recipes — replay there, only probe NEW recipes"]
+    },
+    {
+      "feature": "hunger-food",
+      "hooks": ["setHunger(n)", "give(id,n)", "eat(id)", "step(s) for poison/regen ticks"],
+      "expected": {
+        "berries_118": "+2 (10 -> 12, re-verified r12)",
+        "bread": "+5",
+        "raw_mutton_119": "+3",
+        "cooked_mutton_120": "+6",
+        "rotten_flesh": "+3 hunger, 8s poison at -1 hp per 2s (4 total), 1-hp floor, never lethal, clean expiry",
+        "sprint_gate": "sprint disabled below hunger 6",
+        "regen": "+1 hp ticks at high hunger — can contaminate damage-step readings (r10 caveat b: a -3 arrow step reads -2)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["eat(id) may return false when the item sits in deep inventory (r12); use real pickups or hotbar-verified slots"]
+    },
+    {
+      "feature": "health-damage",
+      "hooks": ["setHp", "setCam + fall", "step", "give armor 115/116", "spawnMob + sample hp steps"],
+      "expected": {
+        "fall_15_blocks": "20 -> 7 exact",
+        "fall_5_blocks_bare": "-3 hp (sinkhole descent)",
+        "drowning": "10s air then 2 dmg/s, armor-piercing",
+        "armor": "flat reduction: plank -1, iron -2; durability charged only to the BEST worn tier",
+        "skeleton_arrows_by_tier": "3 bare / 2 plank / 1 iron"
+      },
+      "last_verified_round": 11,
+      "known_quirks": ["+1 hunger-regen between samples can make a -3 step read -2; sample faster or pin hunger low"]
+    },
+    {
+      "feature": "hostile-spawn-gating",
+      "hooks": ["setTime", "spawnAt(kind,x,z)", "spawnCaveAt(x,z)", "tickSpawns(n)", "mobs()", "clearMobs()"],
+      "expected": {
+        "noon_surface": "'light' reject",
+        "midnight_inland": "'ok' + real mob (re-verified r12 at (490,445))",
+        "torch_or_lit_lamp_adjacent": "'light' reject at midnight",
+        "noon_dark_cave_pocket": "'ok' (cave hostiles exempt from sunburn)",
+        "sunburn": "noon surface skeleton burns to death within ~2.5s sim",
+        "night_mix": "tickSpawns(60) midnight ~ 3 zombies + 1 skeleton (30% nominal)",
+        "noon_passive_mix": "sheep + pigs (+ cave zombies)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["shore columns reject as 'water' — the single most repeated prober trap (r10, r12 x2); go inland", "spawnCaveAt takes (x,z)"]
+    },
+    {
+      "feature": "mobs-combat",
+      "hooks": ["spawnMob(kind)", "attack()", "mobs()", "dropList()", "arrows()", "place() to fire bow"],
+      "expected": {
+        "sheep": "8 hp / 2 bare dmg = exactly 4 hits; flees on first hit; drops wool 24 (+ raw mutton 119 since r11)",
+        "skeleton": "kites holding range, shoots every ~2s (LOS), 3-dmg arrows, ~50% stick drop",
+        "zombie": "chase + melee with knockback",
+        "bow": "craft 117; -3 per arrow (between hand 2 and wood sword 4); 0.6s+ cooldown; -1 dur per shot; shared 8-cap arrow pool; never self-hits",
+        "corpse_run": "death drops ALL occupied slots as distinct full stacks (durability preserved) within ~4 blocks, inventory wiped to 36 nulls, 300s window vs 60s ordinary Q-drops, recover by standing at site",
+        "villager": "passive, hp 10, 10-block leash"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["mob containment: non-finite inputs rejected (suite mob-containment)", "drop rates are binomial — 1-in-4 against 50% nominal is not a fail"]
+    },
+    {
+      "feature": "beds-spawn-anchor",
+      "hooks": ["craft(35)", "place", "interact(bed)", "setTime", "die by fall + Respawn button", "save() + ?test=1&load=1"],
+      "expected": {
+        "interact_day": "spawnset + nosleep cues, clock unchanged, 'Spawn point set' toast",
+        "interact_night": "spawnset + sleep, gt jumps forward-only to next dawn (e.g. 268 -> 468)",
+        "respawn_with_bed": "exactly bed+1 (e.g. (121.5,31.02,126.5)), hp 20",
+        "bed_destroyed": "'bedgone' cue, fallback to world spawn (116.5,29.02,115.5)",
+        "loaded_boot": "world spawn anchored independently of save position (r11 verified_fail if(!SV) drift FIXED lane A r12; suite load-spawn-anchor)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["the r11 find: pre-fix, post-reload world spawn = wherever you stood at save time — regression-watch this on any save-path lane"]
+    },
+    {
+      "feature": "save-load",
+      "hooks": ["save()", "clearSave()", "navigate ?test=1&load=1 (or suite iframe)", "block id + gt + torches() reads post-load"],
+      "expected": {
+        "roundtrip": "edits, inventory, gt (exact, e.g. 327.05), furnaces, chests persist",
+        "redstone": "circuit ids bit-identical; lit lamp re-registers in light registry (0.857) and re-gates spawns; mid-press button re-arms then auto-expires cleanly",
+        "chest": "emptied hamlet chest stays emptied",
+        "world": "sandstone markers, harvested bush state (39) persist; berry-bush regrow re-arms on load (r11 hunter bug fixed lane A r12, index.html:1679)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["corpse-run drops are never saved (reload forfeits them) — by design", "iframe roundtrip needs the three.js CDN; suite has a 45s honest timeout"]
+    },
+    {
+      "feature": "viewmodel-render",
+      "hooks": ["vm() -> {id, children}", "key('1'..'9') to swap", "setCam + setTime to stage framings", "screenshot"],
+      "expected": {
+        "state_shape": "vm() = {id: <held block id>, children: 1}",
+        "opacity": "held block fully opaque vs noon open ocean, vs sky+sun+clouds, vs midnight dark water (r12 retrofit fix verified with screenshots, all four adversarial framings)",
+        "swap_latency": "vm.id updates on the NEXT DRIVEN FRAME after selection change (one-frame render-pass latency, no mixed/ghost state mid-frame)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["dedicated render pass since the r12 fix lane (water-transparency human bug); suite viewmodel-api checks state shape only — opacity stays screenshot territory", "headless: drive at least one frame after key() before screenshotting or you capture the previous held block"]
+    },
+    {
+      "feature": "time-sky",
+      "hooks": ["setTime(gt)", "skyInfo() -> {hex, sunVis, starOp, cloudOx}", "key('N') skips time (+150gt)"],
+      "expected": {
+        "gt_map": "gt 0 = deep night (starOp 1, #03050e); ~150 dawn transition (sun appears); 250-350 full day (#73adfc); noon ~ 300; sleep targets next dawn at +200-forward (e.g. 468)",
+        "storm_dim": "weather episodes dim the sky (weather-schedule-hash deterministic)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["setTime argument is ABSOLUTE gt, not a 0-1 fraction (setTime(0.5) lands in night)", "driving thousands of frames advances gt — re-pin time right before screenshots", "HUD clock string is stale until a rendered frame"]
+    },
+    {
+      "feature": "audio",
+      "hooks": ["audioCheck() offline render peaks", "sfx() ledger census"],
+      "expected": {
+        "peaks": "break ~.29-.31, place ~.33, chirp ~.03, rain ~.03, step ~.02, bow ~.11, arrowhit ~.19, poison ~.07, caveamb ~.04 — all nonzero",
+        "ledger_families": "break/place/step/chirp/cricket/rain/lever/door/pdoor/button/buttonoff/bow/arrowhit/sleep/spawnset/nosleep/bedgone/caveamb/refuse",
+        "caveamb": "triggers underground only (sky exposure ~0.2 yes, 1.0 no)",
+        "refuse": "fires on blocked placements (no silent dead right-clicks)"
+      },
+      "last_verified_round": 11,
+      "known_quirks": ["audioCheck passes vacuously if OfflineAudioContext missing (never in the marathon preview)"]
+    },
+    {
+      "feature": "perf-stability",
+      "hooks": ["perf() -> build avg/max", "mem() -> heap/chunks/meshes", "__vox.errors gate"],
+      "expected": {
+        "build_avg": "~2.8-6.6 ms/chunk (max 65-423ms first-gen spike only)",
+        "heap": "33-48 MB after a full probe session",
+        "errors": "[] across heavy probing (rAF hijack, deaths, reloads); console clean except the known three.js r160 deprecation warning"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["PERF DEBT: chunk Map never evicts (carried since ~r3, scheduled r13) — mem().chunks growth is the observable", "HUD FPS in headless screenshots is meaningless; rd-fps foreground measurement is a human-checkpoint item (r11 hunter evidence-rot flag)"]
+    },
+    {
+      "feature": "probe-environment",
+      "hooks": ["?test=1 (TEST API)", "?test=1&suite=1 (stage-0 suite)", "window.__suiteResult", "rAF hijack recipe (see global_quirks)"],
+      "expected": {
+        "suite": "SUITE PASS 71/71, world_hash 911b6032, ~6s; greppable 'ERROR <id> <reason>' per failure",
+        "boot": "overlay #ov display none + #prog hidden when gen complete; boot gen needs DRIVEN rAF frames (step() alone stalls at a fixed %)"
+      },
+      "last_verified_round": 12,
+      "known_quirks": ["suite is fresh-page-only (mutates world)", "__suite.run() re-runs only on a pristine boot", "mouse-look CORE remains human-checkpoint territory (OS pointer-lock unreachable headless; synthetic shadow only)"]
+    }
+  ]
+}

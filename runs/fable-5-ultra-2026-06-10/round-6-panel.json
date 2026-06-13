@@ -1,0 +1,1352 @@
+{
+ "round": 6,
+ "round_mps": 41.9,
+ "derivation": "Seat scores: worldgen 41.5, player 42, rendering 42, systems 42, perf 42 (prior merged round-5 score: 40.0). Median = 42, mean = 41.9. No seat is unverified-heavy this round \u2014 all five deltas are conversion-driven with zero advance credit (smelting family driven end-to-end through real UI mouse events; weather verified as a pure deterministic function of gt with a bit-identical 61-sample schedule across loads; depth-ore stratification and biome coherence converted on hard scans; controls overlay, sneak edge-guard, exact 5.5 reach cap, hold-to-break, and bare-hand drop gating all freshly verified; both round-5 filed fails \u2014 mob containment and the mineHold clock seam \u2014 fixed and re-verified in play). So no outlier discount applies. The dispute resolution is uniform: all five seats independently ruled the held-item viewmodel a fail on triple-grounded evidence (empty camera.children, zero camera.add, one renderer.render, torch-selected empty-bottom-right screenshot), so no phantom credit survives into the merge. The lone 41.5 comes from the most probe-dense seat (worldgen), withholding half a point for six-round advertised-absent residue (rivers and overhangs the header still claims, unsighted cave mouths and foliage tint, villages held at 1/3 of weight 3) plus the round's one new verified fail (__vox.look() no-arg NaN poisoning, harness-only). Median-leaning merge starts at 42.0; harsh tie-break gives the well-evidenced dissent a 0.1 haircut rather than discarding it: merged 41.9, a +1.9 delta over 40.0. Consistent cross-checks: systems' family math moved ~28.5 -> ~32 of 40 weights (two weight-2 families banked whole, tools banked to full 4), and four seats independently derived +2 from the same conversion ledger while every seat's ties broke downward on the shared dark residue (pointer-lock/collision cluster unprobed a sixth round, z-fighting and footstep audio dark, light family capped at 2/3, redstone 0/4).",
+ "probe": {
+  "observations": "ROUND 6 ENVIRONMENT: rock-solid. __vox.errors stayed empty across two full sessions of heavy stepping (~250s simulated, dozens of teleports, UI interactions); console shows only the pre-existing three.js r160 deprecation warning. HUD FPS read 60 when sampled post-reload (the headless 0 reading from earlier rounds appeared once then recovered \u2014 still do not dock perf). HUD text line remains throttled/stale in headless screenshots (showed old XYZ/biome after teleports). GAME FEEL: the smelting loop is the real thing \u2014 furnace panel is genuinely polished (live 'burn 37s \u00b7 62%' readout, take-only output slot with orange border, tools render durability bars, the whole flow works through actual UI mouse events: output-slot pickup onto a cursor stack, deposit into inventory, MC-style). Weather is the other star: a pure deterministic function of game time (bit-identical 61-sample schedule across two loads), it starts and stops BY ITSELF (rain began unprompted at gt~120 exactly where the schedule said), couples to biome/altitude (rain in plains/forest, snow at columns h>=45 or snowy biome, NOTHING in desert), dims the sky (#73adfc -> #6f94c6 at noon), tags the HUD, and logs a 'rain' sfx event with a real audio bed generator. THE VIEWMODEL DISPUTE IS SETTLED IN THE JUDGES' FAVOR: there is no held-item viewmodel \u2014 camera.children is empty, the camera isn't even parented into the scene, the file contains exactly one renderer.render(scene,camera), zero camera.add, zero 'held/viewmodel' strings, and a screenshot with a torch selected and UI hidden shows an empty bottom-right; round-5's 'orange head bottom-right' was almost certainly a placed world torch. The camera-tracking Group I found in the scene is the sky (sun/moon/stars). QUIRKS for judges: (1) calling __vox.look() with no args poisons yaw/pitch to NaN until the next setCam (harness-only; cost me two evals); (2) precipitation kind is sampled at the player's column, so particles render over the desert horizon when you stand at a border (cosmetic); (3) setTime() rewrites gt so it also time-travels the weather schedule \u2014 coherent but surprising; (4) builder-flagged: snow particles are pure white at night. Incidental finds: pick durability is real (stone pick 132, -1 per break; iron pick 251); reach limit enforced at exactly ~5 blocks (ray returns null at 5.05 \u2014 caused one amusing failed mine); controls overlay already documents the new mechanics ('Shift sneak slow, edge-safe', 'L-click hold to mine, hardness + tools matter'). Screenshot inventory: furnace UI mid-burn, rain over forest/ocean aerial, ground-level natural rain over plains with flowers + desert border, snowfall flakes at the snow line, torch-selected empty bottom-right (viewmodel disproof), controls overlay. The crafting->mining->smelting->tools->food chain plus self-running weather makes this round feel like an actual survival game, not a tech demo.",
+  "verified_pass": [
+   {
+    "feature": "Containment regression: bad-arity/non-finite spawnMob rejected",
+    "evidence": "spawnMob('zombie') with no coords, NaN, and Infinity all returned false with mobs() empty \u2014 nothing spawned at NaN."
+   },
+   {
+    "feature": "Containment regression: vertical escapes cull",
+    "evidence": "spawnMob at y=-20 returned true, then step(2) -> mobs() empty (y<-16 cull); night tickSpawns(6) mobs all on solid grass with finite coords; no leaked fallers anywhere this session."
+   },
+   {
+    "feature": "Smelting: furnace craft and place",
+    "evidence": "craft(23) consumed exactly 5 stone (count 5->0), furnace block placed at (124,27,116) via place() with it selected."
+   },
+   {
+    "feature": "Smelting: furnace UI with live progress",
+    "evidence": "openFurnace screenshot shows FURNACE panel: input slot (iron ore x3), fuel slot, arrow, orange-bordered output slot, live 'burn 37s \u00b7 62%' text, full textured inventory grid below with a durability bar on the stone pick."
+   },
+   {
+    "feature": "Smelting: iron ore -> ingots end to end with coal fuel",
+    "evidence": "furnacePut 3 iron ore + 1 coal: burn started at ~40s (coal=8 smelts), out={id:104,count:3} after ~16s stepped sim (5s/item); ingots retrieved via real UI mousedown on output slot (cursor stack) then deposit click into an empty inventory slot."
+   },
+   {
+    "feature": "Iron pick crafted from smelted ingots",
+    "evidence": "craft(103)=true consuming exactly 3 ingots + 2 sticks; iron pick id 103 with dur 251 appeared in inventory; ore+sticks no longer crafts it (ingot-gated recipe confirmed in RECIPES)."
+   },
+   {
+    "feature": "Mine iron ore with stone pick (tool-tier gated, timed)",
+    "evidence": "Crafted stone pick (3 stone+2 sticks, dur 132); aimed via ray()-verified target and mineHold: iron ore block broke in 0.8s with an id-11 drop collected; TOOLREQ[11]=2 satisfied by stone pick tier."
+   },
+   {
+    "feature": "Cooked porkchop: smelt + hunger delta vs raw",
+    "evidence": "Raw porkchop (106) smelted to cooked (110) in 5s on leftover coal burn; setHunger(10)+eat raw -> 14 (+4), setHunger(10)+eat cooked -> 18 (+8), two 'eat' sfx events logged."
+   },
+   {
+    "feature": "Weather: wxOverride forces rain with sky dimming",
+    "evidence": "setWeather(1) -> weather()={kind:'rain',intensity:1}; noon sky hex #73adfc -> #6f94c6; screenshots show droplet streaks over forest/ocean and ground-level rain over plains; HUD appends '  |  rain'."
+   },
+   {
+    "feature": "Weather: snowfall above the snow line, none in desert",
+    "evidence": "Same override at a column h>=45 flips weather().kind to 'snow' (white drifting flakes in screenshot); 10 blocks downslope it's 'rain'; source line 961 confirms snowy-biome/h>=45 -> snow, desert -> none."
+   },
+   {
+    "feature": "Weather: rain audio events",
+    "evidence": "__vox.sfx logged {t:'rain'} when intensity crossed the threshold; audioCheck() shows the rain generator producing real signal (peak 0.03) alongside break 0.33 / place 0.31."
+   },
+   {
+    "feature": "Weather: deterministic scheduling + natural onset",
+    "evidence": "61-sample weatherAt(gt) sweep over gt 0-1800 is bit-identical across two fresh page loads; with no override, stepping a fresh world to gt~125 produced scheduled=1 and live rain exactly where the schedule predicted."
+   },
+   {
+    "feature": "Hold-to-break full rhythm with retimed stone",
+    "evidence": "Held mineHold broke 4 successive stone blocks in 6.0s of stepped sim (controlled rhythm down a column); single-block timings: bare hand ~1.9-2.2s, stone pick 0.5s \u2014 the round-5 clock seam is gone, stepped-sim mining completes deterministically."
+   },
+   {
+    "feature": "Tool-tier drop gating",
+    "evidence": "Bare-hand stone break yielded no drop (TOOLREQ[3]=1); identical stone broken with stone pick dropped id 3; pick durability decremented 1 per break (132->128 after 4)."
+   },
+   {
+    "feature": "Sneak edge-guard at a block edge",
+    "evidence": "Sneaking (eyeH 1.31) on the furnace block top, held W 2.0s: clamped at exactly the block edge (z 116.5->115.73, y stayed 28, onGround true); released Shift and walked: dropped off to y=24."
+   },
+   {
+    "feature": "Iron only at depth / depth-stratified ores",
+    "evidence": "65x65x33 block scan: 1468 iron ores ALL at y2-14 (zero above 14, densest y2-8); 1731 coal at y9-27 \u2014 coal shallow, iron deep, clean stratification."
+   },
+   {
+    "feature": "Biome border coherence",
+    "evidence": "Two 1200-block colInfo transects through spawn: 12 regions total, run lengths 32-652 blocks, desert<->forest always buffered by plains, zero confetti."
+   },
+   {
+    "feature": "Regression: cave darkness light values",
+    "evidence": "Round-5 cavern (64,18,158): lightAt eff 0.1 vs surface 1.0 \u2014 unchanged."
+   },
+   {
+    "feature": "Regression: farming three growth stages",
+    "evidence": "Seeds on grass -> ground 18 (farmland) + crop 19, growCrops -> 20 -> 21 mature and stable \u2014 same progression as round 5."
+   },
+   {
+    "feature": "Regression: ecology night spawn ticks",
+    "evidence": "setTime(0)+tickSpawns(6) -> 4 zombies at distances 27.2-29.4 (in ring), every one standing over solid grass."
+   },
+   {
+    "feature": "Regression: deterministic seeded spawn",
+    "evidence": "Both fresh ?test=1 loads spawned at exactly (116.5, 29.02, 115.5), seed 1337, matching rounds 2-5."
+   },
+   {
+    "feature": "Reach-limited targeting (incidental)",
+    "evidence": "ray() returned null for a ground block at 5.05 blocks distance and hit fine at 4.3 \u2014 the 5-block reach cap is enforced exactly."
+   },
+   {
+    "feature": "Controls overlay updated with new mechanics",
+    "evidence": "Title overlay screenshot lists 'Shift sneak (slow, edge-safe, lower camera)', 'L-click hold to mine (hardness + tools matter)', seed display + ?seed=42 hint, H toggle."
+   }
+  ],
+  "verified_fail": [
+   {
+    "feature": "Held-item viewmodel (THE DISPUTE \u2014 judges were right)",
+    "evidence": "With a torch selected: camera.children=[], camera has no parent in the scene, exactly one renderer.render(scene,camera) in the file, zero camera.add / 'held' / 'viewmodel' strings; the only camera-tracking scene Group is the sky (sun/moon/stars); screenshot with torch selected shows nothing bottom-right. Round-5's sighting was a placed world torch, not a viewmodel."
+   },
+   {
+    "feature": "__vox.look() no-arg call corrupts camera state (harness robustness wart)",
+    "evidence": "look() without args runs applyLook(undefined,undefined) -> yaw/pitch become NaN (getState returns null, ray() misses everything, highlight vanishes) until the next setCam resets them \u2014 harness-only, but an unguarded hook."
+   }
+  ]
+ },
+ "panel": [
+  {
+   "domain": "worldgen",
+   "confidence": "Medium-high. My domain is now the most evidence-dense in the build: six rounds of cumulative probe ledger, this round adding hard scans (65x65x33 ore stratification, dual 1200-block biome transects), bit-identical weather schedules across loads, and a regression sweep that re-confirmed cave darkness, spawn determinism, and ecology. Residual swing ~\u00b11 MPS in three places: the rivers/overhangs/cave-mouth/foliage-tint cluster could convert upward with pure probe work (or invite an open-dimension dock for header claims six rounds unwitnessed), the panel could price the weather family anywhere from 1.5 to 2 of its 2 weights given the desert-horizon particle bleed and white-at-night snow, and villages pricing (I hold ~1/3 of weight 3) is judgment. The viewmodel dispute resolution also slightly raises my trust in this probe's screenshot interpretation versus round 5's.",
+   "mps": 41.5,
+   "item_verdicts": [
+    {
+     "feature": "Rolling multi-scale terrain (core)",
+     "verdict": "pass",
+     "evidence": "This round's screenshot set spans aerial forest/ocean, flat flowered plains, a desert border, and a snow-line slope where weather flips snow-to-rain over 10 blocks of descent; height stack (rawH, index.html:274-281) untouched by round-6 lanes; carried h=50 summit vs lowland evidence from r5."
+    },
+    {
+     "feature": "Four-plus distinct biomes (core)",
+     "verdict": "pass",
+     "evidence": "One session touched plains, forest, ocean, desert, and snowy/high-altitude palettes (weather screenshots); colInfo transects returned desert/forest/plains regions by name; five palettes in the cumulative ledger."
+    },
+    {
+     "feature": "Trees with trunk and canopy (core)",
+     "verdict": "pass",
+     "evidence": "Forest rain screenshots this round plus carried r2-r5 trunk/canopy evidence; tree decoration code (index.html:329-349) untouched by all round-6 lanes."
+    },
+    {
+     "feature": "Sea-level water bodies (core)",
+     "verdict": "pass",
+     "evidence": "Rain-over-ocean aerial screenshot this round; carried r5 swim/air-drain verification at the single global SEA=26."
+    },
+    {
+     "feature": "Sand beaches at shorelines (core)",
+     "verdict": "pass",
+     "evidence": "Carried r4/r5 aerial confirmations; the neighbor-rawH beach rule (index.html:291) untouched; no contrary observation in this round's coastal screenshots."
+    },
+    {
+     "feature": "Surface soil layering (core)",
+     "verdict": "pass",
+     "evidence": "Carried r3 column dig (grass-dirt-stone); tp/un layering (index.html:319-323) untouched; this round's ore scan confirms a clean stone interior beneath the soil cap."
+    },
+    {
+     "feature": "Large explorable world (core)",
+     "verdict": "pass",
+     "evidence": "Dozens of teleports across ~250s of stepped sim all hit fully generated terrain, including two 1200-block transects through spawn; zero void/wall observations in six rounds."
+    },
+    {
+     "feature": "Seamless chunk borders (core)",
+     "verdict": "pass",
+     "evidence": "Zero seam observations across this round's screenshot inventory; round-6 lanes (weather Points system, furnace BL entries) never touched the mesher or face loops."
+    },
+    {
+     "feature": "Safe solid spawn (core)",
+     "verdict": "pass",
+     "evidence": "Both fresh ?test=1 loads spawned standing at exactly (116.5, 29.02, 115.5), seed 1337, matching rounds 2-5."
+    },
+    {
+     "feature": "Stable revisited terrain (core)",
+     "verdict": "pass",
+     "evidence": "Carried r5 ?load=1 round-trip (edits re-applied over deterministic regen via editB, index.html:364); seed-1337 spawn bit-identical six consecutive rounds."
+    },
+    {
+     "feature": "Biome-specific terrain shapes (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r5 conversion (terraced h=50 peak beside low forest); re-confirmed incidentally this round: the snow/rain weather boundary at h>=45 sits 10 blocks of walk from rain terrain, proving the steep altitude gradient."
+    },
+    {
+     "feature": "Coherent blended biome regions (stretch)",
+     "verdict": "pass",
+     "evidence": "CONVERTED after three rounds unverified: two 1200-block colInfo transects through spawn returned 12 regions with run lengths 32-652 blocks, desert and forest always buffered by plains, zero confetti."
+    },
+    {
+     "feature": "Underground caves (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r5 walked-in 41-cell cavern; regression re-verified this round at (64,18,158): lightAt eff 0.1 vs surface 1.0."
+    },
+    {
+     "feature": "Ore blocks in stone (stretch)",
+     "verdict": "pass",
+     "evidence": "65x65x33 scan found 1468 iron + 1731 coal embedded in stone; iron ore mined live this round with a stone pick (0.8s, id-11 drop, TOOLREQ tier gate)."
+    },
+    {
+     "feature": "Bedrock bottom layer (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r2 break-refusal at the d[base]=9 floor (index.html:317); the new y<-16 entity cull (line 850) now backstops the floor for mobs as well as the player."
+    },
+    {
+     "feature": "Flowers and grass tufts (stretch)",
+     "verdict": "pass",
+     "evidence": "This round's ground-level rain screenshot shows plains with flowers; tuft-to-seed economy (~40% position-hashed) carried from r5."
+    },
+    {
+     "feature": "Per-biome tree variants (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried oak (tree=1) vs spruce (tree=2, snowy) vs treeless cacti desert (index.html:299-302); selection code untouched by round-6 lanes."
+    },
+    {
+     "feature": "Seeded world regeneration (stretch)",
+     "verdict": "pass",
+     "evidence": "Controls overlay screenshot shows the seed display + ?seed=42 hint; seed-1337 spawn reproduced both loads; the bit-identical 61-sample weather schedule across loads is fresh seeding evidence (weatherAt keys off WS via h2f)."
+    },
+    {
+     "feature": "Overhangs and ledges (stretch)",
+     "verdict": "unverified",
+     "evidence": "Six rounds, zero sightings; generation is strictly heightmap + interior carve with an h-y>=3 surface gate (index.html:322) that structurally suppresses them, while the header still advertises 'true overhangs.'"
+    },
+    {
+     "feature": "Ocean biome expanse (stretch)",
+     "verdict": "pass",
+     "evidence": "Rain-over-ocean aerial this round; carried r2 depth-10 measurement and r5 swim with air-meter drain."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "Dozens of cold teleports over ~250s of sim all meshed without freezes or missing patches; the 7ms budget queue (index.html:932) untouched."
+    },
+    {
+     "feature": "Vegetation placement rules (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r4 zero-floater 56x61 scan and cacti-only-on-desert-sand; no flora generation code touched in round 6; weather particles explicitly never seed below terrain (wxSpawn clamp, line 957)."
+    },
+    {
+     "feature": "Altitude snow line (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r5 summit screenshots; re-confirmed this round from a second angle: precipitation flips to snow exactly at columns h>=45 (line 961 uses the same threshold as terrain snow at line 289), with snowfall flakes screenshotted at the line."
+    },
+    {
+     "feature": "Surface cave entrances (wow)",
+     "verdict": "unverified",
+     "evidence": "Still no walkable dark cave mouth sighted in six rounds; the darkness prerequisite is long since live (0.1 floor re-verified this round) but the sighting itself remains owed."
+    },
+    {
+     "feature": "Rivers crossing terrain (wow)",
+     "verdict": "unverified",
+     "evidence": "Sixth consecutive round with zero river sightings; the rv carve (index.html:279-280) stays scorecard-dead while the file header advertises 'winding rivers feeding seas.'"
+    },
+    {
+     "feature": "Biome-tinted foliage (wow)",
+     "verdict": "unverified",
+     "evidence": "Smooth wet/dry/cold tint lerps coded since r2 (CI ti fields, index.html:293-296) but no within-shot grass/leaf hue contrast has ever been captured; the probe's forest/plains/desert shots this round were weather-framed, not tint-framed."
+    },
+    {
+     "feature": "Depth-based ore rarity (wow)",
+     "verdict": "pass",
+     "evidence": "CONVERTED after five rounds unverified: 1468 iron ores ALL at y2-14 (zero above 14, densest y2-8) vs 1731 coal at y9-27 in a 65x65x33 scan - coal shallow, iron deep, exactly matching the generator gates (o<4&&y>8 coal, o<6&&y<=14 iron, index.html:321)."
+    },
+    {
+     "feature": "Horizon fog veil (wow)",
+     "verdict": "pass",
+     "evidence": "This round's aerials (rain over forest/ocean) and the desert-border shot all dissolve into sky-matched fog with no visible generation edge; fog color copies skyC every frame including storm dimming (index.html:985)."
+    },
+    {
+     "feature": "Weather family (43+, weight 2)",
+     "verdict": "pass",
+     "evidence": "NEW and fully verified: deterministic gt-pure schedule (61 samples bit-identical across two loads, natural onset at gt~125 exactly as predicted), biome/altitude-coupled kinds (rain plains/forest, snow at h>=45 or snowy, none in desert), sky dim #73adfc to #6f94c6, HUD tag, real rain audio bed (peak 0.03). Residual polish: kind sampled at the player's column bleeds particles over desert horizons at borders, and snow particles are pure white at night."
+    },
+    {
+     "feature": "Villages or structures (43+, weight 3)",
+     "verdict": "pass",
+     "evidence": "Partial ~1/3, regression-held: the deterministic findStructures registry (2 ruins + 3 wells, 1-in-37 chunk hash at index.html:351) carried unchanged; still micro-flavor - no multi-building site, no loot, no inhabitants, third round at this level."
+    },
+    {
+     "feature": "Light propagation engine (43+, weight 3, shared)",
+     "verdict": "pass",
+     "evidence": "Partial ~2/3: cave darkness re-verified this round (eff 0.1 vs 1.0 at the r5 cavern) and torch pools carried with save/load persistence; still radial falloff without occlusion (lightOf, index.html:458-461) - light shines through walls and heightmap skylight means player roofs never darken."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+, weight 1)",
+     "verdict": "pass",
+     "evidence": "Carried r5 conversion (spawnAt returns 'light' at torch-lit columns via computed eff>=.15, index.html:829); trySpawnAt untouched this round; residual: candidates are surface columns only, so dark caves still spawn nothing."
+    },
+    {
+     "feature": "World save/load over deterministic regen (43+, weight 2, worldgen-coupled)",
+     "verdict": "pass",
+     "evidence": "Carried r5 full round-trip (farmland, dug-air, torch registry, inventory bit-exact); round 6 added furnaces to the save payload (SV.furn, index.html:537) with old-save tolerance and no regression filed."
+    },
+    {
+     "feature": "Natural spawn ecology on worldgen columns",
+     "verdict": "pass",
+     "evidence": "Regression re-verified this round: setTime(0)+tickSpawns(6) produced 4 zombies at distances 27.2-29.4, every one standing over solid grass with finite coords."
+    },
+    {
+     "feature": "Farming family (43+, weight 2, worldgen-coupled seed source)",
+     "verdict": "pass",
+     "evidence": "Regression re-verified: seeds on grass tilled to farmland 18 + crop 19, growCrops stepped 20 then 21 mature and stable; worldgen-scattered tuft seed source carried at the position-hashed ~40% rate."
+    },
+    {
+     "feature": "Out-of-bounds mob containment (world entity floor - r5's verified fail)",
+     "verdict": "pass",
+     "evidence": "FIXED and probe-verified: spawnMob with no coords/NaN/Infinity all returned false with nothing spawned (isFinite guards, index.html:783-785); a y=-20 spawn was culled within step(2) by the new !isFinite(M.y)||M.y<-16 check (line 850); zero leaked fallers across two heavy sessions."
+    },
+    {
+     "feature": "Smelting family (43+, weight 2 - credited as the closure of the worldgen ore economy)",
+     "verdict": "pass",
+     "evidence": "End-to-end this round: 5 stone craft furnace, place, 3 iron ore + coal fuel smelted to 3 ingots at 5s/item with live burn UI, ingots gate the iron pick recipe (ore+sticks no longer crafts it) - the depth-stratified iron vein now feeds a complete mine-smelt-tool loop."
+    },
+    {
+     "feature": "Held-item viewmodel (wow - PANEL DISPUTE RULING, outside my domain)",
+     "verdict": "fail",
+     "evidence": "Ruled with the round-5 dissenting judges: camera.children is empty, the camera is never parented into the scene, the file contains exactly one renderer.render and zero camera.add (only sky tracks the camera, index.html:394/988), and a torch-selected UI-hidden screenshot shows an empty bottom-right; round-5's sighting was a placed world torch."
+    },
+    {
+     "feature": "__vox.look() no-arg NaN poisoning (harness robustness)",
+     "verdict": "fail",
+     "evidence": "NEW probe-filed wart: look() with no args runs applyLook(undefined,undefined) so yaw/pitch become NaN until the next setCam (index.html:620, 1203) - harness-only, never reachable from real mousemove, but an unguarded hook that cost the prober two evals."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Villages: grow the micro-structures into torch-lit hamlets",
+     "detail": "The weight-3 family has sat at ~1/3 for three rounds and its ingredient list keeps shrinking: torches (id 22, self-registering via setB) and furnaces (id 23) now exist as placeable, savable blocks. A rarer seeded site reusing the 1-in-37 hash + flatness gate (index.html:351-363) at lower cadence placing 2-3 plank/log huts with doorways, a dirt path, torch posts that light the scene at night, and one interior with a crafting table + furnace. Keep writes inside the tree-style -3..18 overlap loop so two-chunk spans stay safe, and verify findStructures + seed-1337 spawn bit-identical before merging. Moves the family to ~2.3/3 and gives night exploration a lit destination.",
+     "mps_gain": 0.8,
+     "risk": "medium"
+    },
+    {
+     "title": "Cave mouths + cave mob spawning - make the verified darkness matter",
+     "detail": "Darkness is two-rounds proven (eff 0.1 floor) but nothing lives in it and no surface mouth has ever been sighted: spawn candidates are surface-only (trySpawnAt uses ci.h+1, index.html:825-832) and the h-y>=3 carve gate (line 322) suppresses walkable breaches. Add a __vox helper scanning columns for surface-breaching cave air so the probe can walk and screenshot a dark mouth, and let spawnTick occasionally sample cave-floor air pockets gated on lightAtW eff - zombies in dark caves at noon completes the 65-band 'caves that matter' story and converts the wow. trySpawnAt is isolated; worldgen untouched.",
+     "mps_gain": 0.6,
+     "risk": "low"
+    },
+    {
+     "title": "Torch-light occlusion / flood-fill upgrade (the light family's last weight)",
+     "detail": "lightOf (index.html:458-461) and lightAtW (816-823) are radial distance only: torch light shines through solid walls and heightmap skylight means player roofs never darken. A per-chunk BFS through air cells seeded from torches + sky columns, folded into the existing hcol/tlist precompute, closes the weight-3 family and removes a correctness hole a sharp probe screenshot could file as a fail. This touches the mesher hot path that has now survived two stable rounds - isolate the lane and re-run the seam/AO/border/torch-pool regression suite before anything else merges.",
+     "mps_gain": 0.5,
+     "risk": "high"
+    },
+    {
+     "title": "Overhang/cliff carving so the terrain stretch stops being heightmap-only",
+     "detail": "Six rounds, no overhang, and the header claims them. Add a slope-gated 3D density bite (only where neighboring rawH differs by >=4, carve upper-face cells into the cliff) so cliffs undercut into walkable ledges; keep it a pure function of (x,y,z,seed) so chunk borders, the seed-1337 spawn, and findStructures stay bit-identical - verify those three before merging. Converts the stretch and feeds the cave-mouth wow above.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Make one river findable or delete the header claim",
+     "detail": "Sixth round of dead code: either add a __vox helper scanning the rv field (index.html:279-280) for the nearest channel crossing within 500 blocks of spawn and have the probe fly it, or widen sst(.06,.02) until a channel demonstrably exists near spawn. If the field genuinely produces no channel in the spawn region, strip 'winding rivers' from the header - advertised-absent features are exactly what open-dimension docks punish, and this is now the longest-running one in the file.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "Foliage tint probe conversion - zero code change",
+     "detail": "The CI tint lerps (index.html:293-296) have been live since round 2 but no screenshot has ever framed the contrast. One composed shot straddling a forest/plains or plains/desert border at noon (grass-top hue shift is the visible channel since bl.ti===1 tints top faces, line 488), plus a numeric ti read from colInfo on both sides, converts the wow for free. Cheapest unclaimed point in my domain.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "Weather polish: per-particle precipitation kind + night-tinted snow",
+     "detail": "Two probe-flagged cosmetics before judges start pricing them: precipitation kind is sampled at the player's column (line 961) so rain particles render over the desert horizon at biome borders - sample kind per particle column in wxSpawn instead, or cull particles whose column resolves to 'none'; and snow particles are pure white at night - multiply wxMat color by matO.color for snow like rain already does (line 967). Both are small, isolated to updWeather, and protect the freshly-credited weight-2 family.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Guard the harness hooks against missing args",
+     "detail": "The round's only new verified fail: __vox.look() with no args NaN-poisons yaw/pitch until the next setCam (applyLook at index.html:620). One line (default dx/dy to 0, or isFinite-guard the writes) clears the filed fail and hardens the probe surface that every future round's evidence depends on - the prober lost two evals to it this round.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 6 is the cleanest worldgen-seat delta of the run: weather landed as a genuinely worldgen-coupled system (a pure deterministic function of gt with bit-identical schedules across loads, natural onset exactly on schedule, and rain/snow/none keyed to biome and the verified h>=45 snow line), while two long-owed checklist items finally converted on hard scans - depth-ore rarity (1468 iron all at y2-14 vs 1731 coal at y9-27) and coherent biome regions (12 plains-buffered regions over two 1200-block transects, zero confetti). Round 5's only worldgen-domain fail is verifiably fixed (NaN/Infinity spawns rejected, vertical escapes culled at y<-16), and the smelting family closes the loop my ore stratification feeds: deep iron now mines, smelts, and gates the iron pick. On the dispute, I rule with the round-5 dissenters: there is no held-item viewmodel - the scene-graph audit (empty camera.children, one renderer.render, sky as the only camera-tracking group) plus the torch-selected empty-bottom-right screenshot settle it as a fail, and the round-5 sighting was a placed world torch. What still caps my domain is the advertised-absent residue: rivers and overhangs are six-round no-shows the header still claims, cave mouths and foliage tint remain unsighted, villages hold at a third of their weight, and the light engine is occlusion-free falloff. I move 40 to 41.5: two weight-2 families converted whole plus ~2 itemized conversions and a cleared fail, with the half-point held back (ties downward) for the unwitnessed header claims and the new look() harness wart."
+  },
+  {
+   "domain": "player",
+   "confidence": "Medium-high. The player/interaction domain is the best-evidenced slice of the build: smelting was driven end-to-end through real UI mouse events (cursor-stack pickup from a take-only output slot, deposit click), both round-5 filed fails in my domain (mob containment, mineHold clock seam) are fixed and re-verified live, and hold-to-break, sneak edge-guard, reach boundary, and tool-tier drop gating all converted to fresh numeric evidence this round. The viewmodel dispute is settled with triple-redundant evidence (empty camera.children, zero camera.add in the file, torch-selected empty-bottom-right screenshot). Residual swing ~\u00b11.5 MPS: the pointer-lock/collision cluster (lock cycle, wall, ceiling, strafe-after-turn, wall-slide, diagonal, through-walls, pillar \u2014 roughly 10-12 checklist points) is dark for a SIXTH consecutive round and is pure unharvested verification that could convert either way; weather-family pricing through my whole-build lens could move \u00b10.3 (I credit ~1.75/2 \u2014 no thunder, no snow accumulation, desert-border particle bleed); and the hostile-combat family's tool-attack-bonus leg (PICKT?3:2) has still never been exercised live.",
+   "mps": 42,
+   "item_verdicts": [
+    {
+     "feature": "Pointer lock with re-lock (core)",
+     "verdict": "unverified",
+     "evidence": "Headless probes cannot engage document.pointerLockElement; lock()/pointerlockchange handling (index.html:613-619) unchanged; sixth round with no live lock/Esc/re-lock cycle."
+    },
+    {
+     "feature": "Smooth clamped mouse look (core)",
+     "verdict": "pass",
+     "evidence": "Round-4 conversion carried: applyLook 0.0022/px with pitch pinned at \u00b11.55 (line 620-621); real mousemove always passes numeric movementX/Y, so the new no-arg __vox.look() NaN wart is harness-only and does not touch this item."
+    },
+    {
+     "feature": "Camera-relative WASD (core)",
+     "verdict": "unverified",
+     "evidence": "W-toward-view proven round 3 and used again this round (sneak edge test held W), but A/D strafe and correctness-after-turning have never been exercised in six rounds; half-verified earns no credit."
+    },
+    {
+     "feature": "Calibrated jump with gravity arc (core)",
+     "verdict": "pass",
+     "evidence": "Round-3 sample(): vy0=8.4, peak +1.50 blocks (mounts one, never two), re-jump only after ground contact; the jump branch (line 581) untouched by the smelting/weather lanes."
+    },
+    {
+     "feature": "Solid floor collision (core)",
+     "verdict": "pass",
+     "evidence": "This round: deterministic spawn standing at (116.5,29.02,115.5), sneak test held y=28 with onGround true, un-sneaked walk-off dropped cleanly to y=24 and settled; dozens of teleports and ~250s of stepped sim with zero sink-throughs."
+    },
+    {
+     "feature": "Wall collision without clipping (core)",
+     "verdict": "unverified",
+     "evidence": "No horizontal wall-push test in six rounds; coll() per-axis resolve (lines 552-559) remains code-read only."
+    },
+    {
+     "feature": "Ceiling collision (core)",
+     "verdict": "unverified",
+     "evidence": "Never jumped under a roof or pillared into a ceiling in any probe session; the coll(1,amt>0) clamp is unexercised in play."
+    },
+    {
+     "feature": "Reach-limited block targeting (core)",
+     "verdict": "pass",
+     "evidence": "FRESH this round: ray() returned null for a ground block at 5.05 blocks and hit fine at 4.3 \u2014 the cap (t>5.5, line 658) enforced exactly, inside the 4-6 block band; one probe mine attempt failed on it."
+    },
+    {
+     "feature": "Targeted block outline (core)",
+     "verdict": "pass",
+     "evidence": "mineHold aim was ray()-verified to the exact target before the iron-ore break this round; round-5 crack-contained-within-targeted-face screenshot carried; updHL per-frame tracking unchanged."
+    },
+    {
+     "feature": "Left-click breaks block (core)",
+     "verdict": "pass",
+     "evidence": "This round: 4 successive stone broken in controlled rhythm, iron ore broken in 0.8s with an id-11 drop collected, clean geometry every time."
+    },
+    {
+     "feature": "Right-click places on targeted face (core)",
+     "verdict": "pass",
+     "evidence": "Furnace block placed at exactly (124,27,116) via place() with it selected this round; seeds tilled/planted on exact grass tops carried from round 5."
+    },
+    {
+     "feature": "No placing inside player (core)",
+     "verdict": "pass",
+     "evidence": "overlaps() guard (line 699) unchanged; no self-entombment across six rounds of placement bursts including the 60-op chunk-border torch run."
+    },
+    {
+     "feature": "Multi-type hotbar (core)",
+     "verdict": "pass",
+     "evidence": "Round-5 9-textured-thumbnail screenshot carried; this round's furnace-UI screenshot shows the full textured inventory grid with a durability bar on the stone pick."
+    },
+    {
+     "feature": "Hotbar switching works 1-9 AND wheel (core)",
+     "verdict": "pass",
+     "evidence": "Round-4 wheel \u00b1120 cycle + Digit jump conversion carried (handler line 630 unchanged); torch-selected slot drove the viewmodel-disproof screenshot this round."
+    },
+    {
+     "feature": "Centered readable crosshair (core)",
+     "verdict": "pass",
+     "evidence": "Difference-blend crosshair carried; visible across this round's rain, snow, furnace, and torch-selected screenshots."
+    },
+    {
+     "feature": "No right-click context menu (core)",
+     "verdict": "unverified",
+     "evidence": "document-level preventDefault (line 612) present but no real native right-click has ever been performed; synthetic mousedown cannot pop a native menu."
+    },
+    {
+     "feature": "Sprint speed boost (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-5 Ctrl+W sprint with FOV easing re-verification carried; round-3 speed sampling (7 vs 4.4) intact; physics speed table (line 573) untouched this round."
+    },
+    {
+     "feature": "Wall sliding on contact (stretch)",
+     "verdict": "unverified",
+     "evidence": "No diagonal wall-push performed in six rounds of probing."
+    },
+    {
+     "feature": "Diagonal speed normalized (stretch)",
+     "verdict": "unverified",
+     "evidence": "hypot normalization coded (line 567) but W+D vs W speed never sampled in play."
+    },
+    {
+     "feature": "No interaction through walls (stretch)",
+     "verdict": "unverified",
+     "evidence": "DDA stops at the first solid block by construction and the 5.05-block reach refusal shows distance gating, but an explicit break-through-a-wall attempt has never been made."
+    },
+    {
+     "feature": "Clean fall when undermined (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-2 30-repetition shaft evidence carried; this round's mineHold column descent (4 blocks down a column in stepped sim) re-exercised the drop path with no snap."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "Both round-6 sessions ran visibility-hidden: ~250s of stepped sim, dozens of teleports, __vox.errors empty across two loads; dt clamp .05 plus the simNow clock held everything coherent."
+    },
+    {
+     "feature": "Hold-to-break mining (stretch)",
+     "verdict": "pass",
+     "evidence": "CONVERTED under deterministic sim: held mineHold broke 4 successive stone in 6.0s of controlled rhythm; single-block timings bare ~1.9-2.2s vs stone pick 0.5s \u2014 the round-5 mtLast clock seam is gone (simNow advanced only by simStep, lines 623/1169)."
+    },
+    {
+     "feature": "Pillar jumping (stretch)",
+     "verdict": "unverified",
+     "evidence": "The jump-place-beneath-rise sequence has never been performed in six rounds; fully scriptable today with key()+place()+step()."
+    },
+    {
+     "feature": "Fly mode toggle (stretch)",
+     "verdict": "pass",
+     "evidence": "key(F) toggle used every probe session (the standing setCam caution); gravity restoration on toggle-off relied on and observed repeatedly."
+    },
+    {
+     "feature": "Swimming in water (stretch)",
+     "verdict": "pass",
+     "evidence": "Round-5 conversion carried: sink capped at vel.y -2.8, air 10\u21927.5 draining, Space gave +3.2 rise; the water physics branch (line 579) untouched by both round-6 lanes."
+    },
+    {
+     "feature": "Sprint FOV kick (wow)",
+     "verdict": "pass",
+     "evidence": "Round-5 re-verification carried: FOV eased 75\u219286.7\u219287.0 under sprint, 75.9\u219275.01 on release, smooth both directions."
+    },
+    {
+     "feature": "Sneak mode with edge guard (wow)",
+     "verdict": "pass",
+     "evidence": "FRESH live conversion of the guard leg: sneaking (eyeH 1.31) on the furnace top, held W 2.0s clamped at exactly the block edge (z 116.5\u2192115.73, y stayed 28, onGround true); releasing Shift dropped the player off to y=24 \u2014 slower, lower camera, and edge-safe all observed."
+    },
+    {
+     "feature": "Ghost placement preview (wow)",
+     "verdict": "pass",
+     "evidence": "Carried rounds 2-3 verification; gating (line 727) restricts to placeable block ids and non-overlapping cells, unchanged."
+    },
+    {
+     "feature": "Held-block viewmodel (wow, rendering-shared \u2014 DISPUTE RULING)",
+     "verdict": "fail",
+     "evidence": "RULED FOR THE JUDGES: camera.children is empty with the camera unparented, the file has zero camera.add calls and exactly one renderer.render (line 1188), the only camera-tracking group is the sky (line 988), and a torch-selected UI-hidden screenshot shows an empty bottom-right \u2014 round-5's sighting was a placed world torch; no viewmodel exists."
+    },
+    {
+     "feature": "Inventory with stacking \u2014 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Full weight: this round exercised cursor-stack pickup from the furnace output and deposit into an empty inventory slot via real mousedown events; half-stack split, drag, shift-click, and bit-exact save/load carried."
+    },
+    {
+     "feature": "Crafting table and recipes \u2014 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "~3.5 of 4: exact consumption verified again (5 stone \u2192 furnace, 3 ingots + 2 sticks \u2192 iron pick, ingot-gating confirmed \u2014 ore+sticks no longer crafts it); the placed-table 3x3 (line 687) has STILL never been opened live in six rounds."
+    },
+    {
+     "feature": "Tools with durability and mining speeds \u2014 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "Full weight now: stone pick dur 132 with -1 per break observed (132\u2192128 after 4), iron pick 251 crafted from smelted ingots, timed speeds (bare ~1.9-2.2s vs pick 0.5s), tier-gated drops live (bare-hand stone yields nothing, TOOLREQ[11]=2 satisfied by stone pick), durability bars rendering in the UI."
+    },
+    {
+     "feature": "Health, damage, and fall damage \u2014 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Carried: zombie melee 2/hit with the round-5-fixed 1.02-block knockback, fall-damage formula, drowning, death\u2192respawn; nothing in either round-6 lane touched the damage path."
+    },
+    {
+     "feature": "Hunger and food \u2014 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Strengthened this round: raw porkchop +4 vs cooked +8 measured exactly (setHunger(10) \u2192 14 and 18), bread +5 carried; raw-weak/cooked-strong is MC-direction parity and the FOOD rebalance is flagged in-file."
+    },
+    {
+     "feature": "Smelting \u2014 43+ family, weight 2 (NEW)",
+     "verdict": "pass",
+     "evidence": "Full family landed and play-verified: furnace crafted (exactly 5 stone), placed, opened to a live UI (burn 37s \u00b7 62% readout), 3 iron ore + 1 coal \u2192 3 ingots at 5s/item with coal worth 8 smelts, output retrieved through real UI mouse events, porkchop cooked on leftover burn; contents spill on furnace break (line 670-672)."
+    },
+    {
+     "feature": "Passive mobs \u2014 43+ family, weight 3",
+     "verdict": "pass",
+     "evidence": "Carried at full weight: day-pig spawn ticks on grass, wander, flee, despawn-beyond-range, porkchop drop all in the verified ledger; no regression observed this round."
+    },
+    {
+     "feature": "Hostile mobs and combat \u2014 43+ family, weight 4",
+     "verdict": "pass",
+     "evidence": "~3.5 of 4: night ring spawns re-verified this round (4 zombies at 27.2-29.4, all on solid grass); chase, melee, knockback, sun-burn carried; the tool-tier attack bonus (PICKT?3:2, line 810) remains unexercised live and zombies still drop nothing."
+    },
+    {
+     "feature": "Light-linked mob spawning \u2014 43+ family, weight 1",
+     "verdict": "pass",
+     "evidence": "Carried: torch-lit columns return 'light' from trySpawnAt via computed lightAtW (line 829); cave-darkness regression re-verified this round (eff 0.1 vs 1.0)."
+    },
+    {
+     "feature": "Farming and crop growth \u2014 43+ family, weight 2",
+     "verdict": "pass",
+     "evidence": "Regression re-verified this round: seeds on grass \u2192 farmland 18 + crop 19, growCrops \u2192 20 \u2192 21 mature and stable \u2014 the full round-5 loop (seeds\u2192till\u21923 stages\u2192harvest\u2192bread +5) stands."
+    },
+    {
+     "feature": "Out-of-bounds mob containment (round-5 filed fail)",
+     "verdict": "pass",
+     "evidence": "FIXED and probe-verified both legs: spawnMob with no coords/NaN/Infinity all returned false with nothing spawned (lines 783-785), and a y=-20 spawn was culled within step(2) by the new !isFinite(M.y)||M.y<-16 leg (line 850); no leaked fallers all session."
+    },
+    {
+     "feature": "mineHold clock seam (round-5 flagged wart)",
+     "verdict": "pass",
+     "evidence": "FIXED: mining/placing/eating timers all run off simNow, advanced only by simStep (lines 623, 1169), so stepped-sim mining now completes deterministically \u2014 the round-5 crack-then-release stall did not reproduce."
+    },
+    {
+     "feature": "Death and respawn loop with kept inventory",
+     "verdict": "pass",
+     "evidence": "Carried round-4 pack-kill\u2192respawn evidence; respawn clears velocity/knockback and restores vitals (lines 1162-1164); inventory-kept-on-death remains a flagged parity deviation, not a bug."
+    },
+    {
+     "feature": "Item-drop pickup loop (magnet + auto-collect)",
+     "verdict": "pass",
+     "evidence": "This round collected the iron-ore drop mid-mine and the smelting outputs through the UI; the 0.8s immunity window and 2.2-block magnet (lines 756-759) behaved as designed."
+    },
+    {
+     "feature": "__vox.look() no-arg call corrupts camera state (harness robustness)",
+     "verdict": "fail",
+     "evidence": "applyLook(undefined,undefined) poisons yaw/pitch to NaN until the next setCam (line 620 has no argument guard) \u2014 getState returns null and ray() misses everything; harness-only (real mousemove always passes numbers), but it cost the prober two evals and is the round's only new filed fail."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Collision/movement verification micro-suite \u2014 SIXTH round dark",
+     "detail": "Wall collision (core), ceiling collision (core), A/D strafe-after-turn (core), wall sliding, diagonal-speed normalization, no-interaction-through-walls, and pillar jumping are ALL scriptable today with key()+look()+place()+step()+getState(): build a 2-high wall and push into it straight and diagonally, jump under a roof, sample W+D vs W speed, run the jump-place-rise sequence. coll() (index.html:552-559) reads correct and ~10-12 checklist points (3 cores + 4 stretch) convert with zero gameplay code touched. This has been the single cheapest MPS on the board for six consecutive rounds; at this point the withholding itself is the domain's biggest number.",
+     "mps_gain": 1.5,
+     "risk": "low"
+    },
+    {
+     "title": "Real pointer-lock + context-menu headed pass",
+     "detail": "The only two player cores that cannot be scripted headless: synthetic events cannot engage document.pointerLockElement or pop a native menu. One human or headed-browser pass \u2014 click to lock, Esc, re-lock repeatedly, real right-click during play \u2014 converts both 2-pt cores (lock handling index.html:613-619, preventDefault at 612) and retroactively hardens the entire look/wheel evidence chain. Zero code risk.",
+     "mps_gain": 0.9,
+     "risk": "low"
+    },
+    {
+     "title": "Combat depth: swords, attack table, zombie drop, exercise the pick bonus",
+     "detail": "Rounds the weight-4 hostile family to full and feeds the 65-band 'combat with stakes': sword recipes per tier (planks/stone/ingot + stick \u2014 the ingot path now exists via smelting), an attack-damage table replacing the binary PICKT?3:2 at index.html:810 (the family's only never-exercised leg), rotten-flesh zombie drop as risk-food eaten through the existing FOOD map. attackMob/drops/FOOD substrates are all six-rounds verified; this is mostly data plus one probe call.",
+     "mps_gain": 0.7,
+     "risk": "low"
+    },
+    {
+     "title": "Real held-item viewmodel (dispute settled: definitively absent)",
+     "detail": "The panel ruling is now triple-grounded: no camera-attached mesh exists anywhere in the file. A camera-space quad/cube textured from the selected stack's tile (reuse dropGeo/ITILE so torch/pick/porkchop render correctly), with a click swing-dip and rendered after a depth-clear so it never clips terrain, converts the rendering wow legitimately and adds the first-person feedback that mining, combat, and eating all currently lack. Keep it out of the chunk mesher hot path; render-order isolation makes this low risk.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Open the placed crafting-table 3x3 live \u2014 six rounds unopened",
+     "detail": "Ruins ship crafting tables and right-clicking one opens the 3x3 UI (index.html:687), yet no probe has ever opened it in six rounds; it is the only uncashed leg of the weight-4 crafting family. One eval: findStructures for the nearest ruin, setCam to it, place()/openInv path, screenshot the 3x3 panel, craft something only the table grid can hold. Pure probe work, zero code change.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Drop inventory on death (or a death-stakes toggle)",
+     "detail": "Inventory-kept-on-death is a flagged parity deviation that softens 'combat with stakes' for the 65-band: dying currently costs nothing but position. Spill the inventory as item drops at the death point (spawnDrop loop over inv, the substrate already handles 64 drops with magnet pickup), keep the hotbar empty on respawn, and let the existing 60s drop timer create a real corpse-run. Touches die()/respawn only; the Respawn-recovers caution in the main loop would need its wording updated.",
+     "mps_gain": 0.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Guard the __vox.look() no-arg path",
+     "detail": "The round's only new filed fail: applyLook(undefined,undefined) poisons yaw/pitch to NaN until the next setCam (index.html:620). One line \u2014 if(!isFinite(mx)||!isFinite(my))return \u2014 clears the fail from the ledger and hardens the harness before any future probe burns evals on it again. Harness-only today, but NaN camera state silently breaks ray(), getState(), and the highlight, which makes probe evidence look like game bugs.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 6 is the round the interaction loop became a survival game through my lens: the smelting chain was driven end-to-end with the strongest evidence type this run produces \u2014 real UI mouse events on a live furnace panel (burn 37s \u00b7 62% readout, take-only output slot, cursor-stack pickup and deposit) \u2014 closing the crafting\u2192mining\u2192smelting\u2192tools\u2192food circle with exact numbers (5 stone furnace, coal worth 8 smelts at 5s/item, ingot-gated iron pick at 251 durability, raw +4 vs cooked +8). Both round-5 player-domain filed fails are fixed and re-verified (non-finite spawns rejected and vertical escapes culled; the mineHold clock seam gone, with hold-to-break finally completing deterministically at 4 stone in 6.0s), and the sneak edge-guard, exact 5-block reach refusal, and bare-hand drop gating all converted to fresh live evidence. I rule the open dispute for the judges: no held-item viewmodel exists \u2014 empty camera.children, zero camera.add, one renderer.render, and a torch-selected empty-bottom-right screenshot \u2014 so the wow stays failed and round 5's sighting was a placed world torch. I move 40 \u2192 42 (+2 over the round-5 merged 40.0), a conversion-driven delta from two newly verified 65-band families (smelting fully, weather credited through the whole-build lens) plus two cleared fails; ties break downward for the pointer-lock/collision cluster now dark a SIXTH round (~10-12 pure-verification checklist points), the absent viewmodel, the never-opened 3x3 table, the unexercised pick attack bonus, the new harness-only look() NaN wart, and the kept-inventory death deviation that keeps combat stakes shallow."
+  },
+  {
+   "domain": "rendering",
+   "confidence": "Medium-high. The two headline credits (weather family, furnace UI) are verified both numerically and visually by the probe with code corroboration (deterministic weatherAt at line 950, biome coupling at 961, storm dim through updSky at 980-981, rain bed gain at 962), and the viewmodel dispute is now triple-grounded (scene-graph audit, grep, torch-selected screenshot with empty bottom-right). Residual swing ~\u00b11 MPS: weather pricing is a judgment call (I credit 1.5 of 2 weights for the snow-night-tint wart, column-sampled kind, and no thunder; 1.25-2 plausible, \u00b10.3); the controls-overlay conversion rests on the screenshot implying an H-reopen in a TEST session that boots with the overlay hidden rather than an explicitly logged dismiss/reopen cycle (\u00b10.5 if the panel is stricter); z-fighting and footstep audio remain dark a sixth round and could convert upward (+0.75 of pure probe work); and the torch-pop fix is code-landed but unconverted (\u00b10.1).",
+   "item_verdicts": [
+    {
+     "feature": "Procedural block textures (core)",
+     "verdict": "pass",
+     "evidence": "Furnace front/side tiles (40/41) landed and were seen in-world via craft(23)+place at (124,27,116); furnace UI screenshot shows the full textured inventory grid; 128px atlas carried from rounds 4-5 with no miscoloring."
+    },
+    {
+     "feature": "Per-face directional shading (core)",
+     "verdict": "pass",
+     "evidence": "FACES light constants (top 1.0 / sides .62-.85) untouched this round and visible across the round-6 screenshot set (ground-level rain over plains, snow line, desert border); mob per-face bake carried."
+    },
+    {
+     "feature": "No seams or cracks (core)",
+     "verdict": "pass",
+     "evidence": "Zero seam observations across round-6 screenshots (rain over forest/ocean aerial, snowfall at the snow line, desert border) with the mesher untouched by this round's lanes; round-5 chunk-border torch stress carried."
+    },
+    {
+     "feature": "Break reveals solid faces (core)",
+     "verdict": "pass",
+     "evidence": "Round-6 mining (4-stone column rhythm, iron ore at depth with stone pick) revealed solid interior faces throughout; no sky/void holes in any session."
+    },
+    {
+     "feature": "No z-fighting flicker (core)",
+     "verdict": "unverified",
+     "evidence": "Sixth consecutive round with no motion-burst probe past coplanar-risk geometry; offsets are coded by construction (hl 1.002, crack 1.004, ghost .96) but the rubric forbids code credit."
+    },
+    {
+     "feature": "Distance fog (core)",
+     "verdict": "pass",
+     "evidence": "Carried; round-6 aerial rain shots dissolve into sky-matched fog with no hard edge, and the storm-dim path writes the same skyC into scene.fog.color so fog stays matched even while raining."
+    },
+    {
+     "feature": "Transparent water with visible floor (core)",
+     "verdict": "pass",
+     "evidence": "Rain-over-forest/ocean aerial this round shows tinted water bodies; round-5 submerged floor-terraces evidence carried on untouched water mesh code."
+    },
+    {
+     "feature": "Controls help overlay (core)",
+     "verdict": "pass",
+     "evidence": "CONVERTED after five dark rounds: probe screenshotted the overlay re-shown in a ?test=1 session (which boots with it hidden), listing the real verified bindings ('Shift sneak slow, edge-safe', 'L-click hold to mine, hardness + tools matter') plus seed display, ?seed=42 hint, and the H toggle."
+    },
+    {
+     "feature": "Working pause mode (core)",
+     "verdict": "pass",
+     "evidence": "Carried round-5 bit-identical gt/cloudOx oracle with real frames between; pause path untouched this round, and updWeather runs inside simStep so the freeze envelope covers the new weather system."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "HUD FPS read 60 when sampled post-reload; main-loop truth is 120 whenever the page actually renders; the transient headless 0 is the known visibility-throttle artifact, per standing instruction not to dock."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Heavy round-6 session (~250s stepped, dozens of teleports, furnace ops, 4-block mining rhythm in 6.0s) with __vox.errors empty across two sessions and no observed stall."
+    },
+    {
+     "feature": "Grass multi-face texturing (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried multi-round close-ups (green top / dirt bottom / fringed sides); grass tiles untouched by round-6 lanes."
+    },
+    {
+     "feature": "Ambient occlusion corners (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried; per-vertex AOT table and flip-quad indexing untouched, visible in prior cave interiors and this round's ground-level shots."
+    },
+    {
+     "feature": "Fog-sky horizon blend (stretch)",
+     "verdict": "pass",
+     "evidence": "scene.fog.color copies skyC every frame including the new storm dim, verified live by the noon sky hex sampling (#73adfc -> #6f94c6 under setWeather(1)) flowing into both sky and fog; no gray band in any round-6 shot."
+    },
+    {
+     "feature": "Day-night cycle with sun disc (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried with N-skip listed in the overlay; gDL drove this round's spawn regressions and the gt sweep (0-1800) exercised the cycle end to end; snow-summit day/night pair banked round 5."
+    },
+    {
+     "feature": "Drifting clouds (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried; cloudOx drift remains the pause-freeze oracle; cloud opacity now also rises with storm intensity (coded, .35*wd term) though the drift itself is the credited behavior."
+    },
+    {
+     "feature": "Underwater view effect (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-5 submerged screenshot (blue #uw tint, shortened fog near 2/far 22, bubble meter); underwater path untouched this round."
+    },
+    {
+     "feature": "Block-break particles with physics (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried (dirt-colored fragments in fresh hole, green zombie burst); round-6 ore and stone breaks produced collected drops through the same burst path with no regression."
+    },
+    {
+     "feature": "Hotbar textured icons (stretch)",
+     "verdict": "pass",
+     "evidence": "Furnace UI screenshot shows the full textured inventory grid with a durability bar on the stone pick; round-5 9-thumbnail hotbar evidence carried on an unchanged icon path."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried bit-identical oracle; weather, farming, and furnaces all tick inside simStep so the frozen envelope now provably includes every new system by construction plus the carried live test."
+    },
+    {
+     "feature": "Break and place sounds (stretch)",
+     "verdict": "pass",
+     "evidence": "audioCheck re-verified this round: break 0.33 / place 0.31 peaks through the real generators via OfflineAudioContext, with sfx events logged at interaction moments (eat x2, place, break)."
+    },
+    {
+     "feature": "Night sky and dusk tinting (wow)",
+     "verdict": "pass",
+     "evidence": "Carried (500-point starfield, dusk #3c2019 banked round 4, night summit shot round 5); updSky dusk math untouched except the additive storm dim."
+    },
+    {
+     "feature": "Animated water surface (wow)",
+     "verdict": "pass",
+     "evidence": "Carried; wtex.offset animates with gt on the ripple-banded 32px water texture, path untouched this round."
+    },
+    {
+     "feature": "Mining crack progress (wow)",
+     "verdict": "pass",
+     "evidence": "Carried round-5 mid-hold screenshot with cancel-on-release; round-6's retimed mineHold (4 blocks in 6.0s controlled rhythm, bare hand ~2s vs stone pick 0.5s) exercises the same crack path with the clock seam gone."
+    },
+    {
+     "feature": "Held-block viewmodel (wow) \u2014 THE DISPUTE",
+     "verdict": "fail",
+     "evidence": "SETTLED against the wow: camera.children is empty, the camera is never parented into the scene, the file has exactly one renderer.render(scene,camera) and zero camera.add/'held'/'viewmodel' strings, and a torch-selected screenshot with UI hidden shows an empty bottom-right \u2014 round-5's sighting was a placed world torch."
+    },
+    {
+     "feature": "Footstep audio (wow)",
+     "verdict": "unverified",
+     "evidence": "sStep logs 'step' and gates on onGround && speed>.5 (line 604) but is still not in the audioCheck gens list and no step events were reported this round \u2014 sixth round without conversion."
+    },
+    {
+     "feature": "Ambient audio with mute (wow)",
+     "verdict": "pass",
+     "evidence": "Carried: chirp generator 0.0279 peak (r5) and M-mute with HUD tag (r3); the rain bed adds a second verified ambient layer this round (rain gen peak 0.03 in audioCheck)."
+    },
+    {
+     "feature": "Emissive light blocks (wow)",
+     "verdict": "pass",
+     "evidence": "Carried round-5 money shot (cave lightAt 0.1 -> 0.876 with falloff and save/load persistence); round-6 regression confirms the r5 cavern still reads 0.1 vs surface 1.0 on unchanged light code."
+    },
+    {
+     "feature": "Weather family (43+, weight 2) \u2014 NEW",
+     "verdict": "pass",
+     "evidence": "Credit ~1.5 of 2 weights: deterministic 61-sample weatherAt schedule bit-identical across two loads with natural unprompted onset at gt~120; rain streaks over plains/forest and snow flakes above h>=45 screenshotted, desert correctly dry; sky dims #73adfc -> #6f94c6; HUD tags the state; rain audio bed verified (sfx event + 0.03 peak). Docked half a weight: snow flakes render pure white at night (wxMat.color.setRGB(1,1,1) at line 967 skips the day/night tint), precipitation kind is sampled at the player's column so particles overhang the desert horizon at borders, and there is no thunder/lightning or snow accumulation."
+    },
+    {
+     "feature": "Cave darkness via depth skylight (43+ light family, rendering share)",
+     "verdict": "pass",
+     "evidence": "Regression verified this round: round-5 cavern (64,18,158) still reads lightAt eff 0.1 vs surface 1.0 on untouched light code."
+    },
+    {
+     "feature": "Light propagation engine (43+ family, weight 3)",
+     "verdict": "pass",
+     "evidence": "Credit 2 of 3 weights, unchanged from round 5: two-source model (per-column depth skylight x gDL, radial 7-block torch pool) baked per-face and verified in play with save/load persistence \u2014 but still distance math, not propagation: torch light crosses solid walls and roofs never darken; the third weight stays open."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+ family, weight 1)",
+     "verdict": "pass",
+     "evidence": "Regression held: setTime(0)+tickSpawns(6) -> 4 zombies at 27.2-29.4 in the ring on solid grass; torch-column 'light' rejection carried from round 5 on unchanged trySpawnAt code."
+    },
+    {
+     "feature": "Smelting UI surface (43+ smelting family weight 2, UI/rendering share)",
+     "verdict": "pass",
+     "evidence": "Furnace panel screenshot mid-burn: input (iron ore x3), fuel, arrow, orange-bordered take-only output, live 'burn 37s \u00b7 62%' readout, durability bars \u2014 and the whole flow worked through real UI mousedown events (output pickup to cursor stack, deposit into inventory, MC-style)."
+    },
+    {
+     "feature": "HUD vitals + weather tag (UI-shared)",
+     "verdict": "pass",
+     "evidence": "Hearts/hunger/bubbles carried; HUD now appends '| rain' when intensity crosses 0.1, probe-verified; known artifact: HUD text line is one frame stale in headless screenshots (showed old XYZ/biome after teleports), not docked."
+    },
+    {
+     "feature": "Damage/death/respawn overlays + hit feel (UI-shared)",
+     "verdict": "pass",
+     "evidence": "Carried: red flash + thump + measured 1.02-block knockback (r5); Respawn button recovers with inventory kept per main-loop evidence; no regression observed."
+    },
+    {
+     "feature": "Mob visual presentation (entity rendering, shared)",
+     "verdict": "pass",
+     "evidence": "Carried (pig trio with snouts, hurt-flash swap, walk-bob, sun-burn burst); round-6 night spawn ring rendered all mobs standing on solid grass with finite coords after the containment fix."
+    },
+    {
+     "feature": "Horizon fog veil (worldgen wow, fog-shared)",
+     "verdict": "pass",
+     "evidence": "Carried; round-6 aerial weather shots still dissolve into sky-matched fog at the generation edge."
+    },
+    {
+     "feature": "Torch support-pop coherence (round-5 atmosphere wart)",
+     "verdict": "unverified",
+     "evidence": "Fix landed in code this round (doBreak cascade at line 679 now includes id 22 with an item drop + remeshTorch) which supersedes the round-5 verified fail, but no probe converted it in play \u2014 conversion owed."
+    },
+    {
+     "feature": "Crosshair readability (player core, UI-shared)",
+     "verdict": "pass",
+     "evidence": "Carried; difference-blend crosshair readable across this round's rain, snow, and furnace-interior screenshots."
+    },
+    {
+     "feature": "__vox.look() no-arg NaN poisoning (harness robustness, camera state)",
+     "verdict": "fail",
+     "evidence": "Probe-verified: look() with no args runs applyLook(undefined,undefined) -> yaw/pitch NaN until the next setCam (line 620 has no finiteness guard); harness-only but it cost the probe two evals and getState/ray go dead while poisoned."
+    }
+   ],
+   "mps": 42,
+   "top_gaps": [
+    {
+     "title": "Pure probe conversions: z-fight motion burst, footstep events, torch-pop",
+     "detail": "Three credits sitting on the table with zero code risk: (1) a setCam strafe/orbit burst past coplanar-risk geometry (water sheets, crack box at 1.004, ghost at .96) with frame captures settles the z-fighting core, dark since round 1 (2 itemized points); (2) sStep already logs 'step' with onGround && speed>.5 gating \u2014 hold W via key() over ground, step(), read __vox.sfx for step events, then verify silence while airborne, converting the footstep wow; (3) break the support under a placed torch and confirm the new id-22 cascade (index.html:679) drops the torch and remeshes the pool, clearing the round-5 wart. While in there, also re-screenshot an explicit H dismiss/reopen cycle to harden this round's controls-overlay credit.",
+     "mps_gain": 0.8,
+     "risk": "low"
+    },
+    {
+     "title": "Weather to full weight: snow night tint, lightning/thunder, splash",
+     "detail": "Three small strokes finish the weight-2 family: multiply the snow color by matO.color instead of the unconditional setRGB(1,1,1) at index.html:967 (the builder-flagged pure-white-at-night wart); add a lightning flash during heavy rain (brief skyC lerp toward white in updSky when wI>.8 on a gt-hashed schedule) paired with a thump-based thunder generator registered in audioCheck gens so evidence lands the same round; optionally sample precipitation kind per-particle column rather than at the player to kill the desert-horizon overhang. All sit outside the mesher hot path.",
+     "mps_gain": 0.4,
+     "risk": "low"
+    },
+    {
+     "title": "Occlusion-aware light: the family's third weight",
+     "detail": "lightOf (index.html:458) and lightAtW (818) are radial distance only \u2014 torch light shines through solid stone and player roofs never darken. A small BFS through air cells within the 7-radius (or even a single line-of-sight sample per face) folded into the existing hcol/tlist per-build precompute closes the weight-3 family and fixes the correctness hole a sharp probe screenshot of light bleeding through a wall would file as a fail. DANGER: this is the per-face mesher hot path; isolate it and re-run the seam/AO/chunk-border regression suite plus the 7.1ms/op torch-edit timing before merging.",
+     "mps_gain": 0.4,
+     "risk": "high"
+    },
+    {
+     "title": "Real held-item viewmodel (the dispute is settled: nothing exists)",
+     "detail": "Now definitively absent: camera.children is empty and the camera is not even parented into the scene. Build a camera-space mini-mesh reusing dropGeo/ITILE so blocks, picks, torches, and food render correctly in-hand, swapping on slot change, with a click swing-dip. Implementation note: three.js only renders camera children when the camera is in the scene graph \u2014 scene.add(camera) is required first. Converts the contested wow into a clean credit and gives mining/combat first-person feedback the build currently lacks.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Audio depth: mob voices + footstep through the proven audioCheck path",
+     "detail": "Add a pig oink and a distance-gated zombie night groan as generators, register them plus sStep in the audioCheck gens list (index.html:1256) so all three become offline-render verifiable the round they ship. Night dread is now real (dark caves, spawn rings, weather dimming); voices cash it in for open-dimension credit and complete the audio story beyond the four verified generators.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Cross-domain note: redstone-like logic is the last weight-4 family at zero",
+     "detail": "For the systems lane: a lever block + wire + lamp (emissive when powered, reusing the torch self-lit path at index.html:468 and remeshTorch's pool rebuild) would seed the heaviest untouched family. From my domain the rendering surface is already proven \u2014 self-lit blocks, per-face light bake, and <=4-chunk remesh all exist \u2014 so the lamp's on/off visual is low-risk; the signal-graph simulation is the systems judge's risk to price.",
+     "mps_gain": 0.7,
+     "risk": "medium"
+    },
+    {
+     "title": "Guard applyLook against non-finite input",
+     "detail": "One line at index.html:620 (if(!isFinite(mx)||!isFinite(my))return;) clears this round's filed harness fail: __vox.look() with no args poisons yaw/pitch to NaN, killing getState/ray/highlight until the next setCam. Harness-only today, but the same guard protects any future gamepad/touch input path for free.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 6 lands the two largest pure-atmosphere absences my predecessor flagged: weather is now a verified, self-running system (bit-identical deterministic schedule with natural onset at gt~120, biome/altitude-coupled rain vs snow with the desert correctly dry, sky dimming #73adfc to #6f94c6 flowing into fog, HUD tag, and an audible rain bed confirmed by both an sfx event and an OfflineAudioContext peak), and smelting arrives with a genuinely polished furnace UI (live 'burn 37s \u00b7 62%' readout, take-only orange-bordered output, durability bars, all driven through real mouse events). The open dispute is settled in the judges' favor: there is no held-item viewmodel \u2014 camera.children is empty, the camera is not parented into the scene, and a torch-selected screenshot shows an empty bottom-right \u2014 so the wow stays failed and round-5's sighting was a placed world torch. The controls overlay finally converted after five dark rounds, the torch support-pop wart was fixed in code (conversion owed), and the only new warts are minor: pure-white snow flakes at night, column-sampled precipitation kind at biome borders, and an unguarded look() that NaN-poisons the camera. What still caps my domain: z-fighting and footstep audio are dark a sixth round, the light model remains distance-based rather than occluding (the family holds at 2 of 3 weights), and redstone is the last untouched weight-4 family. I move 40 to 42: roughly +0.7 each from the weather and smelting families plus ~1.25 itemized from conversions (controls overlay, biome coherence, depth ores) and the cleared containment/mineHold fails, minus ties broken downward for the new cosmetic warts and the unconverted residue."
+  },
+  {
+   "domain": "systems",
+   "confidence": "Medium-high. Both headline families landed with live, deterministic, code-corroborated evidence rather than advance credit: the furnace is a complete burn/cook state machine (updFurnace, index.html:259-269) verified end-to-end through real UI mouse events, and weather is a pure function of gt (weatherAt, line 950) verified bit-identical across two loads with a natural unprompted onset at gt~120. The round-5 dispute I inherited is settled with triple evidence (empty camera.children, zero camera.add in the file, empty bottom-right screenshot with torch selected). Residual swing ~\u00b11: weather pricing could be docked ~0.25 for the player-column sampling wart and white night snow; my crafting 3.5/4 and hostile 3.5/4 partials (in-world 3x3 table and pick attack bonus dark a sixth round) could convert upward for ~+0.3; furnace save/load round-trip was code-read but not live-probed this round.",
+   "mps": 42,
+   "item_verdicts": [
+    {
+     "feature": "Systems family: inventory with stacking (weight 2)",
+     "verdict": "pass",
+     "evidence": "This round's smelting flow ran through the real inventory substrate: output-slot mousedown onto a cursor stack, deposit click into an empty slot, shift-click supported (slotClickF line 1106); r4 drag/split/64-merge carried."
+    },
+    {
+     "feature": "Systems family: crafting table and recipes (weight 4, ~3.5 credited)",
+     "verdict": "pass",
+     "evidence": "craft(23) consumed exactly 5 stone; iron pick consumed exactly 3 ingots + 2 sticks and ore+sticks no longer matches (ingot-gated, RECIPES line 249); residual: the in-world 3x3 table (line 687) has never been play-opened in six rounds."
+    },
+    {
+     "feature": "Systems family: tools with durability and mining speeds (weight 4, FULLY banked this round)",
+     "verdict": "pass",
+     "evidence": "Clock seam fixed (simNow, lines 623/1169): bare hand 1.9-2.2s vs stone pick 0.5s on stone, iron ore in 0.8s, 4-block hold rhythm in 6.0s stepped sim; durability real (132->128 at -1/break, iron 251); tier-gated drops verified both directions."
+    },
+    {
+     "feature": "Systems family: health, damage, fall damage (weight 2)",
+     "verdict": "pass",
+     "evidence": "Zombie melee 2/hit and the measured 1.02-block knockback carried from r5; fall-damage formula (line 591), drowning, death/respawn intact; no regression in two heavy sessions."
+    },
+    {
+     "feature": "Systems family: hunger and food (weight 2)",
+     "verdict": "pass",
+     "evidence": "Raw porkchop +4 / cooked +8 exact this round (setHunger(10) -> 14 / 18), bread +5 carried; hunger-gated sprint (line 571); deliberate raw-8->4 rebalance flagged in the header."
+    },
+    {
+     "feature": "Systems family: passive mobs (weight 3)",
+     "verdict": "pass",
+     "evidence": "Regression held: day pigs on grass columns, wander, flee-on-hit, porkchop drop all carried from r5 live verification; entity layer untouched except containment guards."
+    },
+    {
+     "feature": "Systems family: hostile mobs and combat (weight 4, ~3.5 credited)",
+     "verdict": "pass",
+     "evidence": "Night tickSpawns -> 4 zombies at 27.2-29.4 on solid grass this round; chase/melee/sun-burn/knockback carried; residual: pick attack bonus (PICKT?3:2, line 810) never exercised live, and zombie remains the only hostile type."
+    },
+    {
+     "feature": "Systems family: light-linked mob spawning (weight 1)",
+     "verdict": "pass",
+     "evidence": "trySpawnAt light gate (line 829) regression-held; cave lightAt 0.1 vs surface 1.0 re-verified at the round-5 cavern this round."
+    },
+    {
+     "feature": "Systems family: smelting (weight 2) - NEW, verified REAL not stub",
+     "verdict": "pass",
+     "evidence": "Full machine: 3 iron ore + 1 coal -> burn 40s budget, out={id:104,count:3} at 5s/item, live 'burn 37s \u00b7 62%' UI, take-only output retrieved via real mouse events, cooked porkchop, ingot-gated iron pick, contents spill on break (doBreak 670-672); save field exists (line 542) but the reload round-trip was not live-probed."
+    },
+    {
+     "feature": "Systems family: farming and crop growth (weight 2)",
+     "verdict": "pass",
+     "evidence": "Regression: seeds -> farmland 18 + crop 19 -> 20 -> 21 mature and stable via growCrops, identical to r5's end-to-end loop."
+    },
+    {
+     "feature": "Systems family: light propagation engine (weight 3, partial 2/3)",
+     "verdict": "pass",
+     "evidence": "Depth skylight + torch pools regression-verified (0.1 cave floor); still a distance field - lightOf (line 458) has no occlusion, torch light crosses solid walls, third weight withheld."
+    },
+    {
+     "feature": "Systems family: weather (weight 2) - NEW, verified REAL not stub",
+     "verdict": "pass",
+     "evidence": "Pure deterministic fn of gt (weatherAt line 950, 61-sample sweep bit-identical across loads), natural onset at gt~120 exactly on schedule, biome/altitude coupling (rain plains/forest, snow at h>=45/snowy line 961, none in desert), sky #73adfc->#6f94c6, terrain-stopped particles, rain audio peak 0.03, HUD tag, pause-frozen; warts cosmetic (kind sampled at player column, pure-white night snow)."
+    },
+    {
+     "feature": "Systems family: world save/load (weight 2)",
+     "verdict": "pass",
+     "evidence": "Deterministic spawn (116.5, 29.02, 115.5) on both fresh loads; farmland/torch persistence carried from r5; furnaces serialized as an optional v1 field so old saves load (lines 537/542)."
+    },
+    {
+     "feature": "Systems family: villages or structures (weight 3, partial 1/3)",
+     "verdict": "pass",
+     "evidence": "Micro only: deterministic 1-in-37 wells/ruins (lines 350-363) carried; no multi-building site, no loot, no inhabitants in six rounds."
+    },
+    {
+     "feature": "Systems family: redstone-like logic (weight 4)",
+     "verdict": "fail",
+     "evidence": "Grep clean: no lever/wire/piston/powered-block concepts anywhere in the file; blocks carry no state or update propagation beyond crops and furnaces."
+    },
+    {
+     "feature": "Mob variety beyond pig/zombie (sheep/skeleton/creeper)",
+     "verdict": "fail",
+     "evidence": "MOBDEF (line 772) contains exactly pig and zombie; grep for sheep/skeleton/creeper returns zero hits."
+    },
+    {
+     "feature": "Armor and combat depth (sword, armor, damage table)",
+     "verdict": "fail",
+     "evidence": "No sword or armor items exist; attack damage is the hardcoded binary PICKT?3:2 at line 810; no damage reduction path anywhere."
+    },
+    {
+     "feature": "Beds and spawn-setting",
+     "verdict": "fail",
+     "evidence": "No bed block/item (grep's only 'bed' hits are the rain audio bed comments, lines 889/918); respawn is fixed at the boot SPAWN constant (line 1162) with no set-spawn mechanic."
+    },
+    {
+     "feature": "Boats, minecarts, rails",
+     "verdict": "fail",
+     "evidence": "Grep clean for boat/minecart/rail; no vehicle or riding code exists."
+    },
+    {
+     "feature": "Containment regression: non-finite spawn rejection + vertical cull (round-5 verified fail)",
+     "verdict": "pass",
+     "evidence": "FIXED and probe-verified: bad-arity/NaN/Infinity spawnMob all return false (lines 783-785); y=-20 spawn culled within step(2) via the isFinite + y<-16 leg (line 850); zero leaked fallers across both sessions."
+    },
+    {
+     "feature": "mineHold synthetic-clock seam (round-5 wart)",
+     "verdict": "pass",
+     "evidence": "simNow monotonic sim clock (lines 623, 1169) verified: stepped-sim mining completes deterministically, single-block timings match the HARD table."
+    },
+    {
+     "feature": "Torch support-pop (round-5 wart)",
+     "verdict": "pass",
+     "evidence": "doBreak cascade now includes id 22 with a drop and remeshTorch (lines 678-680); lane-1 verified torches() empties and the drop appears after breaking the support."
+    },
+    {
+     "feature": "Held-item viewmodel (wow - THE DISPUTE, settled)",
+     "verdict": "fail",
+     "evidence": "Probe confirmed the judges' refutation: camera.children empty, camera unparented, exactly one renderer.render and zero camera.add in the file, torch-selected screenshot shows empty bottom-right; r5's sighting was a placed world torch."
+    },
+    {
+     "feature": "In-world crafting table right-click opens 3x3",
+     "verdict": "unverified",
+     "evidence": "Code path at line 687 and tables generate in ruins, but never play-opened in six rounds; all recipe evidence is via the pocket grid or craft()."
+    },
+    {
+     "feature": "Tool-tier attack bonus (pick 3 vs hand 2)",
+     "verdict": "unverified",
+     "evidence": "PICKT branch at line 810 carried unverified a third round; every observed hit was hand-tier."
+    },
+    {
+     "feature": "Cactus contact damage",
+     "verdict": "unverified",
+     "evidence": "Code at lines 600-602; never play-touched in any probe round."
+    },
+    {
+     "feature": "Death/respawn loop with kept inventory",
+     "verdict": "pass",
+     "evidence": "Carried r4 pack-kill evidence; main-loop note re-confirms the Respawn button recovers with inventory KEPT (flagged parity deviation, not a bug)."
+    },
+    {
+     "feature": "Item-drop pickup loop",
+     "verdict": "pass",
+     "evidence": "Iron-ore drop (id 11) collected after the timed mine this round; seeds/wheat collection carried from r5."
+    },
+    {
+     "feature": "Scorecard: hold-to-break mining (stretch)",
+     "verdict": "pass",
+     "evidence": "4 successive stone blocks in 6.0s of controlled stepped rhythm; crack-on-hold with cancel carried; the r5 seam is gone."
+    },
+    {
+     "feature": "Scorecard: mining crack progress (wow)",
+     "verdict": "pass",
+     "evidence": "Carried r5 screenshot evidence (crack contained to the targeted face, gone on release); setCrackTile path untouched this round."
+    },
+    {
+     "feature": "Scorecard: multi-type hotbar + switching (2 cores)",
+     "verdict": "pass",
+     "evidence": "Furnace thumbnail with NAME label plus textured 104/110 icons this round; wheel + digit switching verified r4 via real events."
+    },
+    {
+     "feature": "Scorecard: hotbar textured icons (stretch)",
+     "verdict": "pass",
+     "evidence": "Furnace-UI screenshot shows the full textured inventory grid with a durability bar rendering on the stone pick."
+    },
+    {
+     "feature": "Scorecard: emissive light blocks (wow)",
+     "verdict": "pass",
+     "evidence": "Regression: round-5 cavern lightAt eff 0.1 vs surface 1.0 unchanged; torch pool math untouched by all three r6 lanes."
+    },
+    {
+     "feature": "Scorecard: break and place sounds (stretch)",
+     "verdict": "pass",
+     "evidence": "audioCheck this round: break 0.33 / place 0.31 peaks through the real generators via OfflineAudioContext."
+    },
+    {
+     "feature": "Scorecard: sneak mode with edge guard (wow)",
+     "verdict": "pass",
+     "evidence": "CONVERTED live: sneaking on the furnace-block top, held W 2.0s, clamped at exactly the block edge (z 116.5->115.73, y constant); released Shift and dropped off."
+    },
+    {
+     "feature": "Scorecard: reach-limited block targeting (core)",
+     "verdict": "pass",
+     "evidence": "ray() returned null at 5.05 blocks and hit at 4.3 - the cap enforced exactly this round."
+    },
+    {
+     "feature": "Seeded determinism with survival state layered on (regression)",
+     "verdict": "pass",
+     "evidence": "Spawn (116.5, 29.02, 115.5) seed 1337 on both fresh loads, matching rounds 2-5; the 61-sample weather schedule is bit-identical across loads, so the new family inherits the determinism contract."
+    },
+    {
+     "feature": "__vox.look() no-arg corrupts camera state (new harness wart)",
+     "verdict": "fail",
+     "evidence": "Probe verified: look() with no args runs applyLook(undefined,undefined) -> yaw/pitch NaN (line 620, hook at 1203) until the next setCam; harness-only but unguarded, cost the probe two evals."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Redstone-lite: lever + wire + lamp + door (the largest untouched weight, 4 at zero)",
+     "detail": "The only remaining named family with zero code. A minimal powered set - lever block toggling state, wire conducting along adjacent cells, a lamp that feeds the existing torchR light registry (so lit lamps reuse the proven 7-block pool and remeshTorch), and a 2-block door - earns ~2 of 4 weights. High risk by design: it introduces block state and update propagation into a stateless setB world and touches the mesher; run it alone, never in the same round as villages, and gate behind the seed-1337 spawn + findStructures determinism re-probe.",
+     "mps_gain": 1,
+     "risk": "high"
+    },
+    {
+     "title": "Villages: one multi-hut hamlet template (remaining ~2 of 3 weights)",
+     "detail": "Micro wells/ruins have sat at 1/3 for three rounds. A rarer seeded site (reuse the 1-in-37 hash + flatness gate at index.html:351 at lower cadence) placing 2-3 plank/log huts with doorway gaps, torch posts (id 22 self-registers via setB and lights the scene at night), a farmland plot, and one interior crafting table + dropped-item cache. Keep writes inside the tree-style -3..18 overlap loop; findStructures must stay bit-identical. Gives night exploration a lit destination and converts the family to ~2.5/3.",
+     "mps_gain": 0.9,
+     "risk": "medium"
+    },
+    {
+     "title": "Combat depth: sword + armor points + a third mob (skeleton or sheep)",
+     "detail": "Rounds hostile to full weight and starts the mob-variety/armor climb my charter names: sword recipes per tier with a real attack table replacing the binary PICKT?3:2 at line 810 (the family's only unverified leg), 2-4 armor points reducing zombie damage, rotten-flesh drop as risk-food, and one new mob on the proven MOBDEF substrate (sheep = wool economy, low risk; skeleton = ranged pressure, higher). Mostly data plus one projectile or one drop table; the entity layer is six-rounds verified.",
+     "mps_gain": 0.8,
+     "risk": "medium"
+    },
+    {
+     "title": "Light occlusion: the family's third weight",
+     "detail": "lightOf (line 458) and lightAtW (line 818) are radial distance only - torch light crosses solid walls and roofs never darken, visible wrongness Minecraft never shows. A bounded per-chunk BFS through air cells seeded from torches + sky columns inside the existing hcol/tlist precompute closes the weight-3 family. DANGER: this is the buildChunk hot path; isolate the lane and re-run the seam/AO/border/timing regression suite before anything else lands on it.",
+     "mps_gain": 0.5,
+     "risk": "high"
+    },
+    {
+     "title": "Beds and spawn-setting",
+     "detail": "Named in my charter and core to the band-80 alpha-parity feel: a craftable bed block (wool gates nicely behind the sheep lane, or planks+wheat as a flagged substitution), right-click at night skips to dawn via the existing gt math (setTime already proves the seam), and sets SPAWN to the bed column so death stops teleporting you to world spawn. Reuses save/respawn substrate wholesale; the respawn handler (line 1162) just reads a mutable spawn point instead of the boot constant.",
+     "mps_gain": 0.35,
+     "risk": "low"
+    },
+    {
+     "title": "Pure probe conversions: 3x3 table open, pick attack bonus, cactus damage, furnace reload",
+     "detail": "Four coded-but-dark items, zero code change: right-click a ruin's crafting table and screenshot the 3x3 panel (six rounds owed), hit a zombie holding a pick and read the 3-damage delta, brush a cactus, and run the furnace save -> ?load=1 round-trip (furn field exists at line 542 but was never live-probed). Cheap fractional credit on two weight-4 families plus hardening the smelting family's persistence leg.",
+     "mps_gain": 0.3,
+     "risk": "low"
+    },
+    {
+     "title": "Weather polish: border sampling + night snow tint",
+     "detail": "Two builder/probe-flagged warts that a sharp screenshot could turn into a filed fail: precipitation kind is sampled at the player's column (line 960) so rain renders over the desert horizon at biome borders - sample per-particle column kind or fade particles whose column says none; and snow is pure white at night (line 967) - multiply by matO.color like rain already does. Both contained to updWeather, no determinism contract on particles.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Guard the harness hooks: look() NaN poisoning",
+     "detail": "This round's only new verified fail: __vox.look() with no args feeds undefined into applyLook (line 620), poisoning yaw/pitch to NaN until the next setCam. One line - default dx/dy to 0 or early-return on non-finite - in the hook (line 1203) or applyLook itself. Harness-only, but it cost the probe two evals and the same unguarded pattern through applyLook is one bad mousemove polyfill away from a live bug.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 6 cashes the exact two family flips my predecessor priced cheapest, and both are verifiably real rather than stubs: smelting is a complete burn/cook state machine (3 ore + 1 coal -> 3 ingots at 5s/item through a live-progress UI driven by real mouse events, ingot-gated iron pick, raw +4 vs cooked +8 exact) and weather is a pure deterministic function of game time (bit-identical 61-sample schedule, natural unprompted onset at gt~120, biome/altitude-coupled rain/snow/none, sky dimming, audible rain bed). The panel's open dispute is settled against the round-5 probe: no held-item viewmodel exists (empty camera.children, zero camera.add, empty bottom-right with a torch selected), and round 5's only verified fail plus both filed warts (mob containment, clock seam, floating torches) are fixed and re-verified, with the seam fix finally banking tool mining speeds at full weight. By family math I credit ~32 of 40 systems weights versus a strictly-priced ~28.5 last round; what caps the build is now sharply legible: redstone 0/4, villages 1/3, light occlusion 2/3, one hostile type, and no armor/beds/vehicles, plus one new harness-only wart (look() NaN poisoning). I move the merged 40 to 42 - a conversion-driven delta matching the panel's own gap pricing - and the biggest remaining unlocks in my domain are redstone-lite and a village hamlet, run in separate rounds given their blast radii."
+  },
+  {
+   "domain": "perf",
+   "confidence": "High on stability and sim correctness \u2014 this is the best-instrumented round of the run: ~250s of stepped sim across two sessions with __vox.errors empty, both of my round-5 domain fails (mob containment, mining clock seam) re-verified fixed in play, and the new weather/smelting systems probe-verified deterministic (bit-identical 61-sample weather schedule across loads). Medium on rendering throughput: 120 FPS is still accepted via the exoneration note rather than measured in a visible tab, and remesh/torch-burst frame cost has never been directly timed. Residual swing ~\u00b11 MPS: the carried memory-growth gaps (unbounded chunks Map, CCmap cliff-clear, autosave swallow) bite only on sessions far longer than any probe has run, and the panel could price the weather/smelting families anywhere from 3 to 4 of their combined 4 weights.",
+   "mps": 42,
+   "item_verdicts": [
+    {
+     "feature": "Boot gate / zero-error stability (60s+ no fatal console error)",
+     "verdict": "pass",
+     "evidence": "Probe: __vox.errors empty across two full sessions (~250s stepped sim, dozens of teleports, UI interactions); console clean except the pre-existing three.js r160 deprecation warning."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "HUD FPS counter live (read 60 post-reload under headless throttling); main-loop evidence: 120 whenever the page actually renders, 60/0 readings exonerated as preview-tab visibility throttling."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Probe broke 4 successive stone blocks in a 6.0s controlled rhythm, placed a furnace, and ran torch paths (remeshTorch rebuilds <=4 chunks synchronously) with no visible freeze; round-5 measurement of 0.013 ms/frame sim cost stands."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "7ms/frame post-ready budget drains a nearest-last sorted pend queue (index.html:930-936); probe teleports landed with terrain fully present; mesh ring evicts beyond RD+2 with geometry.dispose (index.html:516-519, 928-929)."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "dt clamped to 0.05s (index.html:1175) plus 0.9-block substepped vertical collision for player and mobs; entire probe session ran visibility-hidden between evals with no teleports or floor-falls."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "active gate skips simStep entirely (index.html:1176-1178); round-5 probe verified gt and cloudOx bit-identical across real frames; code path unchanged this round and weather state is module-initialized so updSky is pause-safe (commented at 980)."
+    },
+    {
+     "feature": "Stable revisited terrain / persistent edits (core, perf lens)",
+     "verdict": "pass",
+     "evidence": "Deterministic regen + editB per-chunk edit replay (index.html:364, 533-536); both fresh ?test=1 loads spawned at exactly (116.5, 29.02, 115.5) seed 1337, matching rounds 2-5."
+    },
+    {
+     "feature": "Out-of-bounds mob containment (round-5 verified fail \u2014 FIXED)",
+     "verdict": "pass",
+     "evidence": "Probe: spawnMob with no coords/NaN/Infinity all rejected (isFinite guards at index.html:783-785); y=-20 spawn culled by the new y<-16 check (line 850) after step(2); no leaked fallers anywhere this session."
+    },
+    {
+     "feature": "Sim-clock unification: mining/place/eat timers (round-5 unverified seam \u2014 FIXED)",
+     "verdict": "pass",
+     "evidence": "simNow monotonic sim clock advanced only by simStep (index.html:623, 1169) drives mineTick, nextPlace, and eatT; probe: held mineHold broke 4 stone in 6.0s of stepped sim, bare hand ~1.9-2.2s vs stone pick 0.5s, fully deterministic."
+    },
+    {
+     "feature": "Frame-guard granularity + loop error surfacing (round-5 fail \u2014 FIXED)",
+     "verdict": "pass",
+     "evidence": "loop() now split into guard A (sim) and guard B (world/render), each warn-once to console and each pushing into __vox.errors capped at 300 (index.html:1172-1190); a sim throw no longer blinds the render path or the evidence chain."
+    },
+    {
+     "feature": "Weather family \u2014 perf/GC discipline (new this round)",
+     "verdict": "pass",
+     "evidence": "Fixed 600-slot Float32Array + lazily-built persistent particle pool with drawRange, zero per-frame allocation (index.html:952-973); schedule is a pure function of gt with no saved state \u2014 probe verified a bit-identical 61-sample weatherAt sweep across two loads and natural onset at gt~120 exactly as scheduled."
+    },
+    {
+     "feature": "Smelting family \u2014 bounded state + step()-coherent timing (new this round)",
+     "verdict": "pass",
+     "evidence": "furnaces Map bounded by player placement with lazy entry creation and delete-on-break that spills contents (index.html:254-269, 671); burn/cook advance on sim dt so stepped sim works \u2014 probe ran ore->ingot end-to-end (~16s stepped, 5s/item, coal=8 smelts) through real UI mouse events."
+    },
+    {
+     "feature": "Drop-entity memory bounds (round-1 addition, perf lens)",
+     "verdict": "pass",
+     "evidence": "Hard 64-entity FIFO cap with scene.remove (index.html:745), 60s TTL, per-id shared geometry cache bounded by item-type count; probe collected drops across mining/smelting/mob paths with no growth."
+    },
+    {
+     "feature": "Farming ticker bounded (regression)",
+     "verdict": "pass",
+     "evidence": "1Hz gate, player-planted-only map, self-cleans at maturity and on broken crops (index.html:941-947); probe regression: seeds->farmland->3 stages->mature stable."
+    },
+    {
+     "feature": "Cave light + torch lighting perf design (regression)",
+     "verdict": "pass",
+     "evidence": "Per-build 18x18 Int16Array skylight precompute + flat 3x3-neighborhood torch list, allocation-free lightOf once per face (index.html:454-461); probe regression: cavern lightAt eff 0.1 vs surface 1.0 unchanged."
+    },
+    {
+     "feature": "Mob entity layer perf (shared geometry, zero-alloc AI scratch)",
+     "verdict": "pass",
+     "evidence": "Shared geometries with no dispose churn, module-level wScx/wScz scratch, material-swap caching (index.html:816, 852-875); night tickSpawns(6) produced 4 zombies all on solid grass with finite coords; round-5 measurement 0.013 ms/frame with 8 zombies stands."
+    },
+    {
+     "feature": "Held-item viewmodel (DISPUTE RULING)",
+     "verdict": "fail",
+     "evidence": "Ruling with the round-5 refuters: camera.children is empty, the camera is never parented into the scene, the file has exactly one renderer.render(scene,camera), zero camera.add / 'held' / 'viewmodel' strings, and the probe's torch-selected screenshot with UI hidden shows an empty bottom-right \u2014 round-5's sighting was a placed world torch, and the only camera-tracking Group is the sky."
+    },
+    {
+     "feature": "Chunk data cache eviction",
+     "verdict": "fail",
+     "evidence": "chunks Map still never evicts (no chunks.delete anywhere in the file; ~16KB Uint8Array per visited chunk, carried a 5th round) and CCmap cliff-clears all 4e5 column structs at threshold (index.html:304) \u2014 now worse because weather does up to 600 CI lookups per frame during full rain (index.html:970), so a mid-storm clear triggers an fbm recompute storm."
+    },
+    {
+     "feature": "Autosave cost and quota visibility (save/load family, perf lens)",
+     "verdict": "fail",
+     "evidence": "save() JSON.stringifies the entire edits Map + furnaces + inventory every 15s on the main thread and swallows quota throws with catch(e){} (index.html:542-543) \u2014 silent data loss on long sessions, carried a 4th round unchanged."
+    },
+    {
+     "feature": "Harness hook robustness (__vox.look() NaN poison)",
+     "verdict": "fail",
+     "evidence": "Probe-verified: look() with no args runs applyLook(undefined,undefined), poisoning yaw/pitch to NaN (getState null, ray() misses, highlight gone) until the next setCam; harness-only but it cost the probe two evals \u2014 the evidence pipeline's own tooling is unguarded."
+    },
+    {
+     "feature": "Remesh/torch-burst frame cost under load",
+     "verdict": "unverified",
+     "evidence": "buildChunk still allocates 9 fresh BufferAttributes + untyped arrays per build with per-face-per-torch sqrt in lightOf; probe saw no hitching but the cost has never been directly timed, and rebuild frequency keeps multiplying (farming 1Hz, torch 4-chunk bursts, weather remeshes none \u2014 but future lanes will)."
+    },
+    {
+     "feature": "Long-session memory growth (>5 min)",
+     "verdict": "unverified",
+     "evidence": "No probe has run beyond ~250s of sim; chunks-Map growth is code-confirmed unbounded but never observed biting, and wxP (600 pooled objects) + dropGeos (~30 ids) are code-verified bounded but unmeasured live."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Chunk-data eviction using the proven editB diff",
+     "detail": "chunks Map grows ~16KB per visited chunk forever, now carried a 5th round (no chunks.delete exists in the file). The blocker is already solved infrastructure: editB provably reconstructs player edits per chunk (save/load round-trip verified again this round), so evicting Uint8Arrays beyond the mesh ring and regenerating on revisit is safe. This is the only unbounded memory path left in the build.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "CCmap distance-keyed eviction instead of clear()",
+     "detail": "CI() nukes all 400k cached column structs at threshold (index.html:304). The cache is now additionally hit up to 600 times per frame by weather particle terrain-stop checks (index.html:970) plus the spawner, lightAtW, buildChunk's 18x18 precompute, and HUD \u2014 a mid-storm clear() forces an fbm recompute storm across every consumer simultaneously. Replace with two-generation rotation or distance-keyed eviction so the working set near the player survives.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Direct frame/remesh timing instrumentation (__vox.perf hook)",
+     "detail": "My domain's remaining unverified pile (remesh burst cost, real rendering FPS, torch-dense buildChunk cost) exists only because nothing measures it: add a tiny __vox.perf() exposing a buildChunk ms histogram and last-100-frame ms ring buffer. One eval converts three carried unknowns into evidence and protects every future round's perf verdicts from the visibility-throttling ambiguity.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Pooled remesh scratch buffers before remesh frequency multiplies again",
+     "detail": "buildChunk allocates 9 fresh Float32BufferAttributes plus untyped JS push-arrays per build; torch place/break triggers up to 4 builds per click and farming adds 1Hz remesh events. Verified non-biting at 120 FPS, but every new system lane raises rebuild frequency. Reusable module-level growable typed arrays with subarray views cut the GC spike per rebuild.",
+     "mps_gain": 0.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Guard the __vox harness hooks (arg validation)",
+     "detail": "look() with no args poisons yaw/pitch to NaN until the next setCam (probe-verified, cost two evals this round). One line \u2014 if(!isFinite(mx)||!isFinite(my))return \u2014 plus a sweep of the other numeric hooks (setCam, setTime, furnacePut) keeps the evidence pipeline from corrupting the very state it measures. Zero gameplay risk; pure probe-throughput gain.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Autosave debounce + quota-failure surfacing",
+     "detail": "save() stringifies the whole edits Map + furnaces every 15s on the main thread and swallows setItem throws (index.html:542-543). Debounce on edit-count delta and show one HUD warning when the quota throws so long sessions don't silently stop persisting. Carried from round 3 unchanged; cost grows with every new persisted family (furnaces joined the payload this round).",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Per-type AI function table before mob #3",
+     "detail": "updMobs still inlines zombie/pig behavior as if-else inside the shared hot loop, and sun-burn/flee/attack timers are already type-conditional. Extract MOBDEF[type].ai(M,dt) writing the existing wScx/wScz scratch \u2014 a pure refactor so the inevitable skeleton/sheep/creeper lane doesn't multiply branching in the one function that runs per-mob per-frame.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Throttle furnace UI re-render to state changes",
+     "detail": "While the furnace panel is open, updFurnace calls renderFurn every sim frame (index.html:269), redrawing 3 slot canvases + text at up to 120Hz for a readout that changes at 1s/5% granularity. Dirty-flag it on burn-second or cook-percent change. Cosmetic main-thread churn, but it is the only per-frame DOM work in the build.",
+     "mps_gain": 0.05,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 6 through the perf/stability lens is a clean sweep of my round-5 ledger: both verified fails are fixed in source and re-verified in play (non-finite spawn rejection plus the y<-16 vertical cull at index.html:783-850, and the simNow sim clock at 623/1169 that closed the mining/place/eat clock seam, converting hold-to-break and tool-speed timing into deterministic evidence), and my predecessor's frame-guard gap landed too \u2014 the loop is now split into sim and render guards that both surface into __vox.errors. The two new families arrived with the same engineering discipline the round-5 panel praised: weather is a pure function of gt with a pooled, allocation-free 600-particle system (bit-identical schedule across loads), and smelting is a placement-bounded Map with delete-on-break spill and step()-coherent burn timing, all verified through real UI mouse events. Stability is the best of the run \u2014 ~250s of stepped sim across two sessions with __vox.errors empty \u2014 and I rule the viewmodel dispute against the wow item: no camera-attached mesh exists, one renderer.render, empty bottom-right with a torch selected; round-5's sighting was a placed world torch. The domain's only open fails are the carried memory debts (unbounded chunks Map now in its 5th round, the CCmap cliff-clear that weather's 600-per-frame CI lookups make more dangerous, and the quota-swallowing autosave) plus the new harness-only look() NaN wart, none of which bite at probe timescales. I land at 42, +2 over the round-5 merge, and the delta is conversion-driven: four fully live-verified systems-family weights (smelting 2, weather 2) plus two fixed fails, with no advance credit anywhere in it."
+  }
+ ],
+ "lanes": [
+  {
+   "name": "Lane 1 \u2014 Probe-filed fixes: harness guards, real held-item viewmodel, weather visual polish + perf hook",
+   "goal": "Clear both probe-filed fails from this round (the __vox.look() NaN poisoning and the now-settled-absent held-item viewmodel), retire the two weather cosmetics three judges flagged as fails-in-waiting against the freshly credited weight-2 family, and add the __vox.perf instrumentation that converts three carried perf unknowns. ~0.7-0.8 MPS, low risk, all isolated from the mesher/worldgen/sim hot paths.",
+   "spec": "All edits in game/index.html. (1) GUARD applyLook (line 620): first statement `if(!isFinite(mx)||!isFinite(my))return;` \u2014 clears the filed fail where __vox.look() with no args runs applyLook(undefined,undefined) and NaN-poisons yaw/pitch until the next setCam. Also guard __vox.setCam (line 1194): early-return false if any of x,y,z,ya,pi is non-finite, leaving all state untouched; return true on success. Do NOT alter happy-path math. (2) HELD-ITEM VIEWMODEL: add `scene.add(camera)` immediately after camera creation (~line 387) \u2014 three.js only renders camera children when the camera is in the scene graph; this is the missing prerequisite the scene-graph audit exposed. Create `const vmMat=new THREE.MeshBasicMaterial({map:atlas,alphaTest:.4,depthTest:false});` near matDrop (line 731). Module state `let vmMesh=null,vmId=-1,vmSwing=0;`. Function updVM(dt): read `const it=inv[slot],id=it?it.id:0;` if id!==vmId, remove old mesh from camera and, if id>0, build `new THREE.Mesh(dropGeo(id),vmMat)` (dropGeo at line 733 already handles block tiles, BL.cr cross-tiles like torch 39, and ITILE item tiles), set renderOrder=999, scale ~2.2 (dropGeo is .25-scale, net ~0.55 blocks), base position \u2248 (0.42,-0.34,-0.62) in camera space with rotation.y\u2248Math.PI/5, then camera.add(vmMesh). Each frame: vmMat.color.copy(matO.color) so it tracks day/night/storm light; swing: when mL is true or within 0.25s of an attack/break set vmSwing=1, decay vmSwing-=dt*4 clamped at 0, and offset position.y/rotation.x by a sin dip proportional to vmSwing. Call updVM(dt) from loop() guard B after updHL() (line 1186) \u2014 render-side only, NEVER inside simStep, so determinism and the pause-freeze envelope are untouched. __vox.hideUI must not affect it (it is scene-side; verify). Add harness helper `vm:()=>({id:vmId,children:camera.children.length})` to __vox. (3) WEATHER POLISH, contained to updWeather/wxSpawn (lines 956-973): (a) night snow \u2014 replace `wxMat.color.setRGB(1,1,1)` at line 967 with a copy of matO.color (flakes inherit the day/night/storm tint; unchanged at noon since matO\u2248white); (b) desert-border bleed \u2014 in wxSpawn (line 956), after picking p.x/p.z, re-roll the position up to 4 times if `CI(Math.floor(p.x),Math.floor(p.z)).biome==='desert'` while precipitation is active (bounded retries; wxSpawn already does one CI call so cost is trivial). Do NOT touch weatherAt (line 950) or the wKind decision (line 961) \u2014 the deterministic schedule is the verified contract; particles carry no determinism contract. (4) __vox.perf HOOK: module-level `const perfFrames=new Float32Array(120);let perfFi=0;` and `const perfBuild={n:0,total:0,max:0};` In loop() guard A after dt is computed (line 1173): `perfFrames[perfFi++%120]=dt*1000;` In buildChunk (line 450): t0=performance.now() at entry, accumulate elapsed ms into perfBuild before returning. Expose `perf:()=>({frame:{avg,max over the ring},build:{n:perfBuild.n,avg:perfBuild.total/perfBuild.n||0,max:perfBuild.max}})` on __vox. Allocation-free per frame. FORBIDDEN: any edit to genChunk/CI/rawH/cave, RECIPES/attackMob/MOBDEF, furnaces, or the mesher face loops.",
+   "acceptance": "Through __vox on ?test=1 (seed 1337): (a) call look() with no args, then getState() \u2014 yaw/pitch finite and unchanged, ray() still returns hits, no NaN anywhere; setCam(NaN,0,0,0,0) returns false and getState() is unchanged. (b) give(22,1) + select that slot: vm() reports {id:22,children:>=1}; hideUI() + screenshot shows the held torch bottom-right (the exact shot that proved absence this round now shows presence); switch to an empty slot \u2014 vm().id===0 and the mesh is gone; select stone \u2014 mesh swaps; mineHold(true)+step(1) then screenshot mid-swing shows the dip. (c) setTime(0) (night) + setWeather(1) over a snowy column: screenshot shows snow flakes dimmed to match the night palette, not pure white; teleport to the desert border from the round-6 weather shots, setWeather(1), screenshot toward the desert: no rain streaks over desert columns. (d) perf() returns finite {frame:{avg,max},build:{n>0,avg,max}} after step(5) plus a cold teleport; frame avg consistent with 60fps budget. (e) Determinism regression: fresh load spawns at exactly (116.5, 29.02, 115.5); 61-sample weatherAt sweep bit-identical to the round-6 ledger; pause() freezes gt/cloudOx bit-identical; __vox.errors empty after the full session."
+  },
+  {
+   "name": "Lane 2 \u2014 Combat depth: sword tier, real attack table, rotten-flesh risk food",
+   "goal": "Round the weight-4 hostile family toward full: three sword tiers crafted through the verified recipe substrate (iron sword gated behind the new smelting loop), a real attack-damage table replacing the binary PICKT?3:2 (the family's only never-exercised leg, finally probe-testable), and a zombie rotten-flesh drop eaten as risk food. ~0.7-0.8 MPS, low risk \u2014 mostly data on six-round-verified substrate.",
+   "spec": "All edits in game/index.html. (1) TEXTURES \u2014 must be added ABOVE the avg[] bake at line 211 so tile colors compute: add swordT(i,r,g,b) helper next to pickT (lines 173-175) drawing a 2px-wide diagonal blade from ~(4,11) to ~(11,4) with a brighter top edge plus a short handle in the pickT wood colors (124,84,46 / 104,70,38); define tiles 44=wood blade (158,110,60), 45=stone (134,134,138), 46=iron (214,214,224). Tile 47 = rotten flesh: irregular blob in decayed tones (base ~120,80,52 with green-brown accents ~84,96,44 and darker pits), same R()-noise style as the porkchop tile 31. Tiles 44-63 are free (crack overlays own 21-24; highest used tile is 43). (2) DATA TABLES: NAMES (line 226) += {111:'Wood Sword',112:'Stone Sword',113:'Iron Sword',114:'Rotten Flesh'}; ITILE (line 232) += {111:44,112:45,113:46,114:47}; DURMAX (line 231) += {111:60,112:132,113:251} (isTool/mkStack/addItem/durability-bar UI all key off DURMAX and work unchanged); new `const ATK={111:4,112:5,113:6};` next to PICKT. Do NOT add swords to PICKT \u2014 they must not satisfy TOOLREQ tier gates or receive PMULT mining speed (mineTick line 712 reads PICKT only; verify a sword mines stone at bare-hand speed and yields no drop). FOOD (line 1147) += {114:3} with a header-comment flag: pragmatic substitution, no poison effect. (3) RECIPES (lines 248-252) += {in:{16:2,100:1},out:111,n:1}, {in:{3:2,100:1},out:112,n:1}, {in:{104:2,100:1},out:113,n:1} \u2014 iron sword consumes smelted INGOTS (104), mirroring the verified ingot-gated iron pick. (4) ATTACK TABLE in attackMob (lines 809-810): replace `M.hp-=(it&&PICKT[it.id])?3:2;` with `const dmg=(it&&ATK[it.id])?ATK[it.id]:(it&&PICKT[it.id])?3:2;M.hp-=dmg;` \u2014 hand 2 and pick 3 stay bit-identical. Sword durability: immediately after, `if(it&&ATK[it.id]){it.dur--;if(it.dur<=0){inv[slot]=null;sfx(180,.08,.15,2);}updCounts();}` \u2014 swords only; pick attack behavior unchanged. (5) ZOMBIE DROP in the updMobs death branch (line 848): extend to `else if(M.type==='zombie'&&Math.random()<.6)spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),114);` (mob deaths already use Math.random; no determinism contract). (6) Update the file-header feature list to name swords + rotten flesh so header claims stay accurate. FORBIDDEN: any edit to mineTick/doBreak hardness logic, physics, worldgen, weather, furnaces, or the camera/render layer.",
+   "acceptance": "Through __vox on ?test=1: (a) crafting + gating: give(16,2)+give(100,1) then craft(111) true with exact consumption (invFull() shows both inputs gone); craft(112) from 3-stone... from {3:2,100:1}; craft(113) succeeds only with 2 iron INGOTS (104) + 1 stick \u2014 with 2 iron ORE (11) + stick it returns false. (b) attack table, exercising every leg: clearMobs(), spawnMob('zombie',x,y,z) nearby, aim via setCam; bare hand attack() then mobs() shows hp 10->8; stone pick equipped: next hit -3 (the six-round-dark PICKT bonus finally observed live); iron sword equipped: -6; wood sword -4, stone sword -5. (c) sword durability: invFull() shows dur down exactly 1 per attack() hit; inventory screenshot shows the durability bar on a used sword and the three distinct sword icons plus rotten-flesh icon. (d) drop->food loop: kill ~5 zombies (sword hits + step()); dropList()/pickup yields at least one id-114; setHunger(10) then eat() with rotten flesh selected -> getState().hunger===13. (e) regressions: pig flee + porkchop drop unchanged; zombie melee still 2/hit with knockback; sword in hand mines stone at bare-hand time (~2.2s) and the block yields NO drop (TOOLREQ unaffected); fresh-load spawn still exactly (116.5, 29.02, 115.5); __vox.errors empty."
+  },
+  {
+   "name": "Lane 3 \u2014 Hamlet: multi-hut village site with gen-time torch lighting",
+   "goal": "Grow the weight-3 villages family from micro-flavor (1/3, three rounds stalled) to a real multi-building destination: a rare seeded hamlet of two huts, a path, lit torch posts, and working crafting-table + furnace interiors \u2014 giving night exploration a lit destination and clearing the six-round-owed in-world 3x3 table open. ~0.8-0.9 MPS, medium risk, contained to genChunk's structure section + findStructures + a torch-registry sync.",
+   "spec": "All edits in game/index.html. HARD CONSTRAINTS: do NOT touch rawH/CI/cave or the tree fields (lines 274-309) \u2014 spawn determinism (the seed-1337 (116.5, 29.02, 115.5) contract) derives from CI and must survive untouched; do NOT modify the existing 1-in-37 well/ruin block (lines 350-363) byte-wise. (1) GATE, inside genChunk after the existing structure block: `if(h2i(cx^0x77C7,cz^0x3B3B)%89===0 && h2i(cx^0xA5A5,cz^0x5A5A)%37!==0){...}` \u2014 the second clause excludes every existing well/ruin chunk so all round-6 structures stay bit-identical. Site test: center wx=cx*16+8, wz=cz*16+8; scan dx,dz in -6..6 via CI(wx+dx,wz+dz): require mx-mn<=2, center h>SEA+1, biome 'plains' or 'forest', and no ci.tree anywhere in the 13x13 (avoids trunks through roofs). (2) LAYOUT \u2014 entire footprint inside local 1..14 so it is single-chunk (no -3..18 overlap coherence needed): floor level F=mx; under each built cell, fill from the column's h+1 up to F with dirt (2) via tset(...,1). Hut A at local (3..7)x(3..7): plank (16) walls F+1..F+3 with log (6) corners, a 1x2 doorway gap mid-wall facing the path, interior force-cleared to air, flat plank roof at F+4; interior crafting table (17) against a back wall. Hut B at local (9..13)x(8..12): same shell, interior furnace (23). Dirt (2) path replacing the surface block at F between the two doorways. Two torch posts along the path, each a log at F+1..F+2 with a torch (22) at F+3, positioned within local 5..10 so the 7-block light pools barely cross chunk borders (known faint edge: a neighbor meshed before this chunk gens won't show pool spill until its next remesh \u2014 acceptable, document in a code comment). All writes via tset with force=1. Set a local flag hamletPlaced=true. (3) TORCH REGISTRY SYNC \u2014 gen-placed torches currently never light or suppress spawns because torchR (line 371) is setB-only and buildChunk's tlist (lines 456-457) plus lightAtW (line 820) read torchR. AFTER the editB replay (line 364), if hamletPlaced: scan the chunk's d[] for remaining id-22 cells and register each into torchR keyed exactly like setB does (Map 'cx,cz' -> Map(cellIndex -> [wx,wy,wz])). Ordering is load-bearing: scanning after edit replay means a player-broken gen torch (edit sets the cell to 0) is never re-registered on reload, while live breaks are already handled by setB's old===22 branch since the cell index matches. Registration is idempotent (same key/index). The scan is gated on hamletPlaced so non-hamlet chunks pay zero cost. (4) findStructures (lines 1234-1242): add a second pass with the identical hamlet gate + an exact replica of the site test, pushing {type:'hamlet',x:wx,y:F,z:wz}; existing well/ruin output must remain unchanged. (5) RARITY TUNING: before finalizing, verify via the findStructures logic that seeds 1337 and 42 each have >=1 hamlet within ~768 blocks of spawn; if not, lower the modulus (e.g. %53) \u2014 the determinism contract for the NEW type is per-build, the contract for existing types is bit-identity with round 6. (6) Update the file header to name the hamlet (keeps header claims accurate). FORBIDDEN: edits to the mesher face loops, lightOf/lightAtW math, weather, combat/items, the camera/render layer, or save() beyond what already persists (hamlets are pure gen \u2014 they need no save field; player edits inside them already round-trip via editB).",
+   "acceptance": "Through __vox on ?test=1 (seed 1337): (a) determinism: fresh load spawns at exactly (116.5, 29.02, 115.5); findStructures(256) returns every round-6 well/ruin at identical coords; two consecutive fresh loads return identical hamlet entries; 61-sample weatherAt sweep still bit-identical. (b) discovery: findStructures(768) (the prober should also accept a larger r) lists >=1 {type:'hamlet'}; setCam above it: screenshot shows two huts, dirt path, and torch posts; block() reads confirm plank (16) walls, log (6) corners, table (17) in hut A, furnace (23) in hut B, torches (22) on posts, doorway cells air. (c) lighting + spawn suppression with ZERO player placements: torches() includes the hamlet torch coords on a fresh load; at setTime(0) night, lightAt at a torch-adjacent path cell reads eff>=0.5 and a night screenshot shows the lit hamlet against dark terrain; spawnAt('zombie', <torch-lit column>) returns 'light' while a far unlit column still spawns. (d) interiors work: openFurnace on the gen furnace returns a live UI; furnacePut iron ore + coal then step(12) yields ingots in furnaceInfo; right-clicking the gen crafting table (place() aimed at it) opens the 3x3 panel \u2014 screenshot it (clears the six-round-owed item) and craft something through it. (e) edit persistence: break one hut wall block and one gen torch, save(), reload ?test=1&load=1 \u2014 both stay gone, the broken torch is absent from torches(), the rest of the hamlet is intact. (f) health: __vox.errors empty across the session; cold-teleporting into the hamlet chunk shows no hitch (lane-1 perf() frame stats, if landed, stay within budget)."
+  }
+ ],
+ "built": [
+  {
+   "lane": "Lane 1 \u2014 Probe-filed fixes: harness guards, real held-item viewmodel, weather visual polish + perf hook",
+   "changes_summary": "All edits in game/index.html (single file, now 1295 lines, still ends </html>).\n\n(1) HARNESS GUARDS: applyLook (~line 622) now opens with `if(!isFinite(mx)||!isFinite(my))return;` \u2014 __vox.look() with no args no longer NaN-poisons yaw/pitch. __vox.setCam (~line 1216) early-returns false if any of x/y/z/ya/pi is non-finite (state untouched) and returns true on success; happy-path math untouched.\n\n(2) HELD-ITEM VIEWMODEL: `scene.add(camera)` added right after camera creation (~line 388) \u2014 the missing scene-graph prerequisite. New block after dropGeo (~lines 752-766): vmMat (atlas, alphaTest .4, depthTest false), state vmMesh/vmId/vmSwing/vmHitT, and updVM(dt) which rebuilds the camera-child mesh from dropGeo(id) on slot/id change (renderOrder 999), copies matO.color each frame (day/night/storm tint), and applies a sin dip to position.y/rotation.x driven by vmSwing (held at 1 while mL or within 250ms of a left-click via vmHitT set in the mousedown handler at ~line 648, decays at dt*4). Called from loop() guard B after updHL() (~line 1208) \u2014 render-side only, never in simStep. Harness helper `vm:()=>({id:vmId,children:camera.children.length})` added to __vox. NOTE: tuned transform to scale 1.8 at (0.5,-0.42,-0.8) instead of the spec's literal 2.2 at (0.42,-0.34,-0.62) \u2014 the literal numbers rendered the cube across ~half the screen (verified by screenshot); spec's \"~/\u2248\" latitude used, re-verified visually as a proper bottom-right held item.\n\n(3) WEATHER POLISH (contained to updWeather/wxSpawn): snow branch now does wxMat.color.copy(matO.color) (~line 988) so flakes inherit the night/storm palette (unchanged ~white at noon); wxSpawn (~line 976) re-rolls x/z up to 4 times while the column is desert (bounded, one cached CI call per attempt). weatherAt and the wKind decision untouched.\n\n(4) __vox.perf: perfFrames Float32Array(120) ring + perfFi + perfBuild{n,total,max} declared before buildChunk (~line 451); ring write in loop guard A right after dt (~line 1196); buildChunk wraps entry/exit with performance.now() accumulation (single exit point); `perf:()=>{frame:{avg,max},build:{n,avg,max}}` exposed on __vox. Allocation-free per frame.\n\nVERIFIED LIVE on the preview server (?test=1, seed 1337): (a) look()/look(NaN,NaN) leave yaw/pitch bit-identical and finite, setCam(NaN,0,0,0,0)===false with state untouched, setCam/look happy paths intact; (b) give(22)+select \u2192 vm()={id:22,children:1} and screenshot shows the held torch bottom-right; empty slot \u2192 vm()={id:0,children:0} mesh gone; grass/stone swap works; mineHold(true)+step(1) screenshot shows the dipped/tilted swing pose; viewmodel dims with night palette; (c) midnight+setWeather(1) over a snowy column shows dim (not pure-white) flakes; standing at the plains/desert border looking into desert shows no rain streaks over desert columns; (d) perf() all-finite, build.n grew 121\u2192137 after a 300-block cold teleport, build avg 2.7ms; (e) fresh load spawns at exactly (116.5, 29.02, 115.5) (pre-frame check), 61-sample weatherAt sweep deterministic, pause() freezes gt and cloudOx bit-identical across rendered frames, __vox.errors empty after the full session.",
+   "static_ok": true,
+   "notes": "Risks/follow-ups: (1) Viewmodel transform deviates from the spec's literal numbers (scale 1.8 @ (0.5,-0.42,-0.8) vs ~2.2 @ \u2248(0.42,-0.34,-0.62)) \u2014 the literal values rendered a ~half-screen cube; screenshots confirm the tuned pose reads as a proper held item bottom-right. Flag to judges in case they diff against the literal spec. (2) perf() frame avg/max measured in this backgrounded preview tab are inflated (rAF throttled to screenshot-driven frames, dt gaps up to 81s land in the ring) \u2014 environmental, not a code issue; a visible/headless run will show real ~8ms frames. (3) Desert re-roll is bounded (5 attempts), so ~(desert fraction)^5 residual leakage per particle remains at a border (~3% when half the field is desert) \u2014 per spec's bounded-retries design; the acceptance shot shows a clean desert. (4) The swing kick for mob-attack clicks is wired in the mousedown handler (vmHitT), not attackMob (attackMob edits are forbidden by the lane); synthetic __vox.attack() calls therefore don't kick the swing \u2014 mineHold does, which is what the acceptance tests. (5) vmMesh shares cached dropGeo geometries with drops \u2014 intentional, so no dispose on swap."
+  },
+  {
+   "lane": "Lane 2 \u2014 Combat depth: sword tier, real attack table, rotten-flesh risk food",
+   "changes_summary": "All edits in game/index.html (now 1316 lines).\n\n1. TEXTURES (lines 180-188, above the avg[] bake): added swordT(i,r,g,b) helper directly after the pickT calls \u2014 2px-wide diagonal blade from (4,11) to (11,4) with clamped 1.18x brighter top edge and .8x lower edge, 2x3 diagonal handle plus 4-pixel crossguard in the pickT wood colors (124,84,46 / 104,70,38). Baked swordT(44,158,110,60) wood, swordT(45,134,134,138) stone, swordT(46,214,214,224) iron. Tile 47 = rotten flesh: porkchop-31-style elliptical blob with R()<.92 irregular holes, base ~120,80,52, green-brown accents ~84,96,44, darker pits 58,44,28.\n\n2. DATA (lines 239/244/245): NAMES += 111 Wood Sword / 112 Stone Sword / 113 Iron Sword / 114 Rotten Flesh; DURMAX += {111:60,112:132,113:251}; new ATK={111:4,112:5,113:6} appended to the same const as PICKT with a comment that swords are never in PICKT (no TOOLREQ tier, no PMULT); ITILE += {111:44,112:45,113:46,114:47}. PICKT/PMULT/TOOLREQ untouched.\n\n3. RECIPES (line 266): appended {in:{16:2,100:1},out:111}, {in:{3:2,100:1},out:112}, {in:{104:2,100:1},out:113} \u2014 iron sword consumes smelted ingots (104). Appended AFTER the pick recipes so a grid holding 3 stone + 2 sticks still matches the stone pick first (matchRecipe is >=-count with first-match priority; the exact-key-count check already separates {16:2}->sticks from {16:2,100:1}->sword).\n\n4. ATTACK TABLE (attackMob, lines 844-845): replaced `M.hp-=(it&&PICKT[it.id])?3:2` with `const dmg=(it&&ATK[it.id])?ATK[it.id]:(it&&PICKT[it.id])?3:2;M.hp-=dmg;` \u2014 hand 2 and pick 3 bit-identical, swords 4/5/6. Immediately after: sword-only durability decrement with break sfx and updCounts(); picks still take no durability from attacks.\n\n5. ZOMBIE DROP (updMobs death branch, line 884): `else if(M.type==='zombie'&&Math.random()<.6)spawnDrop(...,114)`.\n\n6. FOOD (line 1185): += {114:3} with in-comment flag \"risk food, pragmatic substitution: no poison effect\". File header feature list gained a Combat-depth bullet naming swords, the attack table, and rotten flesh.\n\nStatic verification: file ends with </html>; main script extracted (84,429 chars) and `node --check` passes.",
+   "static_ok": true,
+   "notes": "Risks/follow-ups: (1) Zombie drop uses Math.random, consistent with the existing mob layer's non-deterministic contract \u2014 worldgen determinism untouched. (2) Recipe priority: with exactly 2 stone + 1 stick only the sword matches; with 3+2 the stone pick (listed first) wins \u2014 flagged in the recipe comment; same pattern for planks and ingots. (3) Swords route through the existing it.id>=100 branch in tryPlace, so they are not placeable and not ghost-previewed; they mine via the PICKT-only mineTick at bare-hand speed with no TOOLREQ drop, satisfying acceptance (e) without touching mineTick. (4) Sword durability ticks only on connecting attackMob hits (whiffs return false before the damage line), so invFull() shows exactly -1 dur per landed attack(). (5) Existing free-tile headroom is now 48-63 (44-47 consumed). Runtime acceptance (probe-testing the attack legs, drop->eat loop, spawn regression at 116.5/29.02/115.5) is left to the round's verifier as my mandate was static verification only."
+  },
+  {
+   "changes_summary": "All edits in game/index.html. (1) genChunk (after the byte-untouched 1-in-37 well/ruin block, before the editB replay): added the hamlet block gated on h2i(cx^0x77C7,cz^0x3B3B)%89===0 && h2i(cx^0xA5A5,cz^0x5A5A)%37!==0 with the specced 13x13 site test (mx-mn<=2, center h>SEA+1, plains/forest, no trees). Builds at F=mx, footprint local 1..14 single-chunk: dirt foundations under every built cell, hut A (3..7)x(3..7) and hut B (9..13)x(8..12) with plank(16) walls, log(6) corners, force-cleared interiors, flat plank roofs at F+4, 1x2 doorways facing each other (east wall of A at local 7,5; west wall of B at 9,10), crafting table 17 at (4,F+1,5), furnace 23 at (12,F+1,10), dirt path at F along x=8 z=5..10 with 2-high air clearance, and two torch posts at local (9,6)/(7,9) (logs F+1..F+2, torch 22 at F+3), all via tset force=1; sets hamletPlaced. (2) Torch registry sync after the editB replay, gated on hamletPlaced: scans d[] for id-22 cells and registers each into torchR keyed exactly like setB ('cx,cz' -> Map(cellIndex -> [wx,wy,wz])); the after-replay ordering means a saved player-broken gen torch is never re-registered (verified in node). Updated torchR's stale \"never naturally generated\" comment. (3) findStructures: appended a second pass with the identical gate + site test pushing {type:'hamlet',x:wx,y:F,z:wz} after the unchanged well/ruin output; it calls genChunk on each hit so gen torches register before the prober reads torches()/lightAt. (4) Rarity verified by replicating the worldgen math in node: at %89, seed 1337 has hamlets at dist 493/590/725 from spawn and seed 42 at 659/688 \u2014 both >=1 within 768, so the specced modulus stands. (5) File header gains a structures bullet naming the hamlet. Hamlet layout, foundations, torch coords, registry decode, edit-replay ordering, and non-hamlet zero-cost were all verified by eval'ing the real extracted genChunk source in node for both seeds (chunks 30,27 and 10,40); seed-1337 spawn replication returns exactly (116.5, 29.02, 115.5).",
+   "lane": "Lane 3 \u2014 Hamlet: multi-hut village site with gen-time torch lighting",
+   "notes": "Risks/follow-ups: (a) torches() only lists hamlet torches once the hamlet chunk has generated; the findStructures hamlet pass deliberately gens hit chunks, so the acceptance flow (findStructures(768) then probe) works on a fresh load, as does teleporting there. (b) seed-1337's closest hamlet is ~493 blocks out, so findStructures(256) intentionally returns no hamlets \u2014 prober must pass r~768. (c) Night visuals: mesh vertex light (lightOf) is time-of-day-agnostic by engine design (the global matO.color day-dim applies uniformly), so gen torches look exactly like player torches at night; lightAt/eff and zombie-spawn suppression are fully night-aware and were the synced mechanics. lightOf/lightAtW/mesher untouched per the forbidden list. (d) Documented faint edge in code: a neighbor chunk meshed before the hamlet chunk gens won't show torch-pool spill across the border until its next remesh. (e) spawnAt on dirt-filled (sub-F) hamlet columns returns 'solid' since CI.h+1 sits inside the fill \u2014 torch-lit columns at natural h==F (path cells, footprint-adjacent) return 'light' as required; prober should pick such a column. (f) Hut interiors render sky-bright because skylight uses the CI heightmap (roofs invisible to it) \u2014 pre-existing behavior for all built structures, not lane scope.",
+   "static_ok": true
+  }
+ ]
+}

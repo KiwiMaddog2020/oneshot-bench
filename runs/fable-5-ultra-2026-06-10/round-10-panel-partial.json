@@ -1,0 +1,1408 @@
+{
+ "round": 10,
+ "status": "rating salvaged after planner 529; build lanes not run",
+ "probe": {
+  "observations": "ROUND 10 IS ANOTHER ZERO-FAIL SWEEP, and the weight-4 redstone family finally cashes: every acceptance item I could reach for lever/wire/lamp/door verified first-try, with the exact decay arithmetic (15-power, -1/step) readable straight from block ids in a player-built 16-wire causeway. The lamp inheriting the torch registry is the standout integration: one toggle flips light pools, remeshes, AND the hostile-spawn gate ('light' reject beside a lit lamp at midnight, 'ok' + real zombie after toggling off), and a lit lamp survives save/reload still registered (0.857 one block away post-load). Propagation is the documented instant-on-edit semantics: every circuit read in this report was taken synchronously in the same eval as the interact() with zero frames driven between. PLAY-FEEL NOTES: (1) The kiting skeleton genuinely evades static aim - at 9 blocks my aim-at-current-position arrows whiffed 4 straight while it strafed; closing to 5 blocks landed 3/3. That is emergent lead-the-target gameplay from dumb parts, and it makes the bow feel earned rather than hitscan. (2) The sheep chain converts cleanly in play: noon passive mix spawned 3 sheep naturally, 4 bare-hand hits, wool drop, pickup, bed craft, sleep, respawn-at-bed - the whole nine-rounds-dark chain is now a 90-second loop. (3) Corpse-run stakes compose with beds exactly right: die 40 blocks out, respawn AT YOUR BED hp 20, run back, 17 full stacks waiting (still there at 90s; ordinary Q-drop despawned on schedule). CAVEATS FOR JUDGES: (a) headless tab is rAF-starved (native rAF fires roughly never until a screenshot forces a BeginFrame; I hijacked requestAnimationFrame and drove ~1500 synthetic frames per page load) - HUD FPS 0-18 in screenshots is an artifact, perf().build avg 2.8ms/chunk (max 65ms first-gen) is the honest number; an interactive judge should confirm foreground 60fps. (b) One bare-armor hp step read -2 instead of -3: full-hunger regen ticked +1 between my 0.8s samples - the underlying hits are -3 (three other steps exact). (c) Door powered-behavior check was inconclusive by my own error (my wire run to the door had a diagonal gap so it never powered); header honestly documents doors as manual-only this slice and there is no door-power code path - door ids did stay 31/32 through adjacent lever toggles. (d) place() with zero items of the selected type silently no-ops (cost me the branch lamp; branch POWER still proven by wire ids 28/28 and the cut test). (e) Shore columns near spawn reject spawnAt as 'water' - honest vocab, but gating tests need inland cells. (f) Skeleton stick drop 1-of-2 kills this round vs 50% nominal - fine. Heap 47MB after the full session incl. reload; console clean except the known three.js r160 deprecation; __vox.errors [] across ~25 evals, two deaths, and a reload on both page instances. Feel: lever-click to lamp-light to zombie-free porch is a real survival-base loop now; beds+corpse-run+bow turn night from a damage tax into tactics.",
+  "verified_pass": [
+   {
+    "feature": "REDSTONE: all four recipes resolve through the real grid and craft from raw mats, no shadowing",
+    "evidence": "matchGrid: {3:1,100:1}->25 lever, {10:1}->27 n4 wire, {10:2,16:2}->29 lamp, {16:5}->31 door; {16:6} still resolves 115 Plank Armor, {16:2} sticks n4, {16:4} table; craft() consumed exact counts (stone 14->13 after lever, etc.)."
+   },
+   {
+    "feature": "REDSTONE HEADLINE: canonical lever-wire-lamp circuit toggles both ways",
+    "evidence": "Placed 25/27/27/27/29 on flat ground at (106-110,27,109); interact(lever) -> ids 26/28/28/28/30 read synchronously in the same eval (instant edit-triggered propagation as documented); interact again -> 25/27/27/27/29 revert; 'lever' sfx logged each toggle."
+   },
+   {
+    "feature": "Lamp joins the torch light system with exact occlusion",
+    "evidence": "Lamp ON: torches() 0->1, lightAt 1 block = 0.857 (=1-1/7 torch falloff family); open-LOS 2-block sample 0.714 dropped to 0.179 (= exactly 0.25x) after placing one plank wall between, recovered on break."
+   },
+   {
+    "feature": "Lit lamp gates hostile spawns like torches",
+    "evidence": "Midnight, lever+lamp pair inland: spawnAt('zombie') 2 cells away -> 'light'; lever OFF -> 'ok' with a zombie actually standing there; mobs cleared after."
+   },
+   {
+    "feature": "Wire run length semantics: power 15, -1 per step",
+    "evidence": "On an 18-block player-built plank causeway: 16-wire run ON reads lever 26, wires 1-14 = 28, wires 15-16 = 27, lamp 29 (exhausted); after shortening to 10 wires + lamp, lamp = 30 (lit)."
+   },
+   {
+    "feature": "Wire branching and cut-depower",
+    "evidence": "T-junction at wire5: both branch wires read 28 (powered through the junction); breaking the first branch wire -> downstream branch wire 27 while the spine stayed 28 and main lamp stayed 30 (downstream-only depower)."
+   },
+   {
+    "feature": "Lamp lit-vs-unlit visual A/B at night",
+    "evidence": "Same midnight camera: ON shot shows bright lattice lamp, vivid red wire crosses, light pooling on sand; OFF shot shows dark lattice, dull dark-red wire, dim sand - unmistakable pair."
+   },
+   {
+    "feature": "DOOR: 2-block place, solid closed, passable open, atomic halves, break drops one door",
+    "evidence": "Place wrote 31/32; 1s of held W stopped at the closed face (z 126.3->125.3, blocked); interact -> 33/34 and same walk passed through (z 120.55); interact on the UPPER half closed both halves; breaking from above cleared both cells and dropList gained exactly one id-31; 'door' sfx logged."
+   },
+   {
+    "feature": "REDSTONE PERSISTENCE through save/reload",
+    "evidence": "Saved with main lever ON; ?test=1&load=1 reload: circuit reads 26/28/28/28/30 bit-identical, lamp re-registered (torches()=1) casting 0.857, and the OFF-state causeway circuit (25/27/29) also intact; gt persisted at 468."
+   },
+   {
+    "feature": "BEDS/WOOL: sheep exist in play, wander, die to melee arithmetic, drop placeable wool",
+    "evidence": "Noon tickSpawns(60) mix = 3 sheep + 1 pig (+4 cave zombies); spawnAt('sheep') 'ok'; wandered 4.9 blocks over 5s; exactly 4 bare-hand hits killed it (8hp/2dmg: 6/4/2/0); dropped id-24 wool, picked up (7->8), placed as block reading 24."
+   },
+   {
+    "feature": "Bed crafts from 3 planks + 3 wool and places",
+    "evidence": "matchGrid {16:3,24:3} -> 35 n1 (no shadowing of sticks/table/armor); craft(35) consumed 3+3; placed block reads 35."
+   },
+   {
+    "feature": "Bed use: spawn-set always, sleep only at night, clock jumps forward to dawn",
+    "evidence": "Noon interact: sfx 'spawnset'+'nosleep', clock unchanged, 'Spawn point set' toast in DOM; night (gt 268): sfx 'spawnset'+'sleep', gt jumped to exactly 468 (next dawn, +200 forward-only), sky after = warm #775f5d with sun visible and stars fading."
+   },
+   {
+    "feature": "BEDS HEADLINE: respawn at the bed, not world spawn",
+    "evidence": "Died by fall 40+ blocks away: Respawn button -> exactly (121.5, 31.02, 126.5) = bed+1, hp 20, NOT (116.5,29.02,115.5); after breaking the bed and dying again -> world spawn (116.5,29.02,115.5) with 'bedgone' logged (MC bed-destroyed parity)."
+   },
+   {
+    "feature": "Bed spawn point persists through save/reload",
+    "evidence": "Saved with bed spawn set; after ?load=1 reload, died by fall -> respawned at (121.5,31.02,126.5), the bed, not world spawn."
+   },
+   {
+    "feature": "Corpse-run drops: whole inventory, 300s window vs 60s ordinary",
+    "evidence": "17 occupied slots became 17 distinct ground drops with full counts/durability (16x38, 10x34, iron+plank armor, bow, sword), inventory wiped to nulls; a Q-tossed ordinary drop despawned within 90s of stepping while all 17 corpse drops survived the same 90s; walked back and recovered 10 stacks by standing at the site."
+   },
+   {
+    "feature": "BOW: crafts, fires, cooldown, durability, 8-cap pool",
+    "evidence": "matchGrid {100:3,24:2} -> 117; 5 rapid place() = 1 arrow + 1 dur (simNow cooldown); 12 spaced shots all fired with min ledger spacing 0.7s (>=0.6s), dur 60->48 (-1/shot), arrows() never exceeded 8 and settled to 0."
+   },
+   {
+    "feature": "Bow damage: -3 per arrow, knockback, kills at range via unchanged drop path",
+    "evidence": "Zombie at 6 blocks: first arrow 10->7 with 0.48-block knockback and 'arrowhit' sfx; midnight kiting skeleton killed by exactly 3 arrows (8->5->2->dead) at 5-6 blocks, knockback pushing it 5.2->6.3; vs sword tier: fresh wood sword (id 111) hit -4 (bow 3 sits between hand 2 and wood sword 4 per the attack table)."
+   },
+   {
+    "feature": "Bow never self-hits",
+    "evidence": "5 shots straight down at own feet + 3 straight up (2s settle each): hp 20 -> 20 across all 8."
+   },
+   {
+    "feature": "ARMOR HUD CHIP: renders, event-updates, shows best tier, hides",
+    "evidence": "#armorchip display none with no armor -> flex with iron 160/160 bar 100%; after absorbing 3 skeleton arrows (-1 hp steps) chip read 157/160 / 98.125%; with plank+iron both held it showed iron (best DEF); Q-tossing iron switched it to plank 60/60; tossing plank hid it (display none)."
+   },
+   {
+    "feature": "Skeleton regression: -3 bare / -1 iron arrows, ~2s cadence, light-gated",
+    "evidence": "Midnight skeleton at 7 blocks: bare hp 20->17->14->12->9 (-3 steps, one -2 reading = +1 hunger-regen between samples), hits every ~2.4s; with iron armor in inventory the same stream read -1 steps and iron dur 160->157; armor tiers remain legible in play."
+   },
+   {
+    "feature": "NEW AUDIO: all 9 generators render nonzero offline peaks",
+    "evidence": "audioCheck: break .288, place .335, chirp .028, rain .029, step .023, bow .113, arrowhit .191, poison .072, caveamb .041 - the round-9 step asterisk is closed and the four new layers exist."
+   },
+   {
+    "feature": "New sfx fire in play (ledger)",
+    "evidence": "Session sfx census: lever 13, door 2, bow 30, arrowhit 6, sleep 2, spawnset 3, nosleep 1, bedgone 1, caveamb 1, refuse 2, plus break/place/step/chirp/cricket/rain - every new event family has live entries."
+   },
+   {
+    "feature": "Cave ambience triggers underground only",
+    "evidence": "On the round-9 sinkhole tunnel floor (129,27,147; sky exposure 0.20) 1.5s of real-time frames produced 1 'caveamb' trigger; same test on the noon surface (sky 1.0) produced 0."
+   },
+   {
+    "feature": "Placement-refusal cue (no silent dead right-clicks)",
+    "evidence": "place() aimed into the player's own column logged 'refuse' twice in the sfx ledger."
+   },
+   {
+    "feature": "Regression: torch wall-occlusion field value unchanged",
+    "evidence": "findStructures regenerated the (488,440) hamlet; the round-9 A/B hut-interior cell (485,34,437) reads torch 0.090 exactly (open-air control 0.798), 2 hamlet torches registered."
+   },
+   {
+    "feature": "Regression: world determinism on fresh load",
+    "evidence": "Spawn exactly (116.5,29.02,115.5); findCaveMouth(300) returns the same 6 sinkhole sites, nearest (129,32,148) at 33 blocks; hamlet still at (488,440) - bit-identical to round 9."
+   },
+   {
+    "feature": "Stability under heavy probing, both page instances",
+    "evidence": "__vox.errors [] across ~25 evals incl. rAF hijack with ~1500 forced frames per load, two fall deaths, despawn stepping, and the ?load=1 reload; console clean except the known three.js deprecation warning; heap 47MB, 237 chunks/146 meshes; perf.build avg 2.8ms (max 65.3ms first-gen spike)."
+   }
+  ],
+  "verified_fail": []
+ },
+ "judges": [
+  {
+   "confidence": "Medium-high. All three of my round-9 gap prices were cashed under exact probe verification rather than code-reading: the lever-wire-lamp circuit was toggled both ways with synchronous block-id reads, the lamp's torch-registry membership was measured (0.857 at 1 block, exact 0.25x through one plank wall, spawn-gate flip with a real zombie, reload re-registration), and audioCheck rendered 9/9 nonzero offline peaks with a live sfx census across two page instances. Residual swing ~+/-0.4 MPS in three places: a colder seat could price the redstone slice below my +0.6 (instant edit-triggered propagation, manual-only doors, 6-neighbor-only wire connectivity that cost the probe its own door test, coal-as-dust substitution) and hold the family at ~1.8/4 rather than my ~2.1; the steady-FPS core item still rests on the standing rAF-starvation exoneration plus the honest 2.8ms/chunk build number (improved from 6.6) rather than an interactive foreground session; and how much the bed/door full-cube rendering substitutions should withhold from open-dimension feel is a judgment call I priced at roughly a tenth.",
+   "item_verdicts": [
+    {
+     "feature": "Procedural block textures (core)",
+     "verdict": "pass",
+     "evidence": "Ten new tiles (lever 51/52, wire 53/54, lamp 55/56, door 57/58, bed 59, bow 60) read distinctly in probe screenshots; the midnight lamp lit/unlit A/B pair shows bright lattice + vivid red wire vs dark lattice + dull dark-red wire."
+    },
+    {
+     "feature": "Per-face directional shading (core)",
+     "verdict": "pass",
+     "evidence": "FACES light table untouched by all round-10 lanes; carried screenshots; mob/arrow geos still bake the same FL constants via mkMobGeo."
+    },
+    {
+     "feature": "No seams or cracks (core)",
+     "verdict": "pass",
+     "evidence": "Zero seam observations across ~25 evals including the 18-block player-built causeway, circuit remeshes, branch cuts, and the ?load=1 reload; 237 chunks/146 meshes end-of-session."
+    },
+    {
+     "feature": "Break reveals solid faces (core)",
+     "verdict": "pass",
+     "evidence": "Heavy edit session (causeway build, door unit-breaks clearing both cells, wire cut tests) with no sky/void holes; mesher untouched except the fl-quad branch already present."
+    },
+    {
+     "feature": "No z-fighting flicker (core)",
+     "verdict": "pass",
+     "evidence": "Wire renders as a ground quad raised .06 above the floor (FLQ), never coplanar; hl 1.002 / crack 1.004 / ghost .96 offsets untouched; no shimmer reports."
+    },
+    {
+     "feature": "Distance fog (core)",
+     "verdict": "pass",
+     "evidence": "Carried; fog near/far constants unchanged; this round's surface and midnight shots show no generation edge."
+    },
+    {
+     "feature": "Transparent water with visible floor (core)",
+     "verdict": "pass",
+     "evidence": "Carried; no round-10 lane touched matW or the water mesher branch."
+    },
+    {
+     "feature": "Controls help overlay (core)",
+     "verdict": "pass",
+     "evidence": "Carried H-toggle; bindings block unchanged and still matches verified behavior (F/N/M/E all exercised by the probe this round)."
+    },
+    {
+     "feature": "Working pause mode (core)",
+     "verdict": "pass",
+     "evidence": "Carried gt/cloudOx oracle; everything new (bow cooldown, bed sleep, redstone) lives in simStep or edit-triggered handlers, inside the frozen envelope by construction."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "HUD 0-18 in headless shots is the documented rAF-starvation artifact (native rAF never fires until a screenshot forces BeginFrame); perf.build avg 2.8ms/chunk (max 65ms first-gen) is the honest number and IMPROVED from round 9's 6.6; interactive foreground confirmation still owed."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Synchronous same-eval lever toggles flipped up-to-4-chunk lamp light-pool remeshes with zero observed hitch; updatePower is edit-triggered BFS capped at 200 cells, never per-frame."
+    },
+    {
+     "feature": "Grass multi-face texturing (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried close-ups; tiles untouched this round."
+    },
+    {
+     "feature": "Ambient occlusion corners (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried per-vertex AOT with flip-quad indexing; path untouched by all three lanes."
+    },
+    {
+     "feature": "Fog-sky horizon blend (stretch)",
+     "verdict": "pass",
+     "evidence": "scene.fog.color copies skyC every frame including the new post-sleep dawn state; probe read warm #775f5d after the gt 268-to-468 jump with no gray band."
+    },
+    {
+     "feature": "Day-night cycle with sun disc (stretch)",
+     "verdict": "pass",
+     "evidence": "Re-exercised through the bed: sleep advanced gt forward-only to exactly 468 (next dawn) producing sun-visible warm sky with stars fading; noon/midnight states exercised throughout the session."
+    },
+    {
+     "feature": "Drifting clouds (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried; cloudOx drift remains the pause oracle, untouched."
+    },
+    {
+     "feature": "Underwater view effect (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried round-5 submerged evidence; #uw tint and fog-near-2 path unchanged."
+    },
+    {
+     "feature": "Block-break particles with physics (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried; door/wire/lever breaks burst through the same path (wire pop-off on broken floors included); zero errors across the session."
+    },
+    {
+     "feature": "Hotbar textured icons (stretch)",
+     "verdict": "pass",
+     "evidence": "New bow(60)/bed(59)/lever/lamp/door icons render via the same drawIcon path; bow durability bar verified live 60-to-48 across 12 shots."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried oracle; redstone is edit-triggered only and bow/bed timers ride simNow, which only simStep advances - provably inside the frozen envelope."
+    },
+    {
+     "feature": "Break and place sounds (stretch)",
+     "verdict": "pass",
+     "evidence": "audioCheck peaks break .288 / place .335, distinct generators, working from first click via audioInit on lock."
+    },
+    {
+     "feature": "Night sky and dusk tinting (wow)",
+     "verdict": "pass",
+     "evidence": "Carried starfield + dusk hues; the midnight lamp A/B pair and the post-sleep dawn re-exercise both ends of the cycle this round."
+    },
+    {
+     "feature": "Animated water surface (wow)",
+     "verdict": "pass",
+     "evidence": "Carried; wtex.offset animates with gt, untouched."
+    },
+    {
+     "feature": "Mining crack progress (wow)",
+     "verdict": "pass",
+     "evidence": "Carried mid-hold screenshot with cancel-on-release; mineTick/setCrackTile path unchanged."
+    },
+    {
+     "feature": "Held-block viewmodel (wow)",
+     "verdict": "pass",
+     "evidence": "Carried; vm() id tracks selection; new items (bow/bed/door) feed the same dropGeo-backed viewmodel; throttled-tab mid-swap freeze remains environmental per the standing ledger."
+    },
+    {
+     "feature": "Footstep audio (wow)",
+     "verdict": "pass",
+     "evidence": "ASTERISK CLOSED: sStep is now registered in audioCheck (peak .023) alongside live step entries in the session ledger; idle-silence evidence carried."
+    },
+    {
+     "feature": "Ambient audio with mute (wow)",
+     "verdict": "pass",
+     "evidence": "chirp .028 / rain .029 nonzero plus the NEW caveamb .041 layer; M-mute and nextChirp scheduler untouched."
+    },
+    {
+     "feature": "Emissive light blocks (wow)",
+     "verdict": "pass",
+     "evidence": "Strongest yet, now two emitter types: lit lamp reads 0.857 one block away, open-LOS 0.714 drops to exactly 0.179 (0.25x) behind one plank wall and recovers on break; A/B midnight screenshots show light pooling on sand; survives save/reload re-registered."
+    },
+    {
+     "feature": "Surface cave entrances (worldgen wow, shared atmosphere)",
+     "verdict": "pass",
+     "evidence": "Regression-verified bit-identical: same 6 sinkhole sites within 300, nearest (129,32,148) at 33 blocks; caveamb fired on the round-9 tunnel floor."
+    },
+    {
+     "feature": "Biome-tinted foliage (worldgen wow, rendering-shared)",
+     "verdict": "pass",
+     "evidence": "Carried numeric CI().ti deltas; tint path untouched."
+    },
+    {
+     "feature": "Horizon fog veil (worldgen wow, fog-shared)",
+     "verdict": "pass",
+     "evidence": "Carried; exterior shots still dissolve into sky-matched fog."
+    },
+    {
+     "feature": "Torch-light wall occlusion (regression of the round-8 converted fail)",
+     "verdict": "pass",
+     "evidence": "The round-9 hut-interior A/B cell (485,34,437) re-reads torch 0.090 exactly with open-air control 0.798; 2 hamlet torches still registered after findStructures regen."
+    },
+    {
+     "feature": "Light propagation engine (43+, weight 3)",
+     "verdict": "pass",
+     "evidence": "Credit ~2.65/3: depth skylight + torch pools + exact wall occlusion in BOTH light paths, and lamps now feed the same registry as a second emitter class. Withheld fraction unchanged: LOS-ray model, not flood-fill - light cannot turn corners through an open doorway, skylight is columnar."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+, weight 1)",
+     "verdict": "pass",
+     "evidence": "Full weight, now four ways: the lamp gates spawns live (midnight 'light' reject 2 cells from a lit lamp, 'ok' with a real zombie after lever-off), plus the carried torch/noon/sunburn evidence."
+    },
+    {
+     "feature": "Redstone-like logic (43+, weight 4) - ROUND-9 FAIL CONVERTED",
+     "verdict": "pass",
+     "evidence": "Credit ~2.1/4: lever-wire-lamp toggles both ways with exact 15-power/-1-step decay readable from block ids on a 16-wire causeway (wires 15-16 stay 27, lamp exhausted; 10-wire run lights it), T-junction branching, downstream-only cut-depower, and state persistence through save/reload. Withheld: doors are manual-only (no door-power code path exists), no second source or inverter, instant edit-triggered propagation, 6-neighbor-only connectivity."
+    },
+    {
+     "feature": "Weather family (43+, weight 2)",
+     "verdict": "pass",
+     "evidence": "~1.75/2 frozen a FOURTH round: tinted flakes, desert dry borders, rain bed (peak .029) all carried; still no thunder/lightning or snow accumulation; nothing regressed."
+    },
+    {
+     "feature": "Villages/structures family (43+, weight 3) - atmosphere share",
+     "verdict": "pass",
+     "evidence": "~2.3/3 frozen a fifth round: hamlet torches verified re-registered this round (0.090 interior read), interiors honestly dark; still uninhabited, no loot."
+    },
+    {
+     "feature": "Combat presentation (43+ hostile family, UI/feel share)",
+     "verdict": "pass",
+     "evidence": "The kiting skeleton genuinely evades static aim (4 straight whiffs at 9 blocks, 3/3 hits at 5) - emergent lead-the-target play; bow twang + arrow thock + knockback (5.2-to-6.3 push) make ranged exchanges legible both ways."
+    },
+    {
+     "feature": "Death/respawn UI and corpse-run presentation",
+     "verdict": "pass",
+     "evidence": "17 occupied slots rendered as 17 distinct ground drops with counts/durability; respawn-at-bed flow lands at exactly bed+1 with hp 20, falls back to world spawn with 'bedgone' after bed destruction; 'Spawn point set' toast in DOM."
+    },
+    {
+     "feature": "Armor UI (43+ hostile share) - round-9 withhold CLOSED",
+     "verdict": "pass",
+     "evidence": "#armorchip flexes with iron 160/160, event-updates to 157/160 across three absorbed arrows, swaps to plank 60/60 when iron is tossed, hides (display none) with no armor - the worn-state legibility gap my seat priced at 0.1 is closed."
+    },
+    {
+     "feature": "Audio coverage of new systems (atmosphere depth) - round-9 FAIL CONVERTED",
+     "verdict": "pass",
+     "evidence": "All 9 generators render nonzero offline peaks; live ledger census lever 13 / door 2 / bow 30 / arrowhit 6 / sleep 2 / spawnset 3 / caveamb 1 / refuse 2 - every new event family has live entries, and dead right-clicks now cue audibly."
+    },
+    {
+     "feature": "Cave darkness ecology - 'caves that matter' (65-band story)",
+     "verdict": "pass",
+     "evidence": "Cave ambience discriminates: 1 caveamb trigger on the sinkhole tunnel floor (sky exposure 0.20) in 1.5s, zero on the noon surface (sky 1.0); 1Hz render-side check with 4s retrigger gate."
+    },
+    {
+     "feature": "Mob voices / remaining audio depth",
+     "verdict": "fail",
+     "evidence": "All four species (zombie, skeleton, pig, sheep) remain voiceless - no proximity grunt/baa/rattle exists in any mob code path; no thunder; no music layer. The atmosphere reads silent between player actions."
+    },
+    {
+     "feature": "True light propagation (corner wrap)",
+     "verdict": "fail",
+     "evidence": "occSolids (lines 1135-1144) hard-blocks at 2 solids regardless of an open-doorway air path; a torch or lamp outside a door contributes nothing to off-LOS interior cells and skylight stays columnar - the family's last ~0.35 is structural, not tuning."
+    },
+    {
+     "feature": "Bed/door true geometry",
+     "verdict": "fail",
+     "evidence": "Closed doors render as full plank cubes and the bed as a full textured cube vs MC's thin panel / half-height 2-block (header-flagged substitutions); honest but a visible parity withhold the custom-geo branch (wire quad, cross-planes) proves is buildable."
+    },
+    {
+     "feature": "Interactive foreground 60fps confirmation",
+     "verdict": "unverified",
+     "evidence": "The probe explicitly defers this: headless tab is rAF-starved so HUD FPS 0-18 is an artifact; perf numbers are honest (frame avg fine, build 2.8ms) but no foreground interactive session has confirmed HUD 30+/50+ since the throttle exoneration was filed."
+    }
+   ],
+   "mps": 45,
+   "top_gaps": [
+    {
+     "title": "Redstone slice 2: powered doors + a second input source",
+     "detail": "The probe confirmed no door-power code path exists (door ids stayed 31/32 through adjacent lever toggles; header documents manual-only). Doors already join updatePower's connectivity component (ids 31-34 seeded, line 571), so reacting to adjacent power in the same rewrite pass - plus one new source (button or pressure plate reusing lever semantics with a timed/stepped-on trigger) - moves the family from ~2.1 toward ~2.8 of 4. The remesh/light machinery is already proven on lamps; acceptance is a wire-to-door open/close A/B the probe can read from ids.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "Hamlet life: a villager and a loot chest",
+     "detail": "Villages frozen at ~2.3/3 a fifth round: torch-lit, honestly dark interiors, spawn suppression all verified, but sites are uninhabited and lootless. One passive villager (sheep/pig rig + new MOBDEF entry, wander radius tied to the path) plus a take-only chest reusing the furnace slot machinery pushes the weight-3 family toward full and gives the night-destination story an inhabitant.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "True light propagation: bounded BFS corner wrap (the family's last ~0.35)",
+     "detail": "Unchanged price from my round-9 board: occSolids blocks at 2 solids regardless of an open air path, so light cannot turn a corner through a doorway and skylight is purely columnar. A bounded BFS through air cells seeded from the torch/lamp registry (cap ~7 steps, reuse the existing per-build precompute) converts the LOS-ray model into real propagation. Touches both light paths and the mesher hot path - highest regression surface in my domain, hence high risk.",
+     "mps_gain": 0.3,
+     "risk": "high"
+    },
+    {
+     "title": "Finish weather: lightning flash + thunder, registered for evidence",
+     "detail": "FOURTH consecutive round frozen at ~1.75/2. A brief skyC lerp toward white when wI>.8 on a gt-hashed deterministic schedule plus a thunder generator REGISTERED IN the audioCheck gens list (the round-10 lanes proved that pattern lands evidence same-round). Sits entirely outside the mesher; closes the weight-2 family.",
+     "mps_gain": 0.25,
+     "risk": "low"
+    },
+    {
+     "title": "Mob voices: proximity-gated species sounds",
+     "detail": "The last audio-depth remainder: zombie groan / skeleton rattle / pig oink / sheep baa as ~2-3s-gated proximity one-shots through the existing sfx/thump primitives, each with logS registration and an audioCheck entry. Four species exist and three are combat-relevant; the world is conspicuously silent between player actions. Pure audio layer, zero sim risk.",
+     "mps_gain": 0.15,
+     "risk": "low"
+    },
+    {
+     "title": "True bed and door geometry",
+     "detail": "Closed doors render as full plank cubes and beds as full cubes - the two most-touched new blocks are also the two biggest visual lies. The custom-geometry branch already handles wire ground-quads and cross-planes, so a thin door panel (offset quad pair on the placed face) and a half-height bed slab are incremental mesher cases, not new machinery. Collision can stay full-cell (flagged substitution) to avoid physics risk.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Retire the steady-FPS exoneration with one foreground session",
+     "detail": "The steady-FPS core item has ridden the rAF-throttle exoneration plus builder-side perf numbers for three rounds. One interactive foreground session with HUD FPS screenshots while sprinting/spinning through the causeway and hamlet (now the heaviest light-pool scenes) either banks the item permanently or surfaces a real problem while the occlusion+lamp light path is still young.",
+     "mps_gain": 0.05,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 10 through the rendering/atmosphere/UI/audio lens is the round my seat's three cashed-out gap prices all landed under exact probe verification: the zeroed weight-4 redstone family opened with a both-ways lever-wire-lamp circuit whose decay arithmetic is readable straight from block ids, and the standout is squarely my domain - the lit lamp joins the torch registry, casting the same occlusion-aware light (0.857 at 1 block, exact 0.25x through one wall), gating hostile spawns live, surviving reload, with an unmistakable lit/unlit midnight A/B. My round-9 audio FAIL converted outright (9/9 generators nonzero including the newly registered step, live ledger entries for bow/arrowhit/poison/caveamb/lever/door/sleep, underground-only cave ambience), the armor HUD chip closed the worn-state legibility withhold, and the bed added real presentation depth (forward-only dawn jump with warm sky, toast, respawn-at-bed with bedgone fallback) - all with zero regressions on my 28-item board, torch occlusion re-reading 0.090 exactly, and build cost improving 6.6 to 2.8ms/chunk. The brakes are the same structural ones, one round older: the light model still cannot turn corners, weather is frozen at ~1.75/2 a fourth round, hamlets stay uninhabited, all four mob species are voiceless, and closed doors/beds render as full cubes. I move my seat 44.1 to 45.0 (+0.9 vs the 44.4 merge): +0.6 from the redstone slice landing with precisely the light-path integration my gap demanded, +0.2 of the 0.25 audio price (mob voices remain), +0.1 from the armor chip, with ties broken downward against the unchanged cold reading of the LOS-ray light model."
+  },
+  {
+   "confidence": "Medium-high. The worldgen core is the most evidence-saturated slice of the build (ten rounds of carried play evidence plus this round's bit-identical fresh-load regression: same spawn, same 6 sinkhole sites, same (488,440) hamlet, same 0.090 hut-interior torch field value), and the round-10 deltas in my whole-build view are all probe-verified rather than code-read: the weight-4 redstone family converted from 0 with exact decay arithmetic, the lamp joined the occlusion-aware light registry and the hostile spawn gate, and the sheep/wool/bed chain I zero-credited last round as code-only is now a verified 90-second loop. Residual swing ~\u00b10.5 MPS in two places: how much of a weight-4 family a lever/wire/lamp slice earns when doors have no power path and propagation is instant-on-edit rather than tick-based (I credit ~2/4; a colder seat says 1.5, a warmer 2.5), and whether any of the beds/bow/corpse-run composition belongs in my seat at all (I took ~0 for it; the merge median will hear it from the systems seats). The fail column is unambiguous: zero chunks.delete grep-confirmed today, tenth consecutive round.",
+   "mps": 45.6,
+   "item_verdicts": [
+    {
+     "feature": "Rolling multi-scale terrain (core)",
+     "verdict": "pass",
+     "evidence": "rawH octave stack (index.html:383-390) untouched by the round-9 diff (ids 25-35 are player-placed only); fresh-load regression bit-identical this round; causeway and midnight lamp screenshots show the gentle near-field relief intact."
+    },
+    {
+     "feature": "Four-plus distinct biomes (core)",
+     "verdict": "pass",
+     "evidence": "Biome label fields (line 396-397) untouched; carried five-palette transects; this round's noon passive mix spawned on plains grass and shore columns read honest 'water' rejections - the biome/terrain vocabulary still discriminates in play."
+    },
+    {
+     "feature": "Trees with trunk and canopy (core)",
+     "verdict": "pass",
+     "evidence": "Tree pass (lines 477-497) untouched; sinkhole-rim and hamlet screenshots across rounds 9-10 show log trunks with leaf canopies; sinkR still excludes tree columns (line 436)."
+    },
+    {
+     "feature": "Sea-level water bodies (core)",
+     "verdict": "pass",
+     "evidence": "Single global SEA=26 fill (line 456) untouched; FRESH negative evidence this round: shore columns near spawn reject spawnAt as 'water' - the engine itself discriminates sea-level water columns honestly."
+    },
+    {
+     "feature": "Sand beaches at shorelines (core)",
+     "verdict": "pass",
+     "evidence": "Beach neighbor-lookup rule (line 400, rawH +-3 probes) untouched; carried sand-banked river/coast aerials from r7; midnight lamp screenshot this round shows light pooling on sand at a shoreline build site."
+    },
+    {
+     "feature": "Surface soil layering (core)",
+     "verdict": "pass",
+     "evidence": "Carried round-9 on-foot evidence (sinkhole shaft reads grass cap, dirt y29, stone y27-28); tp/un layering branch (lines 451-455) untouched this round."
+    },
+    {
+     "feature": "Large explorable world (core)",
+     "verdict": "pass",
+     "evidence": "Tenth round, zero wall/edge/void; this session held 237 chunks/146 meshes across two page instances, two deaths, a 40-block corpse run, and a reload with __vox.errors []."
+    },
+    {
+     "feature": "Seamless chunk borders (core)",
+     "verdict": "pass",
+     "evidence": "No seam in any round-10 screenshot; the player-built 18-block causeway and 16-wire run cross chunk borders with remesh-on-edit (rms border dilation, lines 589-591) and read consistent ids end to end."
+    },
+    {
+     "feature": "Safe solid spawn (core)",
+     "verdict": "pass",
+     "evidence": "Fresh load this round spawned exactly (116.5, 29.02, 115.5), standing, with the sinkR(x,z)<0 funnel reject (line 787) still guaranteeing no spawn-in-pit."
+    },
+    {
+     "feature": "Stable revisited terrain (core)",
+     "verdict": "pass",
+     "evidence": "Bit-identical regen verified again this round: findCaveMouth returns the same 6 sites (nearest 33), hamlet at (488,440), round-9 hut-interior light value 0.090 exact, and the ?load=1 reload restored the circuit on identical ground."
+    },
+    {
+     "feature": "Biome-specific terrain shapes (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried quantified contrast (plains max adjacent delta 1 vs cliffy h-lo>=3 clusters); mtn amplitude term (lines 385-386) untouched by all round-9/10 lanes."
+    },
+    {
+     "feature": "Coherent blended biome regions (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried dual 1200-block transects (12 regions, zero confetti) and the gradient aerial; de-jittered 2-octave label fields (line 396) unchanged."
+    },
+    {
+     "feature": "Underground caves (stretch)",
+     "verdict": "pass",
+     "evidence": "Re-exercised live this round: the round-9 sinkhole tunnel floor at (129,27,147) hosted the cave-ambience test (sky exposure 0.20, 1 caveamb trigger) - the carved tunnel network is still real and reachable."
+    },
+    {
+     "feature": "Ore blocks in stone (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried in-play coal exposure at y27 in the funnel wall; ore branch (line 453) untouched; coal ore is now also the redstone-dust economy input ({10:1}->4 wire), giving ores a second verified sink."
+    },
+    {
+     "feature": "Bedrock bottom layer (stretch)",
+     "verdict": "pass",
+     "evidence": "d[base]=9 floor (line 449) carried; sinkhole carve still whitelists only raw terrain ids 1/2/3/4/8/10/11 and guards y>1 (line 475), never bedrock."
+    },
+    {
+     "feature": "Flowers and grass tufts (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried scatter rules (lines 407-411); funnel columns still explicitly clear placed deco at h+1 (line 476); zero floaters across three regions in the carried sweep."
+    },
+    {
+     "feature": "Per-biome tree variants (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried oak/spruce/cacti-desert split (lines 408-411, 482-497); untouched by the redstone/beds/bow diff."
+    },
+    {
+     "feature": "Seeded world regeneration (stretch)",
+     "verdict": "pass",
+     "evidence": "Re-proven on a THIRD consecutive content drop: fresh load bit-identical on spawn, sinkhole census, and hamlet site; the probe respected the save-key caution so the determinism read is clean."
+    },
+    {
+     "feature": "Overhangs and ledges (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r8 census conversion (26 solid-above-heightmap cells, photographed stone lips); overhang gate (line 465) unchanged."
+    },
+    {
+     "feature": "Ocean biome expanse (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried depth-10 measurement and swim/air-drain verification; nothing in the round-9/10 lanes touched water generation."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "perf().build avg 2.8ms/chunk (max 65ms first-gen spike) this round, the honest number per the rAF-starvation caveat; budgeted build loop (7ms steady / 40ms boot, line 1327) kept terrain present through teleports; mid-stream floating slabs remain documented settling transients."
+    },
+    {
+     "feature": "Vegetation placement rules (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried zero-floater sweeps including two funnel sites; !tree/!cac guards on both carve regimes (lines 454, 473) unchanged."
+    },
+    {
+     "feature": "Altitude snow line (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried summit shots and the breach-mouth snow cap; threshold h>=45 || snowy-above-sea (line 398) untouched."
+    },
+    {
+     "feature": "Surface cave entrances (wow)",
+     "verdict": "pass",
+     "evidence": "Re-confirmed this round: same 6 sinkhole sites within 300, nearest 33 blocks; the round-9 on-foot descent evidence carries; caveamb now gives interiors an audible identity."
+    },
+    {
+     "feature": "Rivers crossing terrain (wow)",
+     "verdict": "pass",
+     "evidence": "Carried r7 conversion (10 inland sand-banked channels, channel-joins-ocean aerial); rv carve term (lines 388-389) untouched."
+    },
+    {
+     "feature": "Biome-tinted foliage (wow)",
+     "verdict": "pass",
+     "evidence": "Carried numeric CI().ti per-biome deltas and the desert-border hue gradient; tint blend (lines 402-405) unchanged."
+    },
+    {
+     "feature": "Depth-based ore rarity (wow)",
+     "verdict": "pass",
+     "evidence": "Carried stratification scan (coal y>8 shallow, iron y<=14 deep, line 453); the funnel-wall coal at y27 remains consistent with the gate."
+    },
+    {
+     "feature": "Horizon fog veil (wow)",
+     "verdict": "pass",
+     "evidence": "Fog far plane at RD*16*.92 with sky-matched color (line 603) conceals the generation edge; ten rounds of screenshots including this round's midnight lamp A/B show no hard world edge or gray band."
+    },
+    {
+     "feature": "Light propagation engine (43+ family, weight 3, ~2.5 credited)",
+     "verdict": "pass",
+     "evidence": "Lamp joined BOTH light paths via the LIT registry (lines 552-558): 0.857 at 1 block, exact 0.25x through one plank wall, recovery on break, re-registration after reload - but the model is still occlusion-shaded radial light, not flood-fill (single walls leak 25%, no around-corner flow), so the last half-weight stays withheld."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+ family, weight 1, full)",
+     "verdict": "pass",
+     "evidence": "EXTENDED to player-built light this round: midnight spawnAt 2 cells from a lit lamp -> 'light', lever OFF -> 'ok' with a real zombie standing there; torch/hamlet suppression and noon dark-pocket spawns carried."
+    },
+    {
+     "feature": "Villages or structures (43+ family, weight 3, ~2.3 credited)",
+     "verdict": "pass",
+     "evidence": "The (488,440) hamlet regenerated intact with 2 torches re-registered and the 0.090 interior field value exact - but a FOURTH round with no inhabitants, no loot, single-chunk scale; the 0.7 withhold stands unchanged."
+    },
+    {
+     "feature": "World save/load over deterministic regen (43+ family, weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Strongest round yet: redstone circuit state (in block ids) bit-identical through ?load=1, lit lamp re-registered casting 0.857, bed spawn point honored after reload-death, gt persisted at 468 - all on the never-bumped v:1 format with optional fields."
+    },
+    {
+     "feature": "Weather family (43+, weight 2, ~1.9 credited)",
+     "verdict": "pass",
+     "evidence": "Carried (tinted flakes, desert-border residual, bit-identical schedule); untouched by this round's lanes; rain peak .029 in the fresh audioCheck."
+    },
+    {
+     "feature": "Redstone-like logic (43+ family, weight 4, ~2.0 credited)",
+     "verdict": "pass",
+     "evidence": "CONVERTED from 0/4 after nine rounds: lever/wire/lamp verified with exact 15-power -1/step decay on a 16-wire causeway, T-junction branching, downstream-only cut-depower, both-ways toggling, save persistence, and lamp integration into light + spawn systems; half withheld - doors have no power path (probe-confirmed no code path), propagation is instant edit-triggered BFS not tick-based, no repeaters/torches/buttons/pistons, wire is coal-dust substitution."
+    },
+    {
+     "feature": "Passive mobs (43+ family, weight 3, ~2.5 credited)",
+     "verdict": "pass",
+     "evidence": "Sheep converted from code-only to play-verified: noon tickSpawns mix 3 sheep + 1 pig, 4.9-block wander, exact 4-hit kill arithmetic, wool drop/pickup/place as block 24, biome-gated to grass tops (line 1162); withheld: no breeding, feeding, or shearing - kill is the only wool path."
+    },
+    {
+     "feature": "Hostile mobs and combat through the worldgen lens (43+ family, weight 4, ~3.8 credited)",
+     "verdict": "pass",
+     "evidence": "Skeleton kiting re-verified (whiffs static aim at 9 blocks, 3 arrows at 5-6), -3/-1 armor legibility held, lamp/torch spawn gating verified; the destinations my domain generates now feed bed-anchored corpse runs; residue: still two hostile species."
+    },
+    {
+     "feature": "Caves that matter (65-band story)",
+     "verdict": "pass",
+     "evidence": "Strengthened: cave ambience triggers underground only (1 trigger at sky 0.20 on the sinkhole tunnel floor, 0 at noon surface) joining discoverable mouths, strata, exposed ore, and dark-pocket spawns; still no underground structure or loot destination."
+    },
+    {
+     "feature": "Wool-bed-respawn worldgen-economy chain",
+     "verdict": "pass",
+     "evidence": "The full chain converted in one 90-second loop: natural sheep spawn -> wool -> bed craft ({16:3,24:3}) -> spawn-set -> sleep jumps gt exactly +200 to dawn -> respawn at bed (121.5,31.02,126.5) not world spawn -> bed destroyed falls back to world spawn with 'bedgone' (MC parity)."
+    },
+    {
+     "feature": "Chunk lifecycle / data eviction (streaming sustainability)",
+     "verdict": "fail",
+     "evidence": "TENTH round: zero chunks.delete in the file (grep-confirmed today); meshes evict beyond RD+2 (line 1324) but every visited chunk's ~16KB Uint8Array is retained forever - 237 chunks held this session and finder/census calls keep inflating it; 47MB heap stays non-pathological only because sessions are short."
+    },
+    {
+     "feature": "Header truth-in-advertising (open dimension)",
+     "verdict": "pass",
+     "evidence": "Third consecutive clean ledger: the header's documented substitutions match probe findings exactly - doors manual-only (no power code path found), instant propagation, wire-from-coal, 1-block bed, infinite arrows - every divergence from MC is declared before it is discovered."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Redstone second slice: powered doors + one more component (button or redstone torch)",
+     "detail": "The probe confirmed there is no door-power code path (door ids stayed 31/32 through adjacent lever toggles) and the header honestly scopes doors as manual this slice. Wiring doors into the existing updatePower BFS (doors already join connectivity, lines 564-565) plus one new component - a button with timed release or a redstone-torch inverter - moves the weight-4 family from ~2/4 toward 3/4. State stays in block ids so v:1 saves and worldgen determinism remain untouched; gate behind the causeway decay re-probe and the spawn/sinkhole/hamlet fingerprints.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "Hamlet third weight: an inhabitant and a loot chest (fourth round stalled)",
+     "detail": "Villages have held at ~2.3/3 for four rounds while redstone, beds, and bows all landed around them. A villager-flavored passive on the proven MOBDEF substrate leashed to the hamlet center, plus a take-only chest reusing the furnace slot machinery with 2-3 seeded items, converts the lit night destination into a payoff. Keep writes inside the single-chunk 1..14 footprint; re-verify byType and the (488,440) coords bit-identical.",
+     "mps_gain": 0.45,
+     "risk": "medium"
+    },
+    {
+     "title": "Second underground structure: seeded dungeon or mineshaft pocket",
+     "detail": "Sinkholes deliver players underground in the first minute and caveamb now sets the mood, but descents still have no destination. A seeded underground room (cobble walls, a torch, a chest, gated like sinkR on cave() truth so it always attaches to a real tunnel) adds the structures family's first underground member. Same determinism discipline as sinkR: pure (x,z,seed) site hash, structure-gate exclusion, census-tuned rarity, full fingerprint re-verification.",
+     "mps_gain": 0.35,
+     "risk": "medium"
+    },
+    {
+     "title": "Light family's last half-weight: full-block single walls or bounded flood-fill",
+     "detail": "The verified 1-solid=x0.25 model now backs torches AND lamps, which raises the payoff of finishing it: either drop single-solid transmission to 0 with a doorway-aware exception, or do the bounded per-chunk BFS through air so light flows around corners. Mesher hot path shared by gameplay-critical spawn gating - isolate the lane, re-run the 837-cell field sweep, the lamp 0.25x A/B, and the hamlet/cave-pocket spawn regressions.",
+     "mps_gain": 0.25,
+     "risk": "high"
+    },
+    {
+     "title": "Chunk data eviction using the proven editB replay (tenth-round debt)",
+     "detail": "chunks Map still grows ~16KB per visited chunk forever (zero chunks.delete, grep-confirmed). Regeneration is deterministic through three consecutive content drops and editB replay (line 537) already restores edits on regen; evict Uint8Arrays beyond ~3x render distance mirroring dropMesh's RD+2 test. Must verify the hamletPlaced torch re-scan AND the new lit-lamp re-registration path (line 770) restore torchR on regen, then re-run sinkhole + hamlet fingerprints after a far round trip.",
+     "mps_gain": 0.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Sheep ecology depth: shearing or wool regrowth (kill is the only wool path)",
+     "detail": "The wool economy now has two sinks (beds, bows) but exactly one source: killing sheep. A shear interaction (right-click with any tool, sheep drops 1-2 wool and regrows on a gt timer) or grass-eating regrowth converts the passive family's last half-weight and matches MC's renewable-wool direction. Pure mob-state change, zero worldgen surface; verify drop counts and the noon spawn mix regression.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Open the gen-placed hamlet crafting table in play (pure probe, zero code)",
+     "detail": "Ten rounds in, the hamlet's 3x3 table block (b===17 interact branch) has still never been right-clicked live - every recipe this round resolved via matchGrid evals or the pocket grid. One eval session at the (488,440) hut cashes the crafting family's last ~0.3 weight and closes the oldest unverified interaction in the build. Cheapest MPS on the board.",
+     "mps_gain": 0.15,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 10 through the worldgen lens is the round my domain's destinations got paid: the weight-4 redstone family converted from nine rounds at zero to a fully verified first slice (exact 15/-1 wire decay, branching, cut-depower, save persistence) whose lamp plugs straight into the occlusion-aware torch registry my domain proved last round - one lever toggle now flips light pools, remeshes, and the hostile spawn gate, and the sheep/wool/bed chain I zero-credited as code-only is a verified 90-second loop ending in bed-anchored respawn. The generator itself shipped nothing new but proved the more important thing: bit-identical determinism through a third consecutive content drop (same spawn, same 6 sinkholes, same hamlet, same 0.090 interior light value), with all state for the new systems living in block ids so v:1 saves never bumped. My 28 scorecard items hold at 28/28 on carried-plus-regression evidence, and cave interiors gained their first sensory identity via the underground-only ambience trigger. I move my seat 44.4 to 45.6 (+1.2): ~+0.95 from cashing my own round-9 #1 gap (priced +1.0; slightly shaded because doors landed without a power path), +0.2 from the sheep conversion I explicitly reserved, +0.1 from the ambience half-gap - held below 45.7 and ties broken downward because villages are stalled a fourth round, the chunks Map still never evicts (tenth round, now a fail on principle), the light model remains ray-shading rather than propagation, and zero net-new generated content means my core domain coasted on its own determinism this round."
+  },
+  {
+   "confidence": "Medium-high. Stability evidence is again the strongest of the run (errors [] across ~25 evals on two page instances including a reload, heap 47MB flat vs round 9's 48.6MB, perf().build avg 2.8ms/chunk resolving my round-9 build-cost watch item favorably), and all three round-10 lanes landed with verifiable perf discipline I confirmed in code: updatePower is edit-triggered-only with a 200-cell BFS cap, reentrancy guard, and deduped remesh Set (index.html:554-593); the bow rides the existing 8-cap arrow pool on a simNow cooldown; the armor chip is event-driven with an id_dur change key (1432-1444). Residual swing ~\u00b10.6 MPS in three places: real-tab foreground frame timing is unmeasured a TENTH round (the probe explicitly asks an interactive judge to confirm 60fps, and my Steady-FPS pass still rests on bounded-work exoneration rather than measurement); how much of the weight-4 redstone family to credit for a slice with instant propagation, manual doors, and no inverters (I credit ~1.8/4; a warmer seat reads 2.5); and the mem() soak curve has never been run, so the ninth-round unbounded chunks Map is priced on principle plus two healthy snapshots rather than a measured growth curve.",
+   "item_verdicts": [
+    {
+     "feature": "Boot gate / zero-error stability (60s+ no fatal console error)",
+     "verdict": "pass",
+     "evidence": "Main-loop: boot gate PASS on ?test=1 zero console errors; probe: __vox.errors [] across ~25 evals, two fall deaths, a ?load=1 reload, and ~1500 hijacked-rAF frames per page load on BOTH page instances; console clean except the known three.js r160 deprecation."
+    },
+    {
+     "feature": "Steady FPS with live counter (core)",
+     "verdict": "pass",
+     "evidence": "HUD counter live; 0-18 screenshot readings are rAF-starved-tab artifacts the probe flagged do-not-dock; perf().build avg 2.8ms/chunk (max 65ms first-gen) is the honest number, all round-10 additions are edit-triggered or event-driven (zero new per-frame work); foreground 60fps still rests on exoneration, tenth round (see gaps)."
+    },
+    {
+     "feature": "No block-edit hitching (core)",
+     "verdict": "pass",
+     "evidence": "Probe built an 18-block plank causeway, 16-wire runs, doors, beds, and toggled 13 levers with zero hitch observations and zero errors; lamp flips remesh the exact (\u00b17)>>4 light-pool footprint deduped through a Set (index.html:588-593); build avg 2.8ms/chunk means worst-case 4-chunk lamp remesh ~11ms, edit-triggered only."
+    },
+    {
+     "feature": "Streaming chunk loading (stretch)",
+     "verdict": "pass",
+     "evidence": "7ms post-ready budget queue (index.html:1327) unchanged; 237 chunks/146 meshes end-of-session with terrain fully present through teleports; mid-stream floating slabs remain exonerated harness transients."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "Entire session ran visibility-hidden with hijacked rAF (~1500 synthetic frames per load); dt=Math.min(dt,.05) (1612) + simNow monotonic clock (869) held player, mobs, arrows, drops, and circuit state coherent; zero teleports or floor-falls."
+    },
+    {
+     "feature": "Pause freezes simulation (stretch)",
+     "verdict": "pass",
+     "evidence": "updArrows runs inside simStep (1605) so arrows freeze with pause; builder verified an in-flight arrow frozen over 600ms wall clock; active gate (1613-1614) skips simStep entirely; carried bit-identical gt/cloudOx oracle."
+    },
+    {
+     "feature": "Timestep clamping + sim-clock unification",
+     "verdict": "pass",
+     "evidence": "dt clamp .05 (1612), mineTick mdt clamp (998), simNow advanced only by simStep; bow cooldown rides simNow (963) - probe measured >=0.6s spacing held at 0.7s minimum across 12 spaced shots under stepped sim, and the bed dawn-jump (gt 268 -> exactly 468) was forward-only."
+    },
+    {
+     "feature": "Loop error guards A/B with __vox.errors surfacing",
+     "verdict": "pass",
+     "evidence": "Split sim/render guards intact (1608-1630), warn-once + 300-cap pushes; zero incidents under the heaviest probing yet including reload and double-death cycles."
+    },
+    {
+     "feature": "Redstone power-update cost containment (new this round)",
+     "verdict": "pass",
+     "evidence": "updatePower is edit-triggered ONLY (setB hook at 559, never per-frame), BFS capped at 200 cells (570), inPwr reentrancy guard with try/finally (554,580,592), changed chunks deduped into one Set; probe read every circuit synchronously in the same eval as interact() with zero frames driven - instant semantics exactly as the header documents; 13 lever toggles, zero errors."
+    },
+    {
+     "feature": "Death-drop / arrow / drop-entity memory bounds",
+     "verdict": "pass",
+     "evidence": "drops 64-FIFO with scene.remove on eviction (1050), die() spawns <=36 inside the cap with D.life=300 only on corpse drops (1591) so ordinary drops keep 60s - probe verified 17 corpse stacks alive at 90s while a Q-drop despawned; arrows 8-capped for both shooters (965,1213); dropGeo cached/shared, dropMesh disposes geometry (748-751); heap 47MB flat vs round 9's 48.6MB."
+    },
+    {
+     "feature": "Bow firing-path cost (new this round)",
+     "verdict": "pass",
+     "evidence": "simNow-based 0.6s cooldown, shared arrowGeo/matMob, mob collision <=8 arrows x <=8 mobs only on arrow-alive frames (1243-1251), pl-tagged arrows skip the player check entirely - probe confirmed zero self-hits across 8 point-blank vertical shots and cap held under 12 rapid fires."
+    },
+    {
+     "feature": "Armor HUD chip DOM discipline (new this round)",
+     "verdict": "pass",
+     "evidence": "Event-driven via updCounts only, armLast keyed id_dur so unchanged state costs zero DOM writes (1437-1440), display:none with no armor; probe verified hide -> 160/160 -> 157/160 after three absorbs -> best-tier switch -> hide, all on damage/inventory events."
+    },
+    {
+     "feature": "Cave-ambience scheduling cost (new this round)",
+     "verdict": "pass",
+     "evidence": "1Hz accumulator + 4s wall-clock retrigger gate, render-side in guard B (1604,1625-1626), single lightAtW probe at player feet per check; probe measured exactly 1 trigger underground in 1.5s and 0 on the noon surface."
+    },
+    {
+     "feature": "Harness crash-risk containment",
+     "verdict": "pass",
+     "evidence": "setCam isFinite guards leave state untouched on bad input (1634), interact dispatches through the shared useBlock (933-939), harness keys stayed append-only (getBlock/interact); place() with zero selected items silently no-ops - cost the prober a lamp but crashed nothing; spawnAt 'water' rejections on shore columns are honest vocab."
+    },
+    {
+     "feature": "Chunk data cache eviction",
+     "verdict": "fail",
+     "evidence": "Zero chunks.delete anywhere in the file (grep-confirmed) - NINTH round per the main-loop ledger; every visited chunk's ~16KB Uint8Array retained forever (chunks.set at 445, no eviction mirror of dropMesh's RD+2 test); 237 chunks held this session and corpse-runs + bed bases now actively encourage the long far-travel sessions that compound it."
+    },
+    {
+     "feature": "CCmap cliff-clear",
+     "verdict": "fail",
+     "evidence": "CCmap.set(k,c);if(CCmap.size>4e5)CCmap.clear() (413) unchanged again; one wholesale nuke still dumps the player-local column working set and forces an fbm recompute spike right after heavy probing or a long hike."
+    },
+    {
+     "feature": "Autosave cost and quota visibility",
+     "verdict": "fail",
+     "evidence": "save() still JSON.stringifies the entire edits Map + furnaces + inventory every 15s on the main thread and swallows quota throws with catch(e){} (777-779) - EIGHTH round; the silent-loss blast radius now includes bed spawn points and whole redstone circuits (all state-in-id rides the edits Map)."
+    },
+    {
+     "feature": "renderFurn per-sim-frame DOM work",
+     "verdict": "fail",
+     "evidence": "updFurnace still calls renderFurn() unconditionally every sim frame while the furnace UI is open (378) to refresh a 1s-granularity readout - the dirty-flag one-liner is now THREE rounds carried."
+    },
+    {
+     "feature": "Long-session memory growth (>5 min soak curve)",
+     "verdict": "unverified",
+     "evidence": "Second consecutive healthy snapshot (47MB after the full session including a reload) but still zero growth-curve data; the mem() hook (1769) has sat unsoaked for three rounds and is the only instrument that can price the chunks-Map debt with evidence."
+    },
+    {
+     "feature": "Real-tab frame timing",
+     "verdict": "unverified",
+     "evidence": "perfFrames ring readings are garbage under hijacked rAF; the probe explicitly states HUD FPS 0-18 is an artifact and asks an interactive judge to confirm foreground 60fps - tenth round resting on main-loop exoneration plus bounded-work code reading."
+    },
+    {
+     "feature": "Extensibility after the round-10 lanes",
+     "verdict": "pass",
+     "evidence": "Genuinely good this round: useBlock is a clean shared right-click dispatch (lever/door/bed/table/furnace, 933-939), the LIT set (553) generalizes the torch registry so lamps inherited light + spawn-gating + persistence for free, state-in-id avoided any save bump, and old v:1 fixtures load identically (775); carried warts now overdue - updMobs inlines three per-type AI branches (1198-1220) and arrows[] carries two ownership flavors via the pl flag, both due the function-table refactor before mob #5."
+    },
+    {
+     "feature": "Redstone-like logic (43+ family, weight 4) - first credited slice",
+     "verdict": "pass",
+     "evidence": "~1.8/4 credited: lever/wire/lamp/door all probe-verified exact (15-power -1/step readable in block ids on a 16-wire causeway, branch/cut downstream-only depower, both-ways toggle, save/reload bit-identical with lamp re-registered at 0.857); withheld half: instant edit-triggered propagation rather than tick-based, doors manual-only with no door-power code path (probe caveat c), no inverter/repeater/piston, coal-ore-as-dust substitution."
+    },
+    {
+     "feature": "Hostile mobs and combat (43+ family, weight 4, perf/code lens)",
+     "verdict": "pass",
+     "evidence": "Near-full: bow answers the archer with -3 steps, knockback, and the unchanged rmMob drop path; the kiting skeleton genuinely evading static aim (4 whiffs at 9 blocks, 3/3 at 5) is emergent gameplay from allocation-free parts; armor tiers re-verified -3/-1 with iron dur 160->157; residue: two hostile species."
+    },
+    {
+     "feature": "Passive mobs (43+ family, weight 3) - sheep finally converted",
+     "verdict": "pass",
+     "evidence": "~2.5/3: the round-9 code-only sheep verified end-to-end in play this round (noon mix 3 sheep + 1 pig, 4.9-block wander, exact 4-hit kill at 8hp/2dmg, 1-2 wool drop, pickup, placeable block 24); withheld: two species, no breeding/feeding."
+    },
+    {
+     "feature": "Light propagation engine (43+ family, weight 3, perf lens)",
+     "verdict": "pass",
+     "evidence": "~2.5/3 with the lamp now a second emitter through the same occSolids path at zero new cost: 0.857 one block away, exact 0.25x through one wall, 0.090 hut-interior regression unchanged, re-registered post-reload; still ray-shading not flood-fill."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+ family, weight 1)",
+     "verdict": "pass",
+     "evidence": "Full and now player-controllable: 'light' reject beside a lit lamp at midnight, 'ok' with a real zombie standing there after toggling off - the spawn gate responds to a circuit toggle through one shared registry."
+    },
+    {
+     "feature": "World save/load (43+ family, weight 2, perf lens)",
+     "verdict": "pass",
+     "evidence": "Strongest persistence round yet at zero format cost: redstone circuit ids bit-identical post-reload with the lit lamp re-registered (LIT extension of the editB sync), bed spawnPt survives via the optional player.sp field, old v:1 fixtures load identically; gt persisted at 468."
+    },
+    {
+     "feature": "Smelting bounded state (43+ family, weight 2, regression)",
+     "verdict": "pass",
+     "evidence": "furnaces Map bounded by placement, untouched by all three lanes; FUEL/SMELT tables and the lazy furnState path unchanged (363-378)."
+    },
+    {
+     "feature": "Header truth-in-advertising (code-quality documentation)",
+     "verdict": "pass",
+     "evidence": "Third consecutive clean ledger: every round-10 claim probe-measured true - 15-power decay (51-59), manual doors, instant propagation, 300s corpse window (40-41), bed substitutions (60-65), infinite arrows (66-70), cave-ambience gate (71-76); every pragmatic substitution is flagged where it lives."
+    }
+   ],
+   "mps": 45.4,
+   "top_gaps": [
+    {
+     "title": "Chunk data eviction using the proven editB replay (ninth round, the board's oldest debt)",
+     "detail": "Zero chunks.delete (grep-confirmed) while every enabling piece is now proven: determinism bit-identical through three generator changes, editB replay restores edits on regen, the hamlet torchR re-scan re-registers on regen, and the LIT extension means lit lamps re-register through the same path. Evict Uint8Arrays beyond ~3x render distance mirroring dropMesh's RD+2 test in refreshPend (index.html:1317-1324). Regression-gate on the breach fingerprint at (749,741), the sinkhole at (129,148), a powered circuit's ids after a far round trip, and the hamlet light pool. Corpse-runs and bed bases now actively generate the long sessions this debt compounds in.",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Redstone slice 2: door power + redstone torch inverter (family sits ~1.8/4)",
+     "detail": "The power core is now proven, isolated, and cheap to extend: updatePower already BFSes doors into the component (564-565) but they neither conduct nor react - the probe confirmed no door-power code path exists. Adding powered-door open/close (one branch in the rewrite loop) plus a redstone-torch NOT gate (emits 15 when its support is unpowered) takes the family to ~2.5-3/4 without touching propagation timing. Keep it edit-triggered; the 200-cap, dedup-remesh, and persistence machinery all carry over. Gate on replaying this round's 16-wire decay, branch-cut, and save/reload acceptance verbatim.",
+     "mps_gain": 0.5,
+     "risk": "medium"
+    },
+    {
+     "title": "Run the mem() soak + interactive foreground FPS confirmation (pure probe, third round outstanding)",
+     "detail": "Two healthy single snapshots (48.6MB, 47MB) are still not a growth curve, and foreground 60fps has rested on exoneration for ten rounds with the probe explicitly requesting interactive confirmation. One session: snapshot cold via mem() (1769), 10-minute stepped soak interleaving step() loops, a far teleport sweep, a finder call, a circuit-toggle burst, and a death/respawn, snapshot again; plus one human-eyes foreground minute reading the HUD counter while sprinting and spinning. Prices the eviction gap with evidence and converts the Steady-FPS core item from exoneration to measurement. Zero builder risk.",
+     "mps_gain": 0.15,
+     "risk": "low"
+    },
+    {
+     "title": "Autosave debounce + quota surfacing + renderFurn dirty flag (small-fixes lane, eighth round)",
+     "detail": "save() stringifies the whole edits Map + furnaces + inventory every 15s and swallows setItem throws (777-779); a quota failure now silently forfeits bed spawn points and entire redstone circuits, which is real player pain post-beds. Debounce on edit-count delta, surface one HUD toast on throw (the toast machinery landed this round at 941-945 - reuse it). Bundle the renderFurn dirty-flag one-liner (378, three rounds carried). Small, mechanical, no hot-path contact.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "CCmap generational eviction instead of clear()",
+     "detail": "CI() still nukes all 400k cached column structs at threshold (413) while the consumer set keeps growing (weather stops, lightAtW, groundY, buildChunk's 18x18 precompute, sinkR, findCaveMouth, and now the cave-ambience 1Hz feet probe). A two-generation rotation (promote hits, drop the old generation at threshold) keeps the player-local working set warm and removes the post-census recompute spike. Self-contained inside CI().",
+     "mps_gain": 0.15,
+     "risk": "low"
+    },
+    {
+     "title": "updMobs function-table + arrow ownership cleanup before mob #5",
+     "detail": "Three species now inline their AI as if-else branches in the per-mob per-frame loop (1198-1220) and arrows[] carries two ownership flavors discriminated by a pl flag inside updArrows (1243-1253). Extract MOBDEF[type].ai(M,dt) writing the existing wScx/wScz scratch and split arrow hit-resolution by owner at spawn time. Verify by replaying this round's kite log, the 3/2/1 armor matrix, and the bow's -3 ledger. Due before villager or creeper compounds the branch - this is the main extensibility tax the next mob lane will pay.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Open the gen-placed 3x3 crafting table in play (ten-rounds-owed, pure probe)",
+     "detail": "The hamlet crafting-table right-click (b===17 branch through useBlock) has still never been exercised live in ten rounds - matchGrid verifies recipes UI-free but the placed-table interaction path that gates the crafting family's last half-weight remains dark. One eval at the (488,440) hamlet: interact(table), confirm tableMode 3x3 grid opens, craft one iron pick through it. Zero builder risk.",
+     "mps_gain": 0.15,
+     "risk": "low"
+    },
+    {
+     "title": "Place()-with-zero-items refusal cue (probe caveat d)",
+     "detail": "The refusal-cue lane closed silent dead right-clicks for blocked cells and own-column overlaps, but place() with zero items of the selected type still silently no-ops - it cost the prober a branch lamp this round. One line in tryPlace's empty/insufficient-stack early-return mirroring the existing sfx(180,.08,.15,2)+logS('refuse') pattern. Trivially verifiable via the sfx ledger.",
+     "mps_gain": 0.05,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 10 is the round the perf discipline paid for itself: the weight-4 redstone family landed as an edit-triggered, 200-cell-capped, reentrancy-guarded BFS with deduped remeshing (index.html:554-593) and the probe cashed every acceptance item first-try with synchronous same-eval reads, while beds, bow, and the sheep chain all rode existing capped substrates (8-cap arrows, 64-FIFO drops, optional v:1 save field) without one new per-frame code path. Stability evidence is the best of the marathon - errors [] across ~25 evals on two page instances including a reload, heap flat at 47MB, and my round-9 build-cost watch item resolved favorably at 2.8ms/chunk avg against round 9's confounded 6.6ms. The delta since the 44.4 merge is the largest verified functional gain of the run (redstone 0 to ~1.8/4, passive family converted in play, hostile near-full with the bow, save/load now carrying circuits and spawn points), and I price it at +1.0 with ties broken downward: the instant-propagation and manual-door substitutions cap the redstone credit, and not one of my six standing perf debts moved - the chunks Map enters its ninth round unbounded just as corpse-runs and bed bases start encouraging the long sessions that compound it, CCmap still cliff-clears, autosave still swallows quota throws now carrying circuit state, renderFurn still redraws per frame, and both the mem() soak and real-tab frame timing remain unmeasured. 44.4 to 45.4; the build is the cleanest it has ever been at the hot paths and the most overdue it has ever been at the cold ones."
+  },
+  {
+   "confidence": "Medium-high. This is the strongest evidence round my domain has ever received: all five fails my seat filed in round 9 (no player ranged answer, invisible armor, 60s corpse despawn, silent placement refusals, sheep dark) converted under exact probe verification, beds/respawn landed as a complete verified chain (spawn-set, night-only sleep with forward-only gt jump, respawn AT the bed, bedgone fallback, reload persistence), and the wall-collision core got its first live conversion in ten rounds via the door solid/passable A/B - which I code-confirmed routes through the generic SOLID()/coll() per-axis resolver (door ids 31/32 absent from NSOLID at index.html:324, resolver at 790-797), not a special-cased door path. Residual swing ~\u00b10.8 MPS in three places: a colder seat could refuse the wall-collision credit as frontal/single-axis-only (one held-W push, no lateral or corner exercise); how much of the weight-4 redstone family to credit through a player-interaction lens is a judgment call (I hold ~2.5/4 - power transmission with decay/branching/persistence/light-integration verified exactly, but no inverter means no logic, doors are manual-only, and propagation is instant rather than tick-based); and the pointer-lock/right-click/strafe/ceiling cluster is dark a TENTH round, which I price as static drag but a colder seat compounds.",
+   "mps": 45.8,
+   "item_verdicts": [
+    {
+     "feature": "Pointer lock with re-lock (core)",
+     "verdict": "unverified",
+     "evidence": "Tenth round dark: headless probes cannot engage document.pointerLockElement; lock() with promise-catch fallback (index.html:858-861) remains code-read only."
+    },
+    {
+     "feature": "Smooth clamped mouse look (core)",
+     "verdict": "pass",
+     "evidence": "Carried r4 conversion (0.0022/px, pitch pinned \u00b11.55 behind isFinite guard, index.html:865-867); round 10 drove aim through ~25 evals, bow combat at 5-9 blocks, and two page instances with zero camera-state corruption."
+    },
+    {
+     "feature": "Camera-relative WASD (core)",
+     "verdict": "unverified",
+     "evidence": "W-toward-view re-proven hard this round (held-W door telemetry z 126.3->125.3 blocked, ->120.55 through open door), but A/D strafe and correctness-after-turning have never been sampled in ten rounds; half-verified earns nothing."
+    },
+    {
+     "feature": "Calibrated jump with gravity arc (core)",
+     "verdict": "pass",
+     "evidence": "Carried r3 sample() evidence (vy0=8.4 at index.html:819, +1.50 peak, no double-jump); jump branch untouched by all round-10 lanes."
+    },
+    {
+     "feature": "Solid floor collision (core)",
+     "verdict": "pass",
+     "evidence": "Fresh: bed respawn landed at exactly (121.5,31.02,126.5) standing on the bed block, corpse runs and the sheep chase ran on foot, two fall deaths produced exact arithmetic; zero sink-throughs in ten rounds including the reload."
+    },
+    {
+     "feature": "Wall collision without clipping (core)",
+     "verdict": "pass",
+     "evidence": "FIRST LIVE CONVERSION in ten rounds: 1s of held W stopped at the closed door face (z 126.3->125.3, no penetration) and the same walk passed through once open; door ids 31/32 are not in NSOLID (line 324) so this exercised the generic coll() per-axis resolver (790-797). Caveat: frontal single-axis evidence only."
+    },
+    {
+     "feature": "Ceiling collision (core)",
+     "verdict": "unverified",
+     "evidence": "Never jumped under a roof in ten rounds; the up-branch of coll() (line 795) is code-read only despite the sinkhole tunnel and door hut making it a one-eval test."
+    },
+    {
+     "feature": "Reach-limited block targeting (core)",
+     "verdict": "pass",
+     "evidence": "Carried r6 exact-boundary conversion (ray null at 5.05, hit at 4.3); cap unchanged, and every circuit cell this round was acquired through the same ray."
+    },
+    {
+     "feature": "Targeted block outline (core)",
+     "verdict": "pass",
+     "evidence": "The 18-block causeway, 16-wire run, T-junction, and 2-cell door were all built by ray-aimed placement landing exact intended cells; updHL tracking unchanged; r5 crack-in-face shot carried."
+    },
+    {
+     "feature": "Left-click breaks block (core)",
+     "verdict": "pass",
+     "evidence": "Fresh and load-bearing: breaking one branch wire depowered exactly the downstream segment, breaking the door's upper half cleared both cells and dropped one id-31, wool block break/re-place verified; doBreak path (line 914) exercised heavily."
+    },
+    {
+     "feature": "Right-click places on targeted face (core)",
+     "verdict": "pass",
+     "evidence": "Fresh: lever/wire/lamp/door/bed (25/27/29/31/35) all wrote exact intended cells including the player-built plank causeway and the atomic 2-cell door write (31+32); zero diagonal placements."
+    },
+    {
+     "feature": "No placing inside player (core)",
+     "verdict": "pass",
+     "evidence": "Now audibly negative: place() into the player's own column logged 'refuse' twice (overlaps() guard at index.html:987); zero self-entombment across ten rounds."
+    },
+    {
+     "feature": "Multi-type hotbar (core)",
+     "verdict": "pass",
+     "evidence": "Carried; new bow/bed/redstone icons render in slots and selection drove the full craft-place-fire session including the 17-stack death-drop recovery."
+    },
+    {
+     "feature": "Hotbar switching works 1-9 and wheel (core)",
+     "verdict": "pass",
+     "evidence": "Carried r4 conversion (wheel \u00b1120 at index.html:876, Digit jump); selection swaps tracked through the bow/sword damage-tier comparison this round."
+    },
+    {
+     "feature": "Centered readable crosshair (core)",
+     "verdict": "pass",
+     "evidence": "Visible across the round-10 screenshot set: midnight lamp ON/OFF A/B pair, noon sheep field, dim causeway shots."
+    },
+    {
+     "feature": "No right-click context menu (core)",
+     "verdict": "unverified",
+     "evidence": "document-level preventDefault (index.html:857) present but no native right-click has ever been performed in ten rounds; synthetic mousedown cannot pop a native menu."
+    },
+    {
+     "feature": "Sprint speed boost (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r3/r5 measurements (7 vs 4.4, ends on release); speed table (index.html:811) and hunger<=6 sprint-block (809) untouched."
+    },
+    {
+     "feature": "Wall sliding on contact (stretch)",
+     "verdict": "unverified",
+     "evidence": "No diagonal wall-push performed in ten rounds; per-axis resolve order (822-824) suggests it works but rubric forbids code credit."
+    },
+    {
+     "feature": "Diagonal speed normalized (stretch)",
+     "verdict": "unverified",
+     "evidence": "hypot normalization coded (index.html:805) but W+D vs W speed never sampled in play."
+    },
+    {
+     "feature": "No interaction through walls (stretch)",
+     "verdict": "unverified",
+     "evidence": "Light occlusion and skeleton LOS respect walls (verified), but the player ray() break-through-a-wall attempt has never been made; DDA stops at first solid by construction only."
+    },
+    {
+     "feature": "Clean fall when undermined (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r2 30-repetition shaft + r6 mining-column descent; fall path untouched by round-10 lanes."
+    },
+    {
+     "feature": "Tab-away physics stability (stretch)",
+     "verdict": "pass",
+     "evidence": "Entire round again ran rAF-starved (native rAF roughly never fired) with ~1500 forced frames per load, two deaths, and a reload across two page instances: __vox.errors [] throughout, no teleport or floor-fall; tenth consecutive round of hostile-harness stability."
+    },
+    {
+     "feature": "Hold-to-break mining (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r6 conversion (4 stone in 6.0s controlled rhythm); mineTick unchanged."
+    },
+    {
+     "feature": "Pillar jumping (stretch)",
+     "verdict": "unverified",
+     "evidence": "The jump-place-beneath-rise sequence has never been performed in ten rounds; fully scriptable with key()+place()+telemetry."
+    },
+    {
+     "feature": "Fly mode toggle (stretch)",
+     "verdict": "pass",
+     "evidence": "Toggled per the standing setCam caution throughout; gravity restoration deliberately relied on for both fall-death tests (die 40+ blocks out, exact respawn coords)."
+    },
+    {
+     "feature": "Swimming in water (stretch)",
+     "verdict": "pass",
+     "evidence": "Carried r5 conversion (sink cap -2.8, Space +3.2, air drain; branch at index.html:817 untouched); shore columns rejecting spawnAt as 'water' this round confirm water cells live near spawn."
+    },
+    {
+     "feature": "Sprint FOV kick (wow)",
+     "verdict": "pass",
+     "evidence": "Carried r5 re-verification (75<->87 ease at index.html:853); lerp unchanged."
+    },
+    {
+     "feature": "Sneak mode with edge guard (wow)",
+     "verdict": "pass",
+     "evidence": "Carried r6 live conversion (eyeH 1.31, clamped at exact block edge; guard at 823-825 unchanged); sneak also gates the new interact branches (!sneak at 972-975) coherently."
+    },
+    {
+     "feature": "Ghost placement preview (wow)",
+     "verdict": "pass",
+     "evidence": "Carried rounds 2-3; gating unchanged by the new placeable ids."
+    },
+    {
+     "feature": "Inventory with stacking (43+ family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Hardened again: 17 occupied slots became 17 distinct full-count ground drops (16x38, 10x34, armor, bow, sword with durabilities), wiped to nulls, 10 stacks re-picked at the site; drag/shift-click carried."
+    },
+    {
+     "feature": "Crafting table and recipes (43+ family, weight 4, ~3.8)",
+     "verdict": "pass",
+     "evidence": "Four new recipes resolve through the real grid with shadowing re-proven ({16:6} still Plank Armor, {16:5} door, {16:2,...} unaffected; {16:3,24:3} bed, {100:3,24:2} bow, exact consumption verified); the gen-placed 3x3 table UI has STILL never been opened live - tenth round."
+    },
+    {
+     "feature": "Tools with durability and mining speeds (43+ family, weight 4)",
+     "verdict": "pass",
+     "evidence": "Bow durability -1/shot verified across 12 shots (60->48) on the DURMAX 60 path; best-only armor durability re-verified (iron 160->157 across 3 absorbs while plank froze); durabilities survived the 17-stack death round trip."
+    },
+    {
+     "feature": "Health, damage, and fall damage (43+ family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Exact arithmetic throughout: skeleton -3 bare steps (the one -2 reading explained by +1 hunger-regen between 0.8s samples, three other steps exact), -1 iron steps with dur charged, respawn hp 20, fall deaths on schedule."
+    },
+    {
+     "feature": "Hunger and food (43+ family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Regen tick observed live mid-combat (the -2 anomaly is the regen at index.html:836 working); poison ticks now audible (sPoison at 841); raw/cooked economy and sprint-block carried."
+    },
+    {
+     "feature": "Hostile mobs and combat (43+ family, weight 4, now ~4.0)",
+     "verdict": "pass",
+     "evidence": "The bow closes my seat's r9 fail: 3 arrows kill the kiting skeleton at 5-6 blocks with knockback (5.2->6.3), whiffs 4 straight at 9 blocks against strafe (emergent lead-the-target play), zero self-hits over 8 point-blank shots, tier table coherent (hand 2 < bow 3 < wood sword 4); skeleton regression intact (-3/-1 by tier, ~2s cadence, light-gated)."
+    },
+    {
+     "feature": "Passive mobs (43+ family, weight 3, ~2.5)",
+     "verdict": "pass",
+     "evidence": "Sheep converted from nine-rounds-dark to a verified 90-second loop: noon natural mix 3 sheep + 1 pig, wander 4.9 blocks, exactly 4 bare-hand hits (8hp/2dmg), wool drop/pickup/place as block 24; no breeding or feeding, so half a weight withheld."
+    },
+    {
+     "feature": "Light-linked mob spawning (43+ family, weight 1)",
+     "verdict": "pass",
+     "evidence": "Extended to lamps: spawnAt('zombie') 2 cells from a lit lamp at midnight -> 'light', toggle off -> 'ok' with a real zombie standing there; the lamp inherits the torch registry so one lever flip moves the spawn gate."
+    },
+    {
+     "feature": "Beds, spawn-set, and respawn (player system, 50-band stakes)",
+     "verdict": "pass",
+     "evidence": "Whole chain verified: spawn-set always with toast, night-only sleep (noon 'nosleep', night gt 268->468 exactly, forward-only), respawn AT the bed (121.5,31.02,126.5) hp 20 after dying 40+ blocks out, bed-destroyed fallback to world spawn with 'bedgone' (MC parity), spawn point survives ?load=1."
+    },
+    {
+     "feature": "Corpse-run despawn window (r9 player-seat fail, CONVERTED)",
+     "verdict": "pass",
+     "evidence": "D.life=300 plumbing (index.html:1056,1591) verified behaviorally: all 17 corpse drops survived the same 90s window in which an ordinary Q-tossed drop despawned; composes with bed respawn into a real run-back loop."
+    },
+    {
+     "feature": "Armor HUD chip (r9 player-seat fail, CONVERTED)",
+     "verdict": "pass",
+     "evidence": "#armorchip display none -> flex iron 160/160 -> event-updates to 157/160 (98.125%) after 3 arrow absorbs -> shows best tier with both held -> switches to plank 60/60 on iron toss -> hides on plank toss; event-driven, never per-frame."
+    },
+    {
+     "feature": "Placement-refusal feedback (r9 player-seat fail, mostly converted)",
+     "verdict": "pass",
+     "evidence": "Blocked-cell and own-column refusals now play the cue and log 'refuse' (index.html:986-987), verified twice in the ledger; residue filed separately for the zero-count branch."
+    },
+    {
+     "feature": "Zero-count placement silent no-op (new residue)",
+     "verdict": "fail",
+     "evidence": "place() with zero items of the selected type silently no-ops (probe caveat d - cost the prober the branch lamp); the refusal fix missed the empty-stack branch, so one class of dead right-click still gives no feedback."
+    },
+    {
+     "feature": "Redstone interaction verbs through the player lens (43+ family, weight 4, ~2.5)",
+     "verdict": "pass",
+     "evidence": "Lever and door interact() verified both directions with sfx and synchronous id reads (26/28/28/28/30 and back); 15-power -1/step decay readable from ids on a 16-wire run; T-junction branching and cut-depower exact; lit-lamp circuit + lever state survive save/reload bit-identical. Withheld ~1.5: no inverter/repeater means no logic, propagation is instant-on-edit, doors unpowerable."
+    },
+    {
+     "feature": "Door power path",
+     "verdict": "fail",
+     "evidence": "No code path exists for powered doors (probe-confirmed: door ids stayed 31/32 through adjacent lever toggles; header honestly documents manual-only) - the family's player-facing loop ends at lamps."
+    },
+    {
+     "feature": "World save/load through the player lens (43+ family, weight 2)",
+     "verdict": "pass",
+     "evidence": "Bed spawn point, lever-ON circuit ids, lit-lamp torch-registry re-registration (0.857 one block away post-load), and gt 468 all survived ?test=1&load=1 bit-identical."
+    },
+    {
+     "feature": "Death-while-UI-open cursor/craft-grid strand",
+     "verdict": "unverified",
+     "evidence": "r9-flagged edge never probed: die() (index.html:1583) closes input state but nothing drains cur/craftG stacks into the corpse spill; a death mid-craft plausibly strands items."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Headed/interactive pass on the ten-round dark cluster",
+     "detail": "Pointer lock with re-lock (core), native right-click menu suppression (core), A/D strafe-after-turn (core), ceiling collision (core), wall sliding, diagonal-speed normalization, no-interaction-through-walls, and pillar jumping remain unverified after TEN rounds - about 12 checklist points of pure verification work with zero code change. Wall collision finally converted this round via the door A/B, proving the cluster is harvestable; ceiling is now a one-eval test under the door hut lintel or the sinkhole tunnel roof at (129,27-28,147), and strafe/diagonal are sample()-scriptable. The two lock items need one human or headed-browser session (lock at index.html:858-861, preventDefault at 857). This withholding is still the single largest number on my board.",
+     "mps_gain": 1.1,
+     "risk": "low"
+    },
+    {
+     "title": "Door power path - close the family's player-facing loop",
+     "detail": "Doors are the one redstone block that ignores power (probe-verified: ids stayed 31/32 through adjacent lever toggles; header documents manual-only). Extend updatePower's lamp rewrite to swap door halves 31/32<->33/34 when adjacent power>0, reusing the existing atomic-halves toggle in useBlock, with manual interact still allowed when unpowered. Converts the canonical lever-opens-door MC moment and lifts my family credit toward 3/4. Touches the power BFS and the door atomicity invariant, so gate behind a replay of this round's full circuit acceptance (decay run, T-junction, persistence).",
+     "mps_gain": 0.3,
+     "risk": "medium"
+    },
+    {
+     "title": "Bow draw-charge and arrow ammo - finish the parity of the new weapon",
+     "detail": "The bow fires instantly on a 0.6s simNow cooldown with infinite arrows (both flagged substitutions, fireBow at index.html:962-966). MC parity wants hold-to-draw with damage/velocity scaling and a craftable arrow item (stick+coal-as-flint substitution) consumed per shot, with skeletons dropping 1-2 arrows to close the economy. The hold-release pattern already exists in mineTick's held-button rhythm; damage scaling reuses the verified -3 path. Probe must re-verify cooldown spacing, no self-hit, and the kill-at-range arithmetic under charge.",
+     "mps_gain": 0.25,
+     "risk": "medium"
+    },
+    {
+     "title": "Sheep breeding - the passive family's last half-weight",
+     "detail": "Passive mobs sit at ~2.5/3: two species verified in play but no breeding or feeding anywhere. Wheat-feed two adjacent sheep -> heart cue -> one lamb on the proven MOBDEF substrate gives wheat a second sink (farming->husbandry loop) and completes the family. Bounded: breed cooldown per mob, cap via the existing mob census. Verify with two spawnAt sheep, give(wheat), interact, count mobs+1.",
+     "mps_gain": 0.25,
+     "risk": "medium"
+    },
+    {
+     "title": "Open the gen-placed 3x3 crafting table UI live - tenth round unopened",
+     "detail": "matchGrid has verified the matching engine exhaustively including this round's four new recipes, but the table-mode UI (right-click block 17 -> openInv(true), index.html:972) has never been opened in a live session in ten rounds. One eval at the (488,440) hamlet or on a player-placed table: open, screenshot the 3x3 panel, craft through outClick. Pure probe work; cashes the crafting family's last uncashed leg toward full weight 4.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Chunk data eviction - tenth round, now incentivized by corpse runs",
+     "detail": "The chunks Map still never evicts (~16KB per visited chunk forever), and the 300s corpse window plus bed-respawn now actively encourage the long cross-country runs that inflate it. The enabling machinery (deterministic regen through three generator changes, editB replay, torch/lamp registry re-scan on load) is fully proven; evict Uint8Arrays beyond ~3x render distance mirroring dropMesh's RD+2 test, then regression-gate on the breach/sinkhole fingerprints and a lit-lamp light pool after a far round trip.",
+     "mps_gain": 0.2,
+     "risk": "medium"
+    },
+    {
+     "title": "Zero-count refusal cue + death-while-UI-open drain",
+     "detail": "Two interaction-truth one-liners: (1) place() with zero items of the selected type silently no-ops (probe caveat d - cost the prober the branch lamp); route it through the same sfx(180)+logS('refuse') cue the blocked-cell and own-column branches got at index.html:986-987. (2) die() (1583) never drains cursor/craft-grid stacks into the corpse spill - probe a death with items on the cursor, then add cur+craftG to the drop loop. Minutes of code, both probe-verifiable same-round.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    },
+    {
+     "title": "Sleep safety check - hostiles ignore the bed",
+     "detail": "useBed sleeps unconditionally at night (no mob-proximity check, flagged substitution at index.html:946-953): sleeping beside an approaching zombie skips to dawn for free, deflating the night-pressure tactics the bow/armor/lamp loop just bought. Add the MC check - refuse sleep ('You may not rest now' toast + the existing 'nosleep' path) when any hostile is within ~8 blocks - reusing the mob-distance scan the skeleton LOS already does. Small, verifiable: spawnAt zombie 5 blocks out, interact bed, assert gt unchanged + refusal logged.",
+     "mps_gain": 0.1,
+     "risk": "low"
+    }
+   ],
+   "summary": "Round 10 through the player lens is the round the survival loop grew tactics: every fail my seat filed in round 9 converted under exact verification (bow answers the kiting archer with emergent lead-the-target play and zero self-hits, armor went from invisible to an event-driven HUD chip, corpse drops survive 300s and compose with bed respawn into a real 40-block run-back, refusals are audible, and the nine-rounds-dark sheep chain is now a 90-second wool-to-bed loop), while the weight-4 redstone family went from zero to a verified lever/wire/lamp/door slice whose interaction verbs - exact 15-power decay readable from block ids, branch/cut semantics, lamp inheriting the spawn gate, save/reload persistence - all run through the player's place/break/interact surface. The wall-collision core also got its first live conversion in ten rounds via the closed-door A/B, which I code-confirmed exercises the generic coll() resolver, leaving the dark cluster at roughly 12 checklist points (pointer lock, native right-click, strafe, ceiling, plus four stretch items) instead of fourteen. What binds now is thinner than ever: doors ignore power, the bow is instant-fire with infinite arrows, zero-count placement is still a silent no-op, the 3x3 table UI is unopened a tenth round, and foreground 60fps remains interactively unconfirmed. I move my seat 44.2 to 45.8 against round 9's 44.4 merge (+1.4): my own round-9 gap prices that landed sum to ~1.05, the wall-collision harvest and verified beds/respawn add ~0.7, and the redstone family adds ~0.6 through a whole-build lens held at ~2.5/4 because power transmission without an inverter is not yet logic - priced down for the ten-round verification debt and ties broken downward."
+  },
+  {
+   "confidence": "Medium-high. Every round-10 headline was measured exactly by the probe and corroborated line-for-line in code: wire decay arithmetic read straight from block ids on a 16-wire causeway (wires 1-14 powered, 15-16 dead, lamp exhausted; 10-wire run lights it) matching updatePower's 15-source/-1-per-step BFS (index.html:568-593); the lamp joining the torch registry (LIT at 553) verified as one toggle flipping light pools (0.857/0.25x occlusion), remesh, AND the hostile spawn gate, surviving save/reload; the nine-rounds-dark sheep chain converted in a single 90-second play loop (noon mix, 4-hit kill, wool drop, bed craft, sleep to gt 468, respawn-at-bed, bed-destroyed fallback); bow combat exact (-3 between hand 2 and wood sword 4, 3-arrow skeleton kill, no self-hits, dur -1/shot). Residual swing ~ +/-0.5: a colder seat holds redstone at ~1.5/4 because no inverter exists so no logic gate is constructible (power distribution, not logic) and doors are unwired; a warmer seat reads the lamp/light/spawn/save integration as ~2.5. I credited ~2.0. Door-power inconclusiveness is by-design (header documents manual-only; code-confirmed no power path), not a half-working feature.",
+   "mps": 46.2,
+   "item_verdicts": [
+    {
+     "feature": "Systems family: inventory with stacking (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Hardest test yet repeated at scale: 17 occupied slots became 17 distinct full-stack drops (16x38, 10x34, both armors, bow, sword) with durability intact, inventory wiped to nulls, 10 stacks recovered by standing at the site."
+    },
+    {
+     "feature": "Systems family: crafting table and recipes (weight 4, ~3.7 credited)",
+     "verdict": "pass",
+     "evidence": "Four new recipes (lever {3:1,100:1}, wire {10:1} n4, lamp {10:2,16:2}, door {16:5}) plus bed {16:3,24:3} and bow {100:3,24:2} all resolve non-shadowing through the real grid with exact consumption; residual unchanged: the gen-placed in-world 3x3 table has never been play-opened in ten rounds (all grid evidence via matchGrid/craft at line 1666)."
+    },
+    {
+     "feature": "Systems family: tools with durability and mining speeds (weight 4, full)",
+     "verdict": "pass",
+     "evidence": "Bow extends dur-only tool semantics correctly (60->48 at -1/shot, snaps at 0); armor best-only durability re-verified (iron 160->157 while plank frozen); DURMAX/PICKT/ATK/DEF tables (line 331) keep roles provably disjoint."
+    },
+    {
+     "feature": "Systems family: health, damage, fall damage (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Skeleton arrows -3 bare / -1 iron in exact steps (one -2 reading explained as +1 hunger-regen between 0.8s samples, three other steps exact); two fall deaths ran the full die() path; knockback 0.48-block on arrow hits."
+    },
+    {
+     "feature": "Systems family: hunger and food (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Full-hunger regen tick (+1 per 4s at hunger>=18, line 836) literally photobombed the probe's damage sampling; rotten-flesh poison carried exact from r9; sprint-block at hunger<=6 in code."
+    },
+    {
+     "feature": "Systems family: passive mobs (weight 3, ~2.5 - sheep CONVERTED from coded-dark)",
+     "verdict": "pass",
+     "evidence": "Noon tickSpawns mix = 3 sheep + 1 pig; sheep wandered 4.9 blocks, died to exactly 4 bare-hand hits (8hp/2dmg), dropped id-24 wool (1-2 per line 1191), picked up and placed as a block; two verified species now, but no breeding, no shears/regrowth, no cow/chicken."
+    },
+    {
+     "feature": "Systems family: hostile mobs and combat (weight 4, full)",
+     "verdict": "pass",
+     "evidence": "The kiting skeleton genuinely evades static aim (4 whiffs at 9 blocks while strafing, 3/3 hits at 5) - emergent lead-the-target play; bow gives the player ranged symmetry through the same arrows[] pool; corpse-run + bed-respawn compose into real night tactics; residue: still only two hostile species."
+    },
+    {
+     "feature": "Systems family: light-linked mob spawning (weight 1, full and extended to lamps)",
+     "verdict": "pass",
+     "evidence": "Midnight beside a lit lamp: spawnAt('zombie') -> 'light'; lever OFF -> 'ok' with a real zombie standing there - the redstone family inherits the spawn gate verified live."
+    },
+    {
+     "feature": "Systems family: smelting (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Carried from r8's live gen-furnace smelt with save persistence; untouched by round-10 lanes, no regression filed."
+    },
+    {
+     "feature": "Systems family: farming and crop growth (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Carried till/grow/harvest/bread ledger; bread {108:3} still resolves in this round's recipe-matrix sweep; updFarm untouched."
+    },
+    {
+     "feature": "Systems family: light propagation engine (weight 3, ~2.7)",
+     "verdict": "pass",
+     "evidence": "Lamp ON reads 0.857 one block away (torch falloff family) and 2-block open-LOS 0.714 drops to exactly 0.179 (0.25x) behind one plank wall, recovering on break; sliver still withheld: LOS attenuation, not flood-fill - light dies around corners where MC wraps."
+    },
+    {
+     "feature": "Systems family: weather (weight 2, full)",
+     "verdict": "pass",
+     "evidence": "Carried from r7; rain generator peak .029 in this round's audioCheck; gt-seeded schedule untouched and gt itself now save-persists (468 after reload)."
+    },
+    {
+     "feature": "Systems family: world save/load (weight 2, full and strengthened)",
+     "verdict": "pass",
+     "evidence": "Redstone block-state (state-in-id via the edits map) reloads bit-identical (26/28/28/28/30 with lamp re-registered in torchR casting 0.857), bed spawn point persists via optional player.sp (died post-reload, respawned at the bed), v:1 format never bumped."
+    },
+    {
+     "feature": "Systems family: villages or structures (weight 3, ~2.3 - FOURTH round stalled)",
+     "verdict": "pass",
+     "evidence": "Hamlet regression exact (hut-interior torch 0.090, 2 torches registered, (488,440) site bit-identical); grep still clean for chest/villager/loot - no inhabitants, no payoff inside the huts."
+    },
+    {
+     "feature": "Systems family: redstone-like logic (weight 4, ~2.0 - FIRST credit after nine rounds at zero)",
+     "verdict": "pass",
+     "evidence": "Lever/wire/lamp/door all verified first-try: canonical circuit toggles both ways read synchronously, 15-power -1/step decay exact on a 16-wire causeway, T-junction branches power and cut-depowers downstream-only, lamp inherits light+spawn+save; withheld ~2.0: no inverter so no logic gate is constructible, propagation is instant (no tick semantics), doors are unwired, no repeater/piston/button/pressure-plate."
+    },
+    {
+     "feature": "Redstone wire run-length and branch semantics",
+     "verdict": "pass",
+     "evidence": "16-wire run: wires 1-14 = 28, 15-16 = 27, lamp 29 (exhausted); shortened to 10 wires the lamp reads 30 (lit); breaking the first branch wire depowered downstream branch only while spine and main lamp held."
+    },
+    {
+     "feature": "Lamp-as-light-emitter integration (the standout)",
+     "verdict": "pass",
+     "evidence": "One lever toggle flips light pools, remeshes the 7-block footprint, and gates hostile spawns; midnight A/B screenshots unmistakable (bright lattice + light pooling on sand vs dark lattice); lit lamp survives reload still in torchR."
+    },
+    {
+     "feature": "Door: 2-block mechanism (place/collide/open/atomic halves/unit break)",
+     "verdict": "pass",
+     "evidence": "Place wrote 31/32; held W blocked at the closed face then passed through after interact (33/34); upper-half interact closes both; break from above cleared both cells dropping exactly one id-31."
+    },
+    {
+     "feature": "Powered doors",
+     "verdict": "fail",
+     "evidence": "No door-power code path exists (updatePower treats 31-34 as connectivity-only, line 564); header honestly documents manual-only this slice - the flagged hole inside the credited family."
+    },
+    {
+     "feature": "Beds: craft / spawn-set / night-sleep",
+     "verdict": "pass",
+     "evidence": "{16:3,24:3} -> bed 35 consuming 3+3; noon interact = spawn-set only ('nosleep', clock unchanged, toast in DOM); night interact jumped gt 268 -> exactly 468 (next dawn, forward-only) with warm dawn sky after."
+    },
+    {
+     "feature": "Respawn at bed + bed-destroyed fallback (MC parity)",
+     "verdict": "pass",
+     "evidence": "Died 40+ blocks out: respawned at exactly (121.5,31.02,126.5) = bed+1 with hp 20, not world spawn; after breaking the bed the next death returned to (116.5,29.02,115.5) with 'bedgone' logged."
+    },
+    {
+     "feature": "Sheep -> wool -> bed -> respawn chain (the nine-rounds-dark conversion)",
+     "verdict": "pass",
+     "evidence": "The whole chain is now a verified 90-second play loop: natural noon sheep spawn, 4-hit kill, wool pickup, bed craft, sleep, respawn-at-bed - wool's economy (bed + bow) closes the loop the header promised."
+    },
+    {
+     "feature": "Corpse-run stakes composing with beds (300s vs 60s windows)",
+     "verdict": "pass",
+     "evidence": "Die far out, respawn AT the bed hp 20, run back: 17 full stacks waiting at 90s while a Q-tossed ordinary drop despawned on schedule - death is a tactical wager with a recovery plan, not a reset."
+    },
+    {
+     "feature": "Bow: craft / fire / cooldown / durability / damage / knockback / no self-hit",
+     "verdict": "pass",
+     "evidence": "{100:3,24:2} -> 117; 12 spaced shots min 0.7s apart (>=0.6s cooldown), dur -1/shot; -3 damage sits between hand 2 and wood sword 4 per the attack table; 3-arrow skeleton kill at 5-6 blocks with knockback; 8 shots straight down/up left hp 20."
+    },
+    {
+     "feature": "Bow ammo economy",
+     "verdict": "fail",
+     "evidence": "Infinite arrows (flagged substitution, line 68 header + fireBow code): no arrow item, no ammo crafting, skeletons drop sticks not arrows - a real MC-parity hole inside the credited bow."
+    },
+    {
+     "feature": "Armor HUD chip",
+     "verdict": "pass",
+     "evidence": "display none bare -> flex with iron 160/160; event-updates to 157/160 (98.125%) after 3 absorbs; shows best-DEF piece when both held; switches to plank on iron toss; hides when none - armor legibility now has a UI surface."
+    },
+    {
+     "feature": "Skeleton regression (r8 system held)",
+     "verdict": "pass",
+     "evidence": "-3 bare / -1 iron arrow steps, ~2.4s cadence, light-gated, kites at range; 1-of-2 stick drops vs 50% nominal is a fair draw."
+    },
+    {
+     "feature": "Audio depth: 9 generators + new event families live",
+     "verdict": "pass",
+     "evidence": "All 9 offline peaks nonzero (bow .113, arrowhit .191, poison .072, caveamb .041, step .023 closing the r9 asterisk); session ledger has live entries for lever/door/bow/arrowhit/sleep/spawnset/nosleep/bedgone/caveamb/refuse."
+    },
+    {
+     "feature": "Cave ambience underground-only",
+     "verdict": "pass",
+     "evidence": "1 caveamb trigger in 1.5s on the sinkhole tunnel floor (sky 0.20), 0 on the noon surface (sky 1.0) - the r9 panel's cave-identity gap partially cashed."
+    },
+    {
+     "feature": "Placement-refusal cue (no silent dead right-clicks)",
+     "verdict": "pass",
+     "evidence": "'refuse' logged twice on own-column place attempts; minor residue: place() with zero items of the selected type still silently no-ops (cost the probe a branch lamp)."
+    },
+    {
+     "feature": "In-world 3x3 crafting table opened in play",
+     "verdict": "unverified",
+     "evidence": "TENTH round dark: b===17 -> openInv(true) exists at lines 972/1773 but every grid proof still flows through matchGrid setting craftG directly; the crafting family's last residual."
+    },
+    {
+     "feature": "Cactus contact damage",
+     "verdict": "unverified",
+     "evidence": "Coded since r4, armor-interacting per the damage() path, never play-touched in ten probe rounds."
+    },
+    {
+     "feature": "Rotten-flesh poison (regression)",
+     "verdict": "pass",
+     "evidence": "Carried exact from r9's re-run; poison tick now has an audible two-tone (peak .072) registered in audioCheck."
+    },
+    {
+     "feature": "Third hostile archetype (creeper or spider)",
+     "verdict": "fail",
+     "evidence": "grep clean for creeper/spider/explo in the 1781-line file; two hostile species (melee chaser + kiting archer) after ten rounds - no explosive or climb threat, no threat-recognition layer."
+    },
+    {
+     "feature": "Boats, minecarts, rails",
+     "verdict": "fail",
+     "evidence": "grep clean for boat/minecart/rail; no vehicle, riding, or rail-block code exists."
+    },
+    {
+     "feature": "Deeper redstone: repeaters, pistons, inverters, logic gates",
+     "verdict": "fail",
+     "evidence": "Levers are the only power source and nothing inverts: NOT gates - and therefore all real logic - are unbuildable; no repeater/piston/button/pressure-plate ids exist in the 25-34 family."
+    },
+    {
+     "feature": "Enchanting / brewing analogs",
+     "verdict": "fail",
+     "evidence": "grep clean for enchant/brew/potion; poison is a food effect only - no item-modification or effect-crafting system exists."
+    },
+    {
+     "feature": "Biome expansion (jungle, swamp)",
+     "verdict": "fail",
+     "evidence": "Biome label set is exactly snowy/desert/forest/plains (line 397); no new biome work in ten rounds."
+    },
+    {
+     "feature": "Chunk data eviction (TENTH-round debt)",
+     "verdict": "fail",
+     "evidence": "Zero chunks.delete in the file (grep-confirmed); meshes evict beyond RD+2 (line 1324) but every visited chunk's ~16KB Uint8Array is retained forever; 237 chunks / 47MB this session - fine for ten minutes, unbounded for an hour."
+    },
+    {
+     "feature": "Scorecard: emissive light blocks (wow, systems-coupled)",
+     "verdict": "pass",
+     "evidence": "Strengthened again: the lamp ON/OFF midnight A/B shows light pooling on sand from a player-toggled emitter, on top of the carried torch evidence."
+    },
+    {
+     "feature": "Scorecard: break and place sounds (stretch, systems-coupled)",
+     "verdict": "pass",
+     "evidence": "Offline peaks .288/.335 plus live break/place ledger entries across the session."
+    },
+    {
+     "feature": "Stability under heavy probing (regression)",
+     "verdict": "pass",
+     "evidence": "__vox.errors [] across ~25 evals, two deaths, despawn stepping, and a ?load=1 reload on both page instances; console clean except the known three.js r160 deprecation; perf.build avg 2.8ms/chunk."
+    }
+   ],
+   "top_gaps": [
+    {
+     "title": "Redstone depth slice 2: powered doors + an inverter source + pressure plate/button",
+     "detail": "The family still holds ~2.0 of its 4 weights and is the largest remaining named pool on the board. The shipped slice is power DISTRIBUTION, not logic: levers are the only source and nothing inverts, so no gate is constructible. Add a redstone-torch-analog NOT source, make doors react to adjacent power (closing the probe's flagged hole - the id machinery 31-34 already swaps atomically), and a pressure plate for input variety. The proven 200-cell BFS substrate carries it, but an inverter in an instant-propagation model can oscillate - compute a bounded fixpoint (cap iterations, settle to the last stable state) and re-run the causeway/branch/persistence probes plus the save round-trip.",
+     "mps_gain": 0.5,
+     "risk": "medium"
+    },
+    {
+     "title": "Villages third weight: an inhabitant and a loot chest (FOURTH round stalled at ~2.3/3)",
+     "detail": "grep is still clean for chest/villager/loot while everything around the hamlets got finished. A villager-flavored passive on the proven MOBDEF substrate leashed to the hamlet center, plus a take-only chest reusing the furnace slot machinery with 2-3 seeded items, converts the lit night destination into a payoff. Keep writes inside the single-chunk footprint; re-verify byType 7/109/22 and the (488,440) site bit-identical.",
+     "mps_gain": 0.45,
+     "risk": "medium"
+    },
+    {
+     "title": "Creeper: third hostile archetype with block-destroying explosion",
+     "detail": "Combat is full on depth but thin on archetypes (melee chaser + kiting archer), and now that players build redstone bases, doors, and beds, a threat that destroys blocks multiplies every system just landed - the bed-destroyed respawn fallback and corpse-run stakes are already wired to punish it. Hiss-fuse on proximity, bounded blast radius via setB+touched (which auto-depowers circuits and pops torches/wires correctly already, line 926). Explosions touch terrain edits and remesh: bound the radius, never break bedrock, and re-run determinism/save sweeps.",
+     "mps_gain": 0.4,
+     "risk": "medium"
+    },
+    {
+     "title": "Arrow item + ammo economy (convert the bow's flagged infinite-ammo substitution)",
+     "detail": "The bow is verified but fires infinite arrows; skeletons drop sticks as a bone substitute and no arrow item exists. Add arrow as a craftable item (stick + coal-as-flint analog) and a skeleton arrow drop, consume one per shot with the existing stack machinery, keep the 8-cap pool. Small, bounded, and it converts a flagged hole in an already-credited feature into clean MC-direction parity.",
+     "mps_gain": 0.2,
+     "risk": "low"
+    },
+    {
+     "title": "Boats or minecart+rails: first vehicle",
+     "detail": "Charter-named remaining work with no rubric family weight of its own - gains flow through 65/80-band anchor interpolation, so yield is lower than the named pools. A boat on the existing water/swim physics (board via interact, WASD steers, exits on land) is the cheaper of the two; minecarts need a rail block family plus path-following. New entity-player coupling is the risk: keep it out of the save format first slice and gate behind the swim/knockback regressions.",
+     "mps_gain": 0.3,
+     "risk": "high"
+    },
+    {
+     "title": "Pure probe conversions: open the in-world 3x3 table + brush a cactus (tenth-round debt, zero code)",
+     "detail": "Two coded-but-dark legs ten rounds owed: right-click the gen-placed hamlet crafting table and screenshot the 3x3 panel (it gates the crafting family's last ~0.3 weight - every grid proof flows through matchGrid), and walk into a cactus bare then armored to verify contact damage on a non-mob source. Hardens two credited families' weakest evidence before a hostile seat finds the seam.",
+     "mps_gain": 0.15,
+     "risk": "low"
+    },
+    {
+     "title": "Chunk data eviction with edit-replay safety (tenth-round honesty debt)",
+     "detail": "chunks Map still grows ~16KB per visited chunk forever (zero chunks.delete); regeneration is deterministic through three generator changes and editB replay already restores edits - now also carrying redstone block-state, which makes the replay path MORE load-bearing. LRU-evict beyond ~3x render distance mirroring dropMesh, then verify torchR re-registration (torches AND lit lamps, line 770) and a powered circuit's state after a far round trip. Mostly the perf seat's credit but it protects my domain's persistence story.",
+     "mps_gain": 0.15,
+     "risk": "medium"
+    },
+    {
+     "title": "Light family's last sliver: flood-fill or full-block single walls",
+     "detail": "The verified 1-solid=x0.25 LOS model now also serves lamps, but light still dies around corners where MC wraps and leaks 25% through single walls where MC blocks. A bounded per-chunk BFS through air seeded from torchR would finish the weight-3 family's last ~0.3. It touches the mesh hot path that has been stable for six rounds and now carries lamp flips - isolate the lane, re-run the 837-cell field sweep, the lamp A/B, and both spawn-gate regressions.",
+     "mps_gain": 0.25,
+     "risk": "high"
+    }
+   ],
+   "summary": "Round 10 is the systems round of the marathon: the weight-4 redstone family went from nine rounds at zero to ~2.0/4 with every acceptance item verified first-try (exact 15-power/-1-step decay read from block ids, branch and cut-depower semantics, save persistence, and the standout lamp-torchR integration where one lever toggle flips light pools, remesh, and the hostile spawn gate), while the nine-rounds-dark sheep chain converted into a 90-second verified loop that pays off in beds, bed-respawn composes with corpse-run stakes into real night tactics, and the bow closes the ranged asymmetry with combat arithmetic that slots exactly into the attack table. Against the round-9 merge of 44.4 - a build with no redstone, no beds, and sheep coded-dark - the prior panel's own pricing for exactly what landed sums past 2.1, and it landed with zero verified fails and zero regressions across two page instances; I score 46.2, a +1.8 delta discounted below the gap-sum because redstone is distribution-without-logic (no inverter means no constructible gate), doors are unwired, the bow fires infinite arrows, and villages plus the in-world crafting table plus chunk eviction are now ten-round debts. The remaining climb through my domain is legible: ~2.0 redstone weights, 0.7 village weights, a third hostile archetype, and vehicles are the whole gap to the 50-anchor reading as conservatively over-satisfied rather than merely satisfied. Ties broken downward throughout; the survival loop is no longer aspirational text but the thin-vs-Minecraft depth of every family (two hostiles, ~25 recipes, four biomes, no enchanting/brewing analogs) is what holds the number in the mid-40s."
+  }
+ ]
+}

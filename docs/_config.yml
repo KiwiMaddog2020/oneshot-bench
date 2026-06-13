@@ -1,0 +1,9 @@
+title: "What ten rounds of a long agentic run taught me"
+description: A long-horizon coding benchmark, the plateau curve, and why a human had to play the game
+url: https://kiwimaddog2020.github.io
+baseurl: /oneshot-bench
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-default-layout
+  - jekyll-titles-from-headings
+  - jekyll-sitemap

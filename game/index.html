@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+VOXELCRAFT - single-file procedural voxel world. SEED=1337 (override with ?seed=N)
+Beyond-checklist / alive features:
+- Full day/night cycle (10 min): moving sun disc, moon, fading starfield, warm dusk/dawn horizon,
+  fog color always matched to sky (no gray band), world light tint shifts warm at sunset.
+- Drifting world-anchored cloud layer.
+- Procedural audio: distinct break/place sounds, footsteps only while walking on ground,
+  wind ambience, songbirds by day, crickets at night, M mutes.
+- Winding rivers carving lowlands and feeding seas; deep multi-block oceans; sand beaches.
+- Spaghetti cave tunnels + deep caverns with walkable surface cave mouths and true overhangs; deterministic
+  flat-terrain sinkhole entrances (stepped 5x5 funnels that daylight real tunnels) near any spawn.
+- Coal shallow / iron deep ore distribution; unbreakable bedrock floor.
+- Per-biome smooth grass/leaf tint blending; altitude snow line with rocky slopes below; spruce
+  vs oak trees; cacti only on desert sand; flowers/grass tufts; vegetation never floats
+  (breaking support removes plants/cacti above).
+- Animated water texture, lowered surface, underwater blue fog/tint with swim-up.
+- Sprint with eased FOV widening; sneak (slower, lower camera, edge-guarded); fly mode;
+  ghost preview of placement; per-vertex ambient occlusion; break particles in block colors.
+- Pause fully freezes time/clouds/particles/physics; controls overlay; HUD with FPS/coords/biome/clock/seed.
+- Item economy: 36-slot inventory (E) with drag + shift-click, 2x2 pocket / 3x3 crafting-table grids,
+  stick + pickaxe tools with tiers and durability bars, per-block hardness, hold-to-mine with
+  animated crack overlay; ore drops gated by pickaxe tier.
+- Farming: grass tufts drop seeds (~40%, position-hashed); right-clicking seeds on grass/dirt
+  tills to farmland and plants in one action (pragmatic substitution: no hoe item); 3-stage
+  wheat growth on a 1Hz ticker; harvest wheat + bonus seed; 3 wheat craft into bread (+5 hunger).
+  Player-planted only - worldgen untouched, determinism bit-identical.
+- Smelting: craftable furnace (5 stone in the pocket grid - pragmatic substitution for MC's 8-in-3x3)
+  with input/fuel/output UI + live burn/progress; iron ore smelts to iron ingots (iron pick now needs
+  INGOTS, not ore); porkchop cooks to cooked porkchop. FOOD rebalance: raw porkchop changed 8 -> 4,
+  cooked porkchop 8 (MC-direction parity: raw weak, cooked strong). Furnaces are player-placed only.
+- Combat depth: wood/stone/iron swords (2 material + 1 stick; iron sword needs smelted INGOTS) with a
+  real per-weapon attack table (hand 2 / pick 3 / swords 4/5/6) + sword durability on hit; swords mine
+  at bare-hand speed (no pick tier). Zombies drop rotten flesh (~60%) - real risk food: +3 hunger but
+  poisons (~8s drain, -1 hp per 2s, floored at 1 hp - never lethal).
+- Armor: two craftable tiers - Plank Armor (6 planks; pragmatic substitution for leather) and Iron Armor
+  (5 ingots; vs MC's 8-in-3x3) give flat 1/2 damage reduction vs mob/fall/cactus hits, with durability
+  per absorbed hit; best armor in inventory counts as worn (no slot UI); drowning/starvation pierce.
+  Death drops your whole inventory at the death point, corpse-run style - death drops persist 300s
+  (ordinary drops keep 60s) but are never saved, so a reload still forfeits the corpse.
+- Species: skeletons - first ranged hostile (kiting archer, 3-dmg arrows so armor tiers read in play:
+  bare 3 / plank 2 / iron 1; LOS-gated shots, sunburns by day, 50% stick drop as pragmatic bone
+  substitution) - and sheep (second passive, plains; drops 1-2 placeable Wool, the bed ingredient).
+  Crafting-grid matching is most-specific-wins, so 6 planks craft Plank Armor, not sticks.
+- Seeded structures: 1-in-37 desert wells / stone ruins, plus rare HAMLETS (1-in-89 chunks on flat
+  plains/forest, never sharing a well/ruin chunk): two plank huts with working crafting-table and
+  furnace interiors, a dirt path, and torch-lit log posts. Gen-placed torches sync into the torch
+  registry, so the hamlet feeds torch light + zombie-spawn suppression - a lit night destination.
+  Torch light is wall-occluded: 1 solid between torch and sample = x.25, 2+ = blocked (both light paths).
+- Redstone-lite (player-placed only - worldgen + v:1 saves untouched, ALL state lives in block ids 25-34):
+  lever + redstone wire + powered lamp + 2-block door. ON levers radiate power 15, wire decays 1 per step
+  (max-combine across sources), lamps turn on when any neighbor is powered; lit lamps join the torch
+  registry, so they cast the same occlusion-aware 7-block light and suppress hostile spawns. Pragmatic
+  substitutions: propagation is instant (edit-triggered BFS over the circuit, capped 200 cells - never
+  per-frame); doors were manual-only right-click toggles in slice 1 (slice 2 wires them - see below);
+  wire crafts from coal-ore-as-redstone-dust; door costs 5 planks because {16:6} is Plank Armor; closed
+  doors render as full plank cubes, open doors + levers as cross-planes, wire as a flat ground quad;
+  wires/levers pop off broken floors (with drops), doors don't.
+- REDSTONE SLICE 2 (round 10, lane 3): power distribution grows logic. (a) POWERED DOORS: updatePower's
+  rewrite pass computes each door pair's power exactly like the lamp rule (max adjacent power, taken over
+  BOTH halves); power>0 rewrites the halves atomically open (31->33, 32->34), a power edge to 0 rewrites
+  open halves back closed (33->31, 34->32). Flagged substitution semantics: power state WINS whenever a
+  power-network update touches a door - manual interact still toggles any door and sticks until the next
+  power edge on that network; no separate 'power-opened' memory bit is kept (state stays purely in block
+  ids, v:1 format untouched). Manual toggles route their setB writes through the inPwr guard, so a hand
+  toggle never triggers its own power rewrite (that guard is what makes free-standing doors still toggle
+  both ways). SOLID/NSOLID membership keeps following open/closed ids, so held-W collision is unchanged.
+  (b) STONE BUTTON (42 idle / 43 pressed, cross-plane nub, crafts from 1 stone - recipe matrix verified:
+  key-set {3} sums 1 vs bricks 4 / furnace 5, and lever {3:1,100:1} is a 2-key set, so most-specific-wins
+  shadows nothing): right-click presses it - 43 emits 15 exactly like an ON lever - and a simStep-driven
+  ticker (alongside updFurnace; O(timers), zero idle cost) releases it after 1.5 SIM-seconds, so
+  __vox.pause() freezes a press mid-flight. Timer list is cap-64 FIFO and an evicted entry force-releases
+  its button - no network can stick powered. Button ids persist in the edits map as-is; timers are
+  transient (never saved), so ON LOAD every saved pressed button (43) re-arms a fresh 1.5s timer - a
+  reloaded mid-press circuit always depowers on schedule. Buttons join circuit connectivity, never
+  conduct, and pop off broken floors like levers (dropping the idle item 42).
+  (c) Redstone-torch inverter (stretch, ids 44/45) DROPPED, two reasons: its spec'd recipe {stick+coal}
+  is byte-identical to the existing torch-22 recipe (same key-set AND counts - matchRecipe's array-order
+  tie-break would leave the inverter permanently uncraftable), and converting the verified single-pass
+  updatePower into a bounded fixpoint late in the slice risks the door/button/causeway regressions that
+  all pass as-is; the lane spec prices a clean doors+button ship over an unverified inverter.
+- Beds (block 35, crafts from 3 planks + 3 wool - the sheep/wool chain pays off): right-click ALWAYS
+  sets your respawn point ('Spawn point set' toast); at night (daylight <.3) it also sleeps, advancing
+  time forward-only to the next dawn. Respawn returns to the bed while it stands; if it's been destroyed
+  you fall back to world spawn (MC 'bed destroyed' parity). Spawn point persists in saves (optional
+  player.sp field, v:1 untouched). Flagged substitutions: 1-block bed (vs MC's 2-block half-height),
+  no mob-proximity sleep check. Player-placed only - worldgen untouched.
+- Bow (answering the archer): craftable Bow (3 sticks + 2 wool-as-string - flagged substitution, wool's
+  second sink; 60 durability) fires on right-click into the SAME 8-cap arrow pool skeletons use: 3 dmg,
+  0.6s cooldown, INFINITE arrows (flagged substitution: no ammo item). Player arrows skip the shooter
+  entirely and hit mobs with melee-exact knockback/flee semantics; deaths run the unchanged drop table.
+  Skeleton arrows still hit only the player.
+- Combat legibility + audio depth: worn-armor HUD chip beside the hearts (best-DEF piece icon +
+  durability fraction, event-driven via updCounts - hides with no armor); dead right-clicks (blocked
+  target cell / own-column overlap) now play the refusal cue instead of failing silently; bow twang,
+  arrow thock, sour poison two-tone on each poison tick, and low cave-drip ambience when sky exposure
+  <.3 (1Hz render-side check, >=4s between triggers). step/bow/arrowhit/poison/caveamb all registered
+  in audioCheck.
+- REAL-INPUT FIXES (round 10, human-filed findings - these outrank probe evidence).
+  (1) REAL MOUSE-LOOK, root cause: the shared applyLook math was always correct (the injected look()
+  path worked), but the REAL pointer-lock path was unhardened against real event values - on
+  Chromium/macOS the first mousemove after lock engage (and occasional recenter glitches) carries a
+  giant spurious movementY; a single spike drives pitch past the -1.55 clamp and pins the camera at
+  the ground ("stuck facing down"), and recurring spikes swamp genuine deltas. A second latent
+  freeze: engines that only ship webkitMovementX/Y fed undefined into the isFinite guard, silently
+  eating every event. Fixes: movementX??webkitMovementX??0 fallback, per-event |delta| clamp 150,
+  first-mousemove-after-lock drop, handler gate locked||TEST (keyboard convention - genuine
+  dispatched MouseEvents now exercise the REAL handler under ?test=1), camera follows yaw/pitch
+  unconditionally every render frame, and a TEST ring buffer __vox.lookLog (last 32 raw {mx,my}).
+  These hold for REAL events because every delta is bounded before it touches pitch and the known
+  spike sources (lock engage, recenter) are dropped or clamped. VERIFIED by dispatching genuine
+  MouseEvents (bubbling document mousemove with movementX/Y, including a 40000px spike + recovery)
+  through the real handler under ?test=1; Kevin's next hands-on pointer-lock session is the final
+  checkpoint for the OS-level path.
+  (2) SURFACE SWIM-JUMP: holding Space while swimming at the surface (head above water) against a
+  1-block bank (solid at feet level + 2 air above, within .7 in the move direction) fires the full
+  8.4 ground-jump impulse with a .4s clamp-bypass window (air-rate gravity, no 3.2 water cap) so the
+  arc completes - mounts the bank like MC. Deep-water clamps (-2.8/3.2), Space impulse, air drain
+  and fly mode unchanged; window resets on respawn.
+  (3) VITALS HUD MIRROR SYMMETRY (MC-style): hearts left-anchored and hunger right-anchored to the
+  measured hotbar width (CSS --hbw set at boot + resize); fixed 16px icon boxes make both rows equal
+  width so the center gaps mirror exactly; hunger renders reversed (depletes from the LEFT, the true
+  mirror of hearts greying from the right); bubbles right-aligned above hunger; armor chip moved
+  above the hearts row, left-anchored, clear of all hp states.
+- CONTENT BREADTH PACK (round 10): blocks 36 Birch Log / 37 Birch Leaves / 38 Berry Bush (full) /
+  39 Berry Bush (picked, walk-through like 38) / 40 Sandstone / 41 Stone Bricks; items 118 Berries (+2)
+  / 119 Raw Mutton (+3, sheep now drop 1 beside their wool) / 120 Cooked Mutton (+6, smelted from 119);
+  recipes 4 sand -> 1 Sandstone and 4 stone -> 4 Stone Bricks (key-sets {4}/{3} shadow nothing:
+  most-specific-wins keeps 5-stone grids resolving to the furnace; bed/bow/door/armor/wire matrices
+  unchanged); Stone Bricks share stone's wood-pick TOOLREQ. DETERMINISM ARGUMENT: the deco decision
+  chain and every existing r-window are untouched - birch is an in-column re-skin decided ONLY in the
+  tree pass via a fresh independent hash (h2i(x^0x77aa,z^0x31cd)%3===0, forest oaks only; canopy
+  footprint/heights/skip-hash are oak's exactly, so every block POSITION is bit-identical and border
+  dilation is unchanged); berry bushes consume a VIRGIN r-window (r%173<2, appended strictly after all
+  existing deco branches) and are placed AFTER the canopy pass only into still-air cells above intact
+  grass caps, so every pre-existing block (canopy leaves included) keeps its exact id - bushes are pure
+  additions, and carved caps (cave/breach/sinkhole funnel) fail the placement gate by construction.
+  Berry loop: breaking 38 yields 1-2 Berries (position-hashed count) and leaves 39; 39 regrows to 38
+  after 60s via a capped-256 bushes queue on the 1Hz farm ticker - timers are never saved, but on load
+  every 39 in the edits map re-arms a fresh 60s timer (FIFO cap honored), so a reloaded picked bush
+  regrows (v:1 save format untouched, old saves load identically). Atlas grew 128x128 -> 128x256
+  (still POT, 8x16 grid) for the nine new tiles 61-69 - a pure texture-space change.
+- LANE B (round 11) - the hamlet pays off: block 44 CHEST (atlas tiles 72/73 on row 9; tiles 0-71 untouched),
+  gen-placed ONCE per hamlet on hut A's interior floor corner (local 4,4). That cell is off BOTH torch sight
+  lines, so the 0.090 interior light fingerprint and the 2-torch registry hold; the hamlet census diff is
+  exactly that one air->chest cell. TAKE-ONLY loot UI (3 slots, no arrow/output slot, no deposit path - the
+  click handler only ever addItem()s OUT): contents live in a chests Map keyed 'x,y,z' mirroring furnaces,
+  lazily seeded deterministically from the cell hash on first touch (2-3 bread / 3-4 torches / 1-2 iron
+  ingots), persisted via optional save field chs exactly like furn (v:1 untouched, old saves load
+  identically; an emptied entry persists as nulls, so taken loot stays taken across reloads). Breaking a
+  chest spills any remaining loot but the block deliberately drops NO item (absent from DROPS): a placeable
+  chest would lazily reseed on open = a free-loot machine. VILLAGER: first hamlet inhabitant - passive
+  MOBDEF (robe-brown box build with nose + folded-arm bar, hp 10, spd 1.1) on the exact pig/sheep
+  wander+flee brain, spawned cap-aware (MOBMAX) whenever a hamlet chunk's MESH builds (deduped per hamlet
+  anchor, so a chunk-regen round trip re-seats it; transient + >56-block culled like every mob) and leashed
+  ~10 blocks to the hamlet center: past the leash it steers home EVERY frame, so no wander segment can walk
+  it out. Probes: __vox.chestInfo/chestTake; interact() and tryPlace dispatch 44 beside the 17/23 branches.
+- REDSTONE SLICE 3 (round 11, lane C) - the family's first logic: REDSTONE TORCH INVERTER, blocks 45 (lit)
+  / 46 (off), atlas tiles 74/75, lever-style cross-plane nubs. Crafts from 1 redstone wire + 1 stick -
+  key-set {27,100} is unique across RECIPES (lever {3,100} / torch {100,10} / bow {100,24} / picks+swords
+  all differ), so the exact-key-set + most-specific-wins matcher shadows nothing; this supersedes the
+  slice-2 dropped {stick+coal} spec whose key-set was byte-identical to torch 22. FLOOR-MOUNTED ONLY
+  (support = the block directly below; wire-style placement gate) - flagged pragmatic substitution vs MC
+  wall mounting. Power model: a lit torch (45) sources 15 exactly like an ON lever / pressed button; after
+  each BFS pow pass updatePower evaluates every torch in the touched network - the support counts as
+  powered when any of ITS 6 neighbors EXCEPT the torch's own cell (a torch never powers its own support)
+  carries pow>0 (wires and emitters both live in the pow map); powered support flips 45->46, unpowered
+  flips 46->45 ('rtorch' in the sfx ledger). Torches join circuit connectivity THROUGH their support:
+  the BFS seeds the support's neighbors from each torch and seeds torches standing atop any cell's solid
+  neighbors, so lever->wire->support chains reach the inverter from either end. Each flip's setB re-fires
+  updatePower (instant-on-edit, consistent with the family) under a PER-CASCADE FLIP BUDGET of 8, shared
+  down the recursion (reset only at top-level edits) - flagged substitution for MC's tick scheduler: a
+  paradox loop (torch feeding its own support) burns the budget and FREEZES mid-state ('rtfreeze') instead
+  of hanging the frame; the next edit on that network retries with a fresh budget. NOT-of-NOT chains up to
+  8 flips deep settle inside one cascade. Mining/popping drops the lit item (DROPS normalizes 46->45);
+  all state lives in block ids so persistence is free (v:1 untouched) - cascades complete synchronously
+  inside one updatePower call, so a save can never catch a half-settled network (no load-time re-arm
+  needed, unlike button timers), and a saved frozen paradox reloads frozen (consistent by design). 45 is
+  deliberately NOT in LIT: the inverter is a logic element, not a light source - lamps stay the family's
+  lit surface. Idle cost zero: everything remains edit-triggered (pwrCalls flat across idle frames).
+-->
+<head>
+<meta charset="utf-8">
+<title>Voxelcraft</title>
+<style>
+html,body{margin:0;padding:0;overflow:hidden;background:#000;height:100%;font-family:'Segoe UI',system-ui,sans-serif;user-select:none}
+canvas{display:block}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 62%,rgba(0,0,0,.28));z-index:3}
+#uw{position:fixed;inset:0;pointer-events:none;background:rgba(18,62,148,.30);display:none;z-index:4}
+#xh{position:fixed;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;pointer-events:none;z-index:5;mix-blend-mode:difference}
+#xh:before,#xh:after{content:"";position:absolute;background:#fff}
+#xh:before{left:9px;top:2px;width:2px;height:16px}
+#xh:after{left:2px;top:9px;width:16px;height:2px}
+#hud{position:fixed;left:10px;top:10px;color:#fff;font:12px/1.6 monospace;text-shadow:0 1px 2px #000;z-index:6;pointer-events:none}
+#hotbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;z-index:6;pointer-events:none}
+.slot{width:48px;height:48px;background:rgba(10,10,14,.55);border:2px solid rgba(255,255,255,.25);border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center}
+.slot.sel{border-color:#fff;background:rgba(40,40,50,.7);transform:translateY(-4px)}
+.slot canvas{width:36px;height:36px;image-rendering:pixelated}
+.slot span{position:absolute;left:3px;top:1px;color:#ccc;font:9px monospace}
+.slot i{position:absolute;bottom:1px;right:3px;color:#aaa;font:8px monospace;font-style:normal}
+.slot .cnt{position:absolute;right:3px;top:1px;color:#fff;font:bold 10px monospace;text-shadow:0 1px 1px #000}
+.slot .dur,.islot .dur{position:absolute;left:14%;bottom:3px;height:2px;background:#6e6;border-radius:1px;display:none}
+#invui{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:8;background:rgba(8,10,18,.5);backdrop-filter:blur(2px)}
+#invpanel{background:rgba(14,16,24,.94);border:2px solid rgba(255,255,255,.22);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+#invpanel h3{margin:2px 0 0;color:#cde;font:bold 12px monospace;letter-spacing:2px}
+.igrid{display:grid;gap:4px}
+.islot{width:44px;height:44px;background:rgba(10,10,14,.6);border:2px solid rgba(255,255,255,.18);border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.islot:hover{border-color:#8af}
+.islot canvas{width:32px;height:32px;image-rendering:pixelated}
+.islot .cnt{position:absolute;right:3px;bottom:1px;color:#fff;font:bold 11px monospace;text-shadow:0 1px 1px #000}
+#craftrow{display:flex;align-items:center;gap:14px}
+#carrow{color:#cde;font:22px monospace}
+#curstack{position:fixed;left:0;top:0;width:32px;height:32px;pointer-events:none;z-index:12;display:none}
+#curstack canvas{width:32px;height:32px;image-rendering:pixelated}
+#curstack .cnt{position:absolute;right:-4px;bottom:-4px;color:#fff;font:bold 11px monospace;text-shadow:0 1px 1px #000}
+.ovl{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,10,18,.78);color:#eee;z-index:10;backdrop-filter:blur(3px)}
+.ovl h1{font-size:42px;letter-spacing:8px;margin:0 0 4px;color:#fff;text-shadow:0 2px 12px #4af}
+.ovl h2{margin:0 0 10px}
+#seedline{color:#9ab;font:13px monospace;margin-bottom:18px}
+#keys{display:grid;grid-template-columns:auto auto;gap:5px 16px;font:13px monospace;color:#cde;margin-bottom:20px}
+#keys b{color:#fff;background:#223;border:1px solid #456;border-radius:4px;padding:1px 7px;justify-self:end}
+#play,#respawn{font:bold 17px inherit;padding:12px 36px;border-radius:8px;border:1px solid #6af;background:#1a3a6a;color:#fff;cursor:pointer}
+#play:hover,#respawn:hover{background:#2a4f8a}
+#prog{font:13px monospace;color:#8fc}
+#pause p{color:#abc;font:13px monospace}
+#dmg{position:fixed;inset:0;pointer-events:none;background:rgba(255,0,0,.35);opacity:0;transition:opacity .3s;z-index:7}
+/* vitals anchored to the measured hotbar width (--hbw, set at boot + resize): MC-mirror layout -
+   hearts grow rightward from the hotbar's LEFT edge, hunger's right edge sits on the hotbar's RIGHT
+   edge, bubbles right-align above hunger, armor chip sits above the hearts row. Fixed 16px icon
+   boxes make both rows exactly equal width so the center gaps are mirror-symmetric. */
+#hearts{position:fixed;left:50%;margin-left:calc(var(--hbw,500px)/-2);bottom:70px;z-index:6;pointer-events:none;font:16px monospace;text-shadow:0 1px 2px #000}
+#bubbles{position:fixed;right:50%;margin-right:calc(var(--hbw,500px)/-2);bottom:90px;z-index:6;pointer-events:none;font:13px monospace;text-shadow:0 1px 2px #000}
+#hunger{position:fixed;right:50%;margin-right:calc(var(--hbw,500px)/-2);bottom:70px;z-index:6;pointer-events:none;font:14px monospace;text-shadow:0 1px 2px #000}
+#hearts span,#hunger span,#bubbles span{display:inline-block;width:16px;text-align:center}
+#armorchip{position:fixed;left:50%;margin-left:calc(var(--hbw,500px)/-2);bottom:92px;z-index:6;pointer-events:none;display:none;align-items:center;gap:5px;background:rgba(10,10,14,.5);border-radius:5px;padding:3px 7px}
+#armorchip canvas{width:18px;height:18px;image-rendering:pixelated;display:block}
+#armorchip .abar{width:30px;height:4px;background:#344;border-radius:2px;overflow:hidden}
+#armorchip .abar i{display:block;height:100%;background:#6e6}
+#armorchip span{color:#cde;font:10px monospace;text-shadow:0 1px 2px #000}
+</style>
+</head>
+<body>
+<div id="hud"></div>
+<div id="xh"></div><div id="vig"></div><div id="uw"></div>
+<div id="hotbar"></div>
+<div id="invui"></div>
+<div id="curstack"><canvas width="16" height="16"></canvas><div class="cnt"></div></div>
+<div id="hearts"></div><div id="bubbles"></div><div id="hunger"></div><div id="armorchip"><canvas width="16" height="16"></canvas><div class="abar"><i></i></div><span></span></div><div id="dmg"></div>
+<div id="ov" class="ovl">
+<h1>VOXELCRAFT</h1>
+<div id="seedline"></div>
+<div id="keys">
+<b>Mouse</b><span>look around</span>
+<b>W A S D</b><span>move &nbsp;(double-tap W or Ctrl = sprint)</span>
+<b>Space</b><span>jump / swim up</span>
+<b>Shift</b><span>sneak (slow, edge-safe, lower camera)</span>
+<b>L-click</b><span>hold to mine (hardness + tools matter)</span>
+<b>R-click</b><span>place block / use crafting table</span>
+<b>1-9 / wheel</b><span>select block</span>
+<b>E</b><span>inventory &amp; crafting</span>
+<b>F</b><span>toggle fly (Space up / Shift down)</span>
+<b>N</b><span>skip time of day</span>
+<b>M</b><span>mute sound</span>
+<b>H</b><span>show / hide this help</span>
+<b>Esc</b><span>pause / release mouse</span>
+</div>
+<div id="prog">Generating world...</div>
+<button id="play" style="display:none">Click to Play</button>
+</div>
+<div id="pause" class="ovl" style="display:none"><h2>Paused</h2><p>Click to resume &middot; H for help</p></div>
+<div id="death" class="ovl" style="display:none"><h2>You died</h2><button id="respawn">Respawn</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>
+'use strict';
+const SEED=1337;
+const qs=new URLSearchParams(location.search);
+const WS=(parseInt(qs.get('seed'),10)||SEED)|0;
+const TEST=qs.get('test')==='1';
+if(!window.THREE){document.getElementById('prog').textContent='Failed to load three.js from CDN (network needed once).';throw 0;}
+THREE.ColorManagement.enabled=false;
+/* ---------- noise ---------- */
+function h2i(x,z){let n=Math.imul(x,374761393)^Math.imul(z,668265263)^Math.imul(WS,974711);n=Math.imul(n^(n>>>13),1274126177);return(n^(n>>>16))>>>0;}
+function h2f(x,z){return h2i(x,z)/4294967296;}
+function h3i(x,y,z){let n=Math.imul(x,374761393)^Math.imul(y,2246822519)^Math.imul(z,668265263)^Math.imul(WS,974711);n=Math.imul(n^(n>>>13),1274126177);return(n^(n>>>16))>>>0;}
+function h3f(x,y,z){return h3i(x,y,z)/4294967296;}
+const lerp=(a,b,t)=>a+(b-a)*t;
+function sst(e0,e1,x){let t=(x-e0)/(e1-e0);t=t<0?0:t>1?1:t;return t*t*(3-2*t);}
+function vn2(x,z){const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi,u=xf*xf*(3-2*xf),v=zf*zf*(3-2*zf);
+return lerp(lerp(h2f(xi,zi),h2f(xi+1,zi),u),lerp(h2f(xi,zi+1),h2f(xi+1,zi+1),u),v);}
+function fbm2(x,z,o){let a=0,m=.5,f=1,s=0;for(let i=0;i<o;i++){a+=m*vn2(x*f,z*f);s+=m;m*=.5;f*=2.03;}return a/s;}
+function vn3(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi,
+u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf),
+a=lerp(lerp(h3f(xi,yi,zi),h3f(xi+1,yi,zi),u),lerp(h3f(xi,yi,zi+1),h3f(xi+1,yi,zi+1),u),w),
+b=lerp(lerp(h3f(xi,yi+1,zi),h3f(xi+1,yi+1,zi),u),lerp(h3f(xi,yi+1,zi+1),h3f(xi+1,yi+1,zi+1),u),w);
+return lerp(a,b,v);}
+function mb(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+/* ---------- textures ---------- */
+const TC=document.createElement('canvas');TC.width=128;TC.height=256;const tg=TC.getContext('2d'); /* atlas grew 128->256 tall (8x16 tiles, still POT) for breadth tiles 61-69; tuv row-div + avg scan updated to match - tiles 0-60 keep their exact texels */
+function T(i,f){const ox=(i&7)*16,oy=(i>>3)*16,R=mb(i*7919+17);
+f((x,y,r,g,b,a)=>{tg.fillStyle='rgba('+(r|0)+','+(g|0)+','+(b|0)+','+(a===undefined?1:a)+')';tg.fillRect(ox+x,oy+y,1,1);},R);}
+function noisy(P,R,r,g,b,v){for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*v;P(x,y,r*n,g*n,b*n);}}
+T(0,(P,R)=>{noisy(P,R,168,176,142,.3);for(let i=0;i<26;i++)P(R()*16|0,R()*16|0,130,142,108);});
+T(1,(P,R)=>{noisy(P,R,140,100,68,.3);for(let x=0;x<16;x++){const d=3+(R()*2|0);for(let y=0;y<d;y++)P(x,y,86+R()*30,150+R()*30,52+R()*20);}});
+T(2,(P,R)=>{noisy(P,R,140,100,68,.3);for(let i=0;i<14;i++)P(R()*16|0,R()*16|0,104,72,46);});
+T(3,(P,R)=>{noisy(P,R,128,128,128,.16);for(let i=0;i<5;i++){let x=R()*16|0,y=R()*16|0;for(let j=0;j<4;j++){P(x&15,y&15,96,96,98);x+=R()<.5?1:0;y+=1;}}});
+T(4,(P,R)=>{noisy(P,R,219,205,158,.1);for(let i=0;i<12;i++)P(R()*16|0,R()*16|0,198,182,132);});
+T(6,(P,R)=>{for(let x=0;x<16;x++){const c=R()<.28;for(let y=0;y<16;y++){const n=1+(R()-.5)*.2;c?P(x,y,80*n,60*n,36*n):P(x,y,106*n,82*n,50*n);}}P(7,4,60,44,26);P(8,4,60,44,26);P(7,5,60,44,26);});
+T(7,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const d=Math.max(Math.abs(x-7.5),Math.abs(y-7.5)),n=1+(R()-.5)*.18;
+if(d>6.7)P(x,y,84*n,64*n,38*n);else (d|0)%2?P(x,y,112*n,88*n,54*n):P(x,y,142*n,114*n,72*n);}});
+T(8,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const r=R();r<.16?P(x,y,82,104,70):P(x,y,142+r*40,166+r*40,116+r*30);}});
+T(9,(P,R)=>{noisy(P,R,238,243,250,.05);});
+T(10,(P,R)=>{noisy(P,R,140,100,68,.3);for(let x=0;x<16;x++){const d=3+(R()*2|0);for(let y=0;y<d;y++)P(x,y,232+R()*15,238+R()*12,246);}});
+T(11,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const v=40+R()*55;P(x,y,v,v,v+4);}});
+function oreT(i,r,g,b){T(i,(P,R)=>{noisy(P,R,128,128,128,.16);for(let k=0;k<5;k++){const x=1+R()*13|0,y=1+R()*13|0;P(x,y,r,g,b);P(x+1,y,r,g,b);P(x,y+1,r*1.2,g*1.2,b*1.2);P(x+1,y+1,r*.8,g*.8,b*.8);}});}
+oreT(12,32,32,38);oreT(13,205,158,128);
+T(14,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const rid=x%4===0,n=1+(R()-.5)*.2;rid?P(x,y,44*n,94*n,36*n):P(x,y,60*n,122*n,48*n);if(rid&&y%5===2)P(x,y,190,212,160);}});
+T(15,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const c=x>3&&x<12&&y>3&&y<12,n=1+(R()-.5)*.2;c?P(x,y,140*n,182*n,110*n):P(x,y,58*n,118*n,46*n);}});
+T(16,(P,R)=>{for(let y=7;y<16;y++)P(8,y,52+R()*20,126,40);P(6,10,52,120,40);P(7,9,60,134,44);P(10,11,52,120,40);P(9,10,60,134,44);
+const px=[[8,3],[7,4],[9,4],[8,5],[6,3],[10,3],[8,1],[7,2],[9,2]];for(const q of px)P(q[0],q[1],212+R()*40,48,48);P(8,3,250,214,64);});
+T(17,(P,R)=>{for(let i=0;i<10;i++){const x=1+(R()*14|0),h=4+R()*9|0;for(let y=0;y<h;y++)P(x,15-y,128+R()*60,158+R()*50,84+R()*30);}});
+T(18,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const r=R();r<.18?P(x,y,34,58,52):P(x,y,58+r*26,92+r*26,76+r*20);}});
+T(19,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.14;y%4===3?P(x,y,118*n,92*n,55*n):P(x,y,172*n,138*n,84*n);}
+for(let r=0;r<4;r++)P((r*5+r)%16,r*4+1,118,92,55);});
+T(20,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const e=x===0||x===15||y===0||y===15,n=1+(R()-.5)*.15;
+e?P(x,y,96*n,70*n,40*n):((x===7||x===8||y===7||y===8)?P(x,y,118*n,88*n,50*n):P(x,y,168*n,134*n,82*n));}});
+T(25,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.14;
+y<3?P(x,y,96*n,70*n,40*n):(y%4===3?P(x,y,118*n,92*n,55*n):P(x,y,172*n,138*n,84*n));}
+for(let q=0;q<4;q++){P(4+q%2,7+(q>>1),70,52,30);P(10+q%2,7+(q>>1),70,52,30);}});
+for(let cs=0;cs<4;cs++)T(21+cs,(P,R)=>{for(let k=0;k<2+cs*2;k++){let x=5+(R()*6|0),y=5+(R()*6|0);
+const n=6+cs*3;for(let j=0;j<n;j++){P(x&15,y&15,24,20,16);const dd=R();x+=dd<.3?1:dd<.6?-1:0;y+=dd<.5?1:-1;}}});
+T(26,(P,R)=>{for(let i=0;i<9;i++){P(3+i,12-i,124,84,46);P(4+i,12-i,150,104,58);}});
+function pickT(i,r,g,b){T(i,(P,R)=>{for(let j=0;j<9;j++){P(4+j,13-j,124,84,46);P(5+j,13-j,104,70,38);}
+for(let x=2;x<14;x++){const y=3+(x<5?5-x:x>10?x-10:0);P(x,y,r,g,b);P(x,y+1,r*.78,g*.78,b*.78);}});}
+pickT(27,158,110,60);pickT(28,134,134,138);pickT(29,214,214,224);
+/* combat tiles 44-47: sword blades (wood/stone/iron, handle+guard in pick wood colors) + rotten flesh */
+function swordT(i,r,g,b){T(i,(P,R)=>{for(let j=0;j<3;j++){P(2+j,14-j,124,84,46);P(3+j,14-j,104,70,38);}
+P(3,11,104,70,38);P(2,10,124,84,46);P(6,13,104,70,38);P(7,14,124,84,46); /* crossguard */
+for(let j=0;j<8;j++){const x=4+j,y=11-j;P(x,y,Math.min(255,r*1.18),Math.min(255,g*1.18),Math.min(255,b*1.18));P(x+1,y,r*.8,g*.8,b*.8);}});}
+swordT(44,158,110,60);swordT(45,134,134,138);swordT(46,214,214,224);
+T(47,(P,R)=>{for(let x=3;x<14;x++)for(let y=4;y<14;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.1+dy*dy<20&&R()<.92)P(x,y,120+R()*22,80+R()*16,52+R()*12);}
+for(let i=0;i<9;i++){const x=4+(R()*9|0),y=5+(R()*8|0);P(x,y,84+R()*18,96+R()*14,44+R()*10);P(x+1,y,84,96,44);}
+for(let i=0;i<5;i++)P(4+(R()*9|0),6+(R()*7|0),58,44,28);});
+/* armor tiles 48/49: chestplate silhouettes - shoulder-notched torso (neck gap splits two shoulder posts)
+   + darker right-edge shading column like pickT; 48 = plank palette (pragmatic substitution for leather), 49 = iron */
+function armorT(i,r,g,b){T(i,(P,R)=>{
+for(let x=4;x<=11;x++)for(let y=5;y<=13;y++){
+if(y<=6&&x>=7&&x<=8)continue; /* neck notch */
+const n=1+(R()-.5)*.12,s=x===11?.78:1;P(x,y,Math.min(255,r*n*s),Math.min(255,g*n*s),Math.min(255,b*n*s));}
+P(3,6,r*.9,g*.9,b*.9);P(3,7,r*.9,g*.9,b*.9);P(12,6,r*.7,g*.7,b*.7);P(12,7,r*.7,g*.7,b*.7); /* shoulder caps */
+});}
+armorT(48,158,110,60);armorT(49,214,214,224);
+T(30,(P,R)=>{for(let x=4;x<13;x++)for(let y=5;y<14;y++){const dx=x-8,dy=y-9;
+if(dx*dx+dy*dy*1.2<17)P(x,y,188+R()*50,34+R()*22,30+R()*14);}
+P(6,7,255,140,120);P(7,6,255,170,140);P(8,4,110,74,34);P(8,3,96,64,30);P(9,3,84,140,52);P(10,2,94,156,58);P(10,3,84,140,52);});
+T(31,(P,R)=>{for(let x=3;x<14;x++)for(let y=4;y<14;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.1+dy*dy<20)P(x,y,222+R()*26,118+R()*30,118+R()*20);}
+for(let x=6;x<12;x++)for(let y=6;y<12;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.3+dy*dy<6.5)P(x,y,244,168+R()*30,158);}
+P(4,5,238,232,220);P(5,4,238,232,220);P(4,4,246,242,232);P(3,4,230,224,210);});
+/* farming tiles 32-38: farmland top, wheat stages, seed/wheat/bread item icons (unset pixels stay transparent) */
+T(32,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.3;y%4===1?P(x,y,104*n,72*n,46*n):P(x,y,140*n,100*n,68*n);}});
+T(33,(P,R)=>{for(let i=0;i<7;i++){const x=1+(R()*14|0),h=2+(R()*3|0);for(let y=0;y<h;y++)P(x,15-y,66+R()*28,148+R()*36,46+R()*18);}});
+T(34,(P,R)=>{for(let i=0;i<9;i++){const x=1+(R()*14|0),h=5+(R()*5|0);for(let y=0;y<h;y++)P(x,15-y,128+R()*40,156+R()*36,60+R()*24);}});
+T(35,(P,R)=>{for(let i=0;i<10;i++){const x=1+(R()*14|0),h=10+(R()*4|0);for(let y=0;y<h;y++)P(x,15-y,196+R()*26,164+R()*24,56+R()*16);P(x,15-h,232,202,96);P(x,16-h,214,184,76);}});
+T(36,(P,R)=>{for(let i=0;i<8;i++){const x=3+(R()*10|0),y=3+(R()*10|0);P(x,y,218,208,152);P(x+1,y,196,184,128);}});
+T(37,(P,R)=>{for(let x=5;x<11;x++){const o=(x===5||x===10)?1:0;for(let y=2+o;y<14-o;y++)P(x,y,198+R()*28,168+R()*24,58+R()*14);}
+for(let x=4;x<12;x++)P(x,8,148,108,48);P(6,2,232,204,96);P(7,2,232,204,96);P(8,2,232,204,96);P(9,2,232,204,96);});
+T(38,(P,R)=>{for(let x=2;x<14;x++)for(let y=5;y<13;y++){const dx=x-7.5,dy=y-9;
+if(dx*dx*.32+dy*dy*1.1<10.5)P(x,y,y<8?206+R()*18:172+R()*14,y<8?156+R()*14:122+R()*10,(y<8?80:62)+R()*8);}});
+/* torch tile 39: 2px stick from bottom-center up to y=5, 3x3 glowing head, transparent elsewhere */
+T(39,(P,R)=>{for(let y=5;y<16;y++){const n=1+(R()-.5)*.25;P(7,y,124*n,84*n,46*n);P(8,y,124*n,84*n,46*n);}
+for(let x=6;x<9;x++)for(let y=2;y<5;y++)P(x,y,255,160,40);
+P(7,3,255,220,90);P(8,3,255,220,90);P(7,2,255,200,70);});
+/* smelting tiles 40-43: furnace front (dark opening + embers), furnace side, iron ingot + cooked porkchop icons */
+T(40,(P,R)=>{noisy(P,R,128,128,128,.16);for(let i=0;i<4;i++){let x=R()*16|0,y=R()*8|0;for(let j=0;j<3;j++){P(x&15,y&7,96,96,98);x+=R()<.5?1:0;y+=1;}}
+for(let x=5;x<11;x++)for(let y=10;y<14;y++)P(x,y,26+R()*8,22+R()*6,20+R()*6);
+P(7,12,255,120,30);P(8,13,255,120,30);P(9,12,255,120,30);});
+T(41,(P,R)=>{noisy(P,R,116,116,118,.16);for(let i=0;i<5;i++){let x=R()*16|0,y=R()*16|0;for(let j=0;j<4;j++){P(x&15,y&15,88,88,90);x+=R()<.5?1:0;y+=1;}}});
+T(42,(P,R)=>{for(let k=0;k<2;k++){const oy=3+k*6;
+for(let y=0;y<4;y++){const x0=5-(y>>1),x1=10+(y>>1);
+for(let x=x0;x<=x1;x++){const n=(1+(R()-.5)*.08)*(y===0?1.12:1);P(x,oy+y,Math.min(255,214*n),Math.min(255,214*n),Math.min(255,224*n));}}}});
+T(43,(P,R)=>{for(let x=3;x<14;x++)for(let y=4;y<14;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.1+dy*dy<20)P(x,y,158+R()*16,90+R()*14,48+R()*10);}
+for(let x=6;x<12;x++)for(let y=6;y<12;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.3+dy*dy<6.5)P(x,y,194+R()*14,134+R()*12,84+R()*10);}
+P(4,5,238,232,220);P(5,4,238,232,220);P(4,4,246,242,232);P(3,4,230,224,210);});
+/* wool tile 50: noisy near-white like snow(9) but warmer (cream cast) + sparse darker fleece flecks */
+T(50,(P,R)=>{noisy(P,R,233,228,215,.12);for(let i=0;i<14;i++)P(R()*16|0,R()*16|0,212,204,186);});
+/* redstone-lite tiles 51-58: lever off/on (stone base + tilted stick, red tip when on), wire cross-trace
+   on transparent ground (dull grey-red off / bright red on), lamp dark-lattice off / warm-glow on,
+   door lower (handle) + upper (window) plank panels */
+T(51,(P,R)=>{for(let x=4;x<12;x++)for(let y=12;y<16;y++)P(x,y,116+R()*24,116+R()*24,120+R()*24);
+for(let i=0;i<7;i++){P(7-(i>>1),11-i,124,84,46);P(8-(i>>1),11-i,104,70,38);}});
+T(52,(P,R)=>{for(let x=4;x<12;x++)for(let y=12;y<16;y++)P(x,y,116+R()*24,116+R()*24,120+R()*24);
+for(let i=0;i<7;i++){P(8+(i>>1),11-i,124,84,46);P(9+(i>>1),11-i,104,70,38);}P(11,5,255,60,40);P(12,5,255,120,80);});
+T(53,(P,R)=>{for(let x=0;x<16;x++)for(let y=6;y<10;y++)P(x,y,(y===7||y===8)?150+R()*24:104+R()*18,40+R()*12,36+R()*10);
+for(let y=0;y<16;y++)for(let x=6;x<10;x++)P(x,y,(x===7||x===8)?150+R()*24:104+R()*18,40+R()*12,36+R()*10);});
+T(54,(P,R)=>{for(let x=0;x<16;x++)for(let y=6;y<10;y++)P(x,y,235+R()*20,(y===7||y===8)?70+R()*40:38+R()*20,30+R()*14);
+for(let y=0;y<16;y++)for(let x=6;x<10;x++)P(x,y,235+R()*20,(x===7||x===8)?70+R()*40:38+R()*20,30+R()*14);});
+T(55,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const g=x===0||x===15||y===0||y===15||x===5||x===10||y===5||y===10;
+g?P(x,y,38+R()*10,30+R()*8,24+R()*6):P(x,y,96+R()*18,64+R()*12,28+R()*8);}});
+T(56,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const g=x===0||x===15||y===0||y===15||x===5||x===10||y===5||y===10;
+g?P(x,y,120+R()*20,86+R()*14,40+R()*10):P(x,y,250,208+R()*30,96+R()*40);}});
+T(57,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const e=x===0||x===15,n=1+(R()-.5)*.14;
+e?P(x,y,96*n,70*n,40*n):(x===7||x===8)?P(x,y,118*n,88*n,50*n):P(x,y,168*n,134*n,82*n);}
+P(12,3,225,225,232);P(12,4,200,200,210);});
+T(58,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const e=x===0||x===15||y===0,n=1+(R()-.5)*.14,w=x>4&&x<11&&y>5&&y<11;
+e?P(x,y,96*n,70*n,40*n):w?P(x,y,150+R()*30,190+R()*30,220+R()*20):(x===7||x===8)?P(x,y,118*n,88*n,50*n):P(x,y,168*n,134*n,82*n);}});
+/* bed tile 59 (block 35): white pillow band at the head, dark seam, red blanket, wood footboard rows */
+T(59,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.14;
+y<4?P(x,y,226*n,222*n,212*n):y===4?P(x,y,142*n,38*n,34*n):y<14?P(x,y,178*n,46*n,40*n):P(x,y,104*n,74*n,44*n);}});
+/* bow tile 60 (item 117): quarter-circle wooden limb (pick-handle palette) bulging upper-right,
+   pale string chord drawn last between the tips - string pixels overwrite limb shading where they meet */
+T(60,(P,R)=>{for(let i=0;i<=10;i++){const a=i/10*1.5708,x=3+Math.round(9*Math.sin(a)),y=12-Math.round(9*Math.cos(a));
+P(x,y,124+R()*12,84,46);P(x+1,y+1,104,70,38);}
+P(2,2,90,60,34);P(13,13,90,60,34);
+for(let i=0;i<=9;i++)P(3+i,3+i,214,214,222);});
+/* breadth-pack tiles 61-69 (atlas rows 7-8): birch bark + paler leaves, berry bush full/picked
+   cross-planes, sandstone, stone bricks, and the berries / raw mutton / cooked mutton item icons */
+T(61,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.1;P(x,y,224*n,220*n,208*n);}
+for(let i=0;i<9;i++){const x=R()*13|0,y=R()*15|0;P(x,y,54,48,38);P(x+1,y,40,36,30);P(x+2,y,54,48,38);}}); /* white birch bark, dark horizontal seams */
+T(62,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const r=R();r<.14?P(x,y,108,128,84):P(x,y,168+r*36,186+r*34,128+r*26);}}); /* paler leaves (tile-8 recipe, lifted palette) */
+T(63,(P,R)=>{for(let x=2;x<14;x++)for(let y=5;y<15;y++){const dx=x-7.5,dy=y-10;
+if(dx*dx*.9+dy*dy*1.1<22&&R()<.93)P(x,y,44+R()*22,98+R()*30,40+R()*16);}
+for(const q of[[4,8],[7,7],[10,9],[5,11],[9,12],[12,8],[7,13]]){P(q[0],q[1],208,40,46);P(q[0]+1,q[1],160,26,34);}}); /* full berry bush: green dome + red berry pairs */
+T(64,(P,R)=>{for(let x=2;x<14;x++)for(let y=5;y<15;y++){const dx=x-7.5,dy=y-10;
+if(dx*dx*.9+dy*dy*1.1<22&&R()<.9)P(x,y,40+R()*20,92+R()*26,38+R()*14);}}); /* picked bush: same dome, berries gone */
+T(65,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const n=1+(R()-.5)*.1,b=(y&7)===7?.8:(y&3)===1?.93:1;
+P(x,y,216*n*b,198*n*b,150*n*b);}}); /* sandstone: sand palette, banded courses */
+T(66,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const m=y%4===3||((x+((y>>2)&1)*4)%8)===7,n=1+(R()-.5)*.12;
+m?P(x,y,84*n,84*n,86*n):P(x,y,132*n,132*n,134*n);}}); /* stone bricks: mortar grid, offset courses */
+T(67,(P,R)=>{for(const q of[[6,8],[9,7],[8,11],[5,11],[11,10]]){
+for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)if(dx*dx+dy*dy<2)P(q[0]+dx,q[1]+dy,196+R()*30,36+R()*18,42+R()*12);
+P(q[0],q[1]-1,240,96,100);}
+P(8,5,84,140,52);P(9,4,94,156,58);P(7,5,70,120,44);}); /* berries icon: red cluster + leaf sprig */
+T(68,(P,R)=>{for(let x=3;x<14;x++)for(let y=4;y<14;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.1+dy*dy<20)P(x,y,196+R()*30,70+R()*20,72+R()*16);}
+for(let x=6;x<12;x++)for(let y=6;y<12;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.3+dy*dy<6.5)P(x,y,226,130+R()*24,124+R()*10);}
+P(4,5,238,232,220);P(5,4,238,232,220);P(4,4,246,242,232);P(3,4,230,224,210);}); /* raw mutton: porkchop-family shape, redder raw palette + bone tip */
+T(69,(P,R)=>{for(let x=3;x<14;x++)for(let y=4;y<14;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.1+dy*dy<20)P(x,y,148+R()*16,82+R()*14,44+R()*10);}
+for(let x=6;x<12;x++)for(let y=6;y<12;y++){const dx=x-8.5,dy=y-9;
+if(dx*dx*1.3+dy*dy<6.5)P(x,y,188+R()*14,126+R()*12,78+R()*10);}
+P(4,5,238,232,220);P(5,4,238,232,220);P(4,4,246,242,232);P(3,4,230,224,210);}); /* cooked mutton: cooked-porkchop browns */
+/* button tiles 70/71 (slice 2): stone nub on transparent bg, rendered as lever-style cross-planes;
+   70 = idle raised pad, 71 = pressed - sunken one row, darker, warm power glint */
+T(70,(P,R)=>{for(let x=5;x<11;x++)for(let y=9;y<14;y++){const e=x===5||x===10||y===9||y===13,v=(e?96:128)+R()*18;
+P(x,y,v,v,v+2);}});
+T(71,(P,R)=>{for(let x=5;x<11;x++)for(let y=10;y<14;y++){const e=x===5||x===10||y===10||y===13,v=(e?78:104)+R()*14;
+P(x,y,v,v,v+2);}
+P(7,11,255,120,60);P(8,11,255,120,60);});
+/* lane B chest tiles 72/73 (row 9): 72 = top/bottom (warm planks, dark rim), 73 = front/side (lid seam at
+   y=5 + iron latch). Pure additions on the existing 8x16/128x256 atlas - tiles 0-71 keep their exact texels. */
+T(72,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const e=x===0||x===15||y===0||y===15,n=1+(R()-.5)*.15;
+e?P(x,y,84*n,60*n,34*n):P(x,y,152*n,114*n,64*n);}});
+T(73,(P,R)=>{for(let x=0;x<16;x++)for(let y=0;y<16;y++){const e=x===0||x===15||y===0||y===15,n=1+(R()-.5)*.15;
+e?P(x,y,84*n,60*n,34*n):y===5?P(x,y,92*n,66*n,38*n):P(x,y,152*n,114*n,64*n);}
+for(let y=4;y<8;y++){P(7,y,170,170,178);P(8,y,170,170,178);}P(7,6,118,118,128);P(8,6,118,118,128);});
+/* lane C redstone-torch tiles 74/75 (row 9, beside the chest): torch-39 layout - 2px stick, 3x3 head on
+   transparent bg - in redstone reds. 74 = lit (glowing core + glint), 75 = off (dead maroon). Pure
+   additions: tiles 0-73 keep their exact texels. */
+T(74,(P,R)=>{for(let y=8;y<16;y++){const n=1+(R()-.5)*.25;P(7,y,124*n,84*n,46*n);P(8,y,124*n,84*n,46*n);}
+for(let x=6;x<9;x++)for(let y=5;y<8;y++)P(x,y,235+R()*20,40+R()*24,30+R()*12);
+P(7,6,255,150,110);P(8,5,255,110,80);P(7,5,255,90,60);});
+T(75,(P,R)=>{for(let y=8;y<16;y++){const n=1+(R()-.5)*.25;P(7,y,124*n,84*n,46*n);P(8,y,124*n,84*n,46*n);}
+for(let x=6;x<9;x++)for(let y=5;y<8;y++)P(x,y,96+R()*16,26+R()*10,22+R()*8);
+P(7,6,72,20,18);});
+const avg=[];{const id=tg.getImageData(0,0,128,256).data;for(let t=0;t<128;t++){const ox=(t&7)*16,oy=(t>>3)*16;let r=0,g=0,b=0,n=0;
+for(let x=0;x<16;x++)for(let y=0;y<16;y++){const k=((oy+y)*128+ox+x)*4;if(id[k+3]>128){r+=id[k];g+=id[k+1];b+=id[k+2];n++;}}
+avg[t]=n?[r/n/255,g/n/255,b/n/255]:[1,1,1];}}
+const WC=document.createElement('canvas');WC.width=32;WC.height=32;{const c=WC.getContext('2d'),R=mb(WS^991);
+for(let x=0;x<32;x++)for(let y=0;y<32;y++){const r=R(),rip=((y+Math.round(2.5*Math.sin(x/4.5)))%8)===0;
+c.fillStyle=rip?'rgb(120,170,235)':'rgb('+(42+r*28|0)+','+(96+r*36|0)+','+(186+r*48|0)+')';c.fillRect(x,y,1,1);}}
+const CC2=document.createElement('canvas');CC2.width=128;CC2.height=128;{const c=CC2.getContext('2d');
+for(let x=0;x<128;x++)for(let y=0;y<128;y++){const a=sst(.56,.72,fbm2(x*.07+513.3,y*.07-77.7,3));
+if(a>0){c.fillStyle='rgba(255,255,255,'+(a*.92).toFixed(2)+')';c.fillRect(x,y,1,1);}}}
+/* ---------- blocks ---------- */
+const BL={1:{t:[0,2,1],ti:1},2:{t:[2,2,2]},3:{t:[3,3,3]},4:{t:[4,4,4]},5:{},6:{t:[7,7,6]},7:{t:[8,8,8],ti:2},
+8:{t:[9,2,10]},9:{t:[11,11,11]},10:{t:[12,12,12]},11:{t:[13,13,13]},12:{t:[15,15,14]},13:{cr:16},14:{cr:17,ti:2},
+15:{t:[18,18,18]},16:{t:[19,19,19]},17:{t:[20,19,25]},18:{t:[32,2,2]},19:{cr:33},20:{cr:34},21:{cr:35},22:{cr:39},23:{t:[41,41,40]},24:{t:[50,50,50]},
+25:{cr:51},26:{cr:52},27:{fl:53,cr:53},28:{fl:54,cr:54},29:{t:[55,55,55]},30:{t:[56,56,56]},31:{t:[57,57,57]},32:{t:[58,58,58]},33:{cr:57},34:{cr:58},35:{t:[59,59,59]},
+36:{t:[7,7,61]},37:{t:[62,62,62],ti:2},38:{cr:63},39:{cr:64},40:{t:[65,65,65]},41:{t:[66,66,66]},42:{cr:70},43:{cr:71},44:{t:[72,72,73]},45:{cr:74},46:{cr:75}}; /* redstone-lite 25-34; wire fl = flat ground quad (cr kept for icons/drops); 35 = bed, solid 1-block (flagged substitution vs MC's 2-block half-height); breadth pack 36-41: birch log/leaves mirror oak 6/7 (solid+OPQ, so occlusion fingerprints hold), berry bush full/picked are walk-through cross-planes, sandstone + stone bricks plain solids; slice 2: stone button 42 idle / 43 pressed, lever-style cross-plane nubs; lane B: 44 = chest, plain solid loot block (top/bottom 72, latch sides 73); slice 3: redstone torch 45 lit / 46 off, cross-plane nubs like the lever */
+const NSOLID={5:1,13:1,14:1,19:1,20:1,21:1,22:1,25:1,26:1,27:1,28:1,33:1,34:1,38:1,39:1,42:1,43:1,45:1,46:1};const SOLID=b=>b>0&&!NSOLID[b]; /* closed door 31/32 + lamps stay solid; berry bushes 38/39 walk-through (no spawn hazard, no light occlusion); buttons 42/43 + redstone torches 45/46 walk-through like levers */
+const OPQ=SOLID;
+const NAMES={1:'Grass',2:'Dirt',3:'Stone',4:'Sand',6:'Log',16:'Planks',7:'Leaves',10:'Coal Ore',11:'Iron Ore',17:'Crafting Table',18:'Farmland',19:'Wheat',20:'Wheat',21:'Wheat',22:'Torch',23:'Furnace',24:'Wool',25:'Lever',26:'Lever',27:'Redstone Wire',28:'Redstone Wire',29:'Redstone Lamp',30:'Redstone Lamp',31:'Door',32:'Door',33:'Door',34:'Door',35:'Bed',36:'Birch Log',37:'Birch Leaves',38:'Berry Bush',39:'Berry Bush',40:'Sandstone',41:'Stone Bricks',42:'Button',43:'Button',44:'Chest',45:'Redstone Torch',46:'Redstone Torch (off)',100:'Stick',101:'Wood Pick',102:'Stone Pick',103:'Iron Pick',104:'Iron Ingot',105:'Apple',106:'Porkchop',107:'Seeds',108:'Wheat',109:'Bread',110:'Cooked Porkchop',111:'Wood Sword',112:'Stone Sword',113:'Iron Sword',114:'Rotten Flesh',115:'Plank Armor',116:'Iron Armor',117:'Bow',118:'Berries',119:'Raw Mutton',120:'Cooked Mutton'};
+const DROPS={1:2,8:2,2:2,3:3,4:4,6:6,7:7,15:7,16:16,10:10,11:11,17:17,18:2,19:107,20:107,21:108,22:22,23:23,24:24,25:25,26:25,27:27,28:27,29:29,30:29,31:31,32:31,33:31,34:31,35:35,36:36,37:37,40:40,41:41,42:42,43:42,45:45,46:45}; /* power family drops normalize to one item id (button 43 -> 42, redstone torch 46 -> 45 lit); berry bushes 38/39 deliberately absent - 38 harvests to 39 inside doBreak, 39 breaks empty; chest 44 deliberately absent too - its contents spill in doBreak but the block never drops (a placeable chest would lazily reseed loot) */
+/* ---------- items / inventory ---------- */
+const inv=new Array(36).fill(null);          /* 36 slots; 0-8 = hotbar */
+[1,2,3,4,6,16,7,10,11].forEach((b,i)=>inv[i]={id:b,count:10});
+const DURMAX={101:60,102:132,103:251,111:60,112:132,113:251,115:60,116:160,117:60},PICKT={101:1,102:2,103:3},PMULT=[1,.32,.25,.18],ATK={111:4,112:5,113:6},DEF={115:1,116:2}; /* swords: attack damage only - never in PICKT (no TOOLREQ tier, no mining speed); armor (DEF): flat damage reduction only - armor ids are never in PICKT/ATK (no mining, no attack); bow 117: dur-only tool semantics (fires, never mines/melees) */
+const ITILE={100:26,101:27,102:28,103:29,104:42,105:30,106:31,107:36,108:37,109:38,110:43,111:44,112:45,113:46,114:47,115:48,116:49,117:60,118:67,119:68,120:69};
+const HARD={13:.05,14:.05,7:.3,15:.3,1:.45,2:.45,4:.45,8:.45,12:.4,6:.8,16:.8,17:.8,3:2.2,10:2.8,11:3.5,18:.45,19:.05,20:.05,21:.05,22:.05,23:2.2,24:.5,25:.5,26:.5,27:.05,28:.05,29:.8,30:.8,31:.8,32:.8,33:.8,34:.8,35:.3,36:.8,37:.3,38:.05,39:.05,40:.8,41:2.2,42:.5,43:.5,44:.8,45:.05,46:.05}; /* birch mirrors oak 6/7; bricks mirror stone; buttons mirror the lever; chest mirrors planks; redstone torches mirror torch 22 */
+const TOOLREQ={3:1,10:1,11:2,23:1,41:1};     /* min pickaxe tier for the block to drop (and mine fast); stone bricks gate like stone */
+const isTool=id=>DURMAX[id]!==undefined;
+function mkStack(id,n){return isTool(id)?{id,count:n||1,dur:DURMAX[id]}:{id,count:n||1};}
+function invCount(id){let n=0;for(const s of inv)if(s&&s.id===id)n+=s.count;return n;}
+function consume(id,n){for(let i=0;i<36&&n>0;i++){const s=inv[i];if(s&&s.id===id){const t=Math.min(s.count,n);s.count-=t;n-=t;if(s.count<=0)inv[i]=null;}}}
+function addItem(st,a,b){a=a||0;b=b||36;
+if(isTool(st.id)){while(st.count>0){let p=-1;for(let i=a;i<b;i++)if(!inv[i]){p=i;break;}
+if(p<0)break;inv[p]={id:st.id,count:1,dur:st.dur!==undefined?st.dur:DURMAX[st.id]};st.count--;}
+updCounts();return st.count===0;}
+for(let i=a;i<b&&st.count>0;i++){const s=inv[i];if(s&&s.id===st.id&&s.count<64){const t=Math.min(64-s.count,st.count);s.count+=t;st.count-=t;}}
+for(let i=a;i<b&&st.count>0;i++){if(!inv[i]){const t=Math.min(64,st.count);inv[i]={id:st.id,count:t};st.count-=t;}}
+updCounts();return st.count===0;}
+/* count-matched recipes (cells hold stacks, so the 2x2 pocket grid fits 5-item pick recipes).
+   Smelting exists now (furnace block 23): the iron pick requires iron INGOTS (104) smelted from ore. */
+const RECIPES=[{in:{6:1},out:16,n:4},{in:{16:2},out:100,n:4},{in:{16:4},out:17,n:1},
+{in:{16:3,100:2},out:101,n:1},{in:{3:3,100:2},out:102,n:1},{in:{104:3,100:2},out:103,n:1},
+{in:{108:3},out:109,n:1},
+{in:{3:5},out:23,n:1}, /* furnace: 5 stone in the pocket grid - pragmatic substitution for MC's 8-in-3x3 */
+{in:{100:1,10:1},out:22,n:4}, /* torch: stick + coal ORE (10) - pragmatic substitution, no coal item */
+{in:{16:2,100:1},out:111,n:1},{in:{3:2,100:1},out:112,n:1},{in:{104:2,100:1},out:113,n:1}, /* swords: 2 material + 1 stick; iron sword consumes smelted INGOTS (104), mirroring the ingot-gated iron pick. 3-material grids match picks via most-specific-wins (pick sum 5 > sword sum 3) */
+{in:{16:6},out:115,n:1}, /* Plank Armor: 6 planks, count-matched like the 5-stone furnace - pragmatic substitution for MC leather (no animal hides). Grid note: matchRecipe is most-specific-wins, so 6 planks yield armor (sticks=2 / table=4 need fewer) - grid-reachable since round 8 */
+{in:{104:5},out:116,n:1}, /* Iron Armor: 5 smelted ingots in the pocket grid - pragmatic substitution for MC's 8-in-3x3 */
+{in:{3:1,100:1},out:25,n:1}, /* lever: stone + stick (3-stone+2-stick grids still resolve Stone Pick via most-specific-wins, sum 5>2) */
+{in:{10:1},out:27,n:4}, /* redstone wire: coal-ore-as-redstone-dust - pragmatic substitution, no redstone item */
+{in:{10:2,16:2},out:29,n:1}, /* redstone lamp: coal ore + planks (glowstone substitution) */
+{in:{16:5},out:31,n:1}, /* door: 5 planks, NOT MC's 6 - {16:6} is Plank Armor; most-specific-wins (sum 6>5) keeps armor reachable, verified no shadowing */
+{in:{16:3,24:3},out:35,n:1}, /* bed: 3 planks + 3 wool (MC-parity counts); key-set {16,24} matches no other recipe - verified non-shadowing: wood pick {16:3,100:2} needs sticks, Plank Armor {16:6} is single-key */
+{in:{100:3,24:2},out:117,n:1}, /* bow: 3 sticks + 2 wool-as-string (flagged substitution - no string item; wool's second sink). Key-set {100,24} is unique across RECIPES - verified non-shadowing (bed is {16,24}, torch is {100,10}) */
+{in:{4:4},out:40,n:1}, /* sandstone: 4 sand -> 1; key-set {4} appears in no other recipe - shadow-free */
+{in:{3:4},out:41,n:4}, /* stone bricks: 4 stone -> 4; shares key-set {3} with the 5-stone furnace, but most-specific-wins (sum 5>4) keeps every >=5-stone grid resolving to the furnace - exactly-4-stone grids matched nothing before */
+{in:{3:1},out:42,n:1}, /* stone button (slice 2): 1 stone. Matrix run: key-set {3} sum 1 - bricks (4) and furnace (5) outrank it on >=4-stone grids; lever {3:1,100:1} is a 2-KEY set so the exact-key-count check keeps stone+stick grids resolving to the lever; 1-3 stone grids matched nothing before. No shadowing. */
+{in:{27:1,100:1},out:45,n:1}]; /* redstone torch (slice 3): 1 redstone-wire item + 1 stick - fixes the slice-2 collision (the dropped {stick+coal} spec was byte-identical to torch 22). Matrix run: key-set {27,100} appears in NO other recipe - lever is {3,100}, torch is {100,10}, bow is {100,24}, picks/swords carry {16|3|104,100} - and wire 27 is never an input elsewhere, so the exact-key-set check makes this grid unambiguous. No shadowing either direction. */
+/* ---------- smelting: player-placed furnaces (block 23); map bounded by placement, entries created lazily on open/put ---------- */
+const furnaces=new Map(); /* 'x,y,z' -> {inp:stack|null,fuel:stack|null,out:stack|null,burn:s,cook:s} */
+const SMELT={11:104,106:110,119:120}; /* iron ore -> iron ingot, porkchop -> cooked porkchop, raw mutton -> cooked mutton */
+const FUEL={10:40,6:7.5,16:7.5}; /* burn seconds; coal ore = 8 smelts at 5s each */
+function furnState(x,y,z){if(getB(x,y,z)!==23)return null;const k=x+','+y+','+z;
+let f=furnaces.get(k);if(!f){f={inp:null,fuel:null,out:null,burn:0,cook:0};furnaces.set(k,f);}return f;}
+function updFurnace(dt){if(!furnaces.size)return;
+for(const f of furnaces.values()){
+const sm=f.inp&&SMELT[f.inp.id]&&(!f.out||(f.out.id===SMELT[f.inp.id]&&f.out.count<64));
+if(f.burn<=0&&sm&&f.fuel&&FUEL[f.fuel.id]){f.burn=FUEL[f.fuel.id];f.fuel.count--;if(f.fuel.count<=0)f.fuel=null;}
+if(f.burn>0){f.burn-=dt;
+if(sm){f.cook+=dt;
+if(f.cook>=5){f.cook=0;const oid=SMELT[f.inp.id];f.inp.count--;if(f.inp.count<=0)f.inp=null;
+if(f.out)f.out.count++;else f.out={id:oid,count:1};}}
+else f.cook=0;}
+else f.cook=0;} /* no burn (or fuel ran out): progress resets */
+if(uiOpen&&furnKey)renderFurn();}
+/* ---------- loot chests (block 44, gen-placed only): TAKE-ONLY - there is no write path back in ---------- */
+const chests=new Map(); /* 'x,y,z' -> [stack|null x3], mirrors furnaces; persisted via optional save field chs - an all-null (emptied) entry persists too, so taken loot stays taken across reloads */
+function chestState(x,y,z){if(getB(x,y,z)!==44)return null;const k=x+','+y+','+z;
+let c=chests.get(k);if(!c){const r=h3i(x,y,z); /* lazy deterministic seed (h3f's integer form - same hash, whole bits): 2-3 bread / 3-4 torches / 1-2 iron ingots */
+c=[{id:109,count:2+r%2},{id:22,count:3+(r>>3)%2},{id:104,count:1+(r>>6)%2}];chests.set(k,c);}return c;}
+/* ---------- worldgen ---------- */
+const H=64,SEA=26,RD=6;
+const CCmap=new Map();
+/* rawH: height only (no CCmap write, no biome/veg) so beach neighbor lookups can't recurse */
+function rawH(x,z){const cont=fbm2(x*.0035,z*.0035,4),t=fbm2(x*.0045+813.7,z*.0045-217.3,3),m=fbm2(x*.004-411.9,z*.004+672.2,3);
+const cold=sst(.42,.3,t),wet=sst(.45,.62,m),dry=sst(.55,.7,t)*(1-wet);
+const mtn=sst(.48,.78,cont)*(.45+.85*cold);
+const amp=(5+8*wet+46*mtn)*(1-.55*dry);
+let h=SEA-7+cont*17+(fbm2(x*.013,z*.013,4)-.5)*2*amp+(fbm2(x*.055,z*.055,2)-.5)*4;
+const rv=Math.abs(fbm2(x*.0028+3210.5,z*.0028-1234.5,3)-.5);
+h+=(SEA-2.5-h)*(sst(.06,.02,rv)*sst(SEA+22,SEA+3,h));
+return Math.max(3,Math.min(H-12,Math.round(h)));}
+function CI(x,z){const k=x+'_'+z;let c=CCmap.get(k);if(c)return c;
+const t=fbm2(x*.0045+813.7,z*.0045-217.3,3),m=fbm2(x*.004-411.9,z*.004+672.2,3);
+const cold=sst(.42,.3,t),wet=sst(.45,.62,m),dry=sst(.55,.7,t)*(1-wet);
+const h=rawH(x,z);
+/* biome label from lower-octave fields (de-jitter); 3-octave t/m kept for tint blending */
+const tB=fbm2(x*.0045+813.7,z*.0045-217.3,2),mB=fbm2(x*.004-411.9,z*.004+672.2,2);
+const biome=tB<.36?'snowy':(tB>.58&&mB<.46)?'desert':mB>.55?'forest':'plains';
+const snow=h>=45||(biome==='snowy'&&h>SEA);
+let tp,un;
+if(h<=SEA||(h<=SEA+2&&(rawH(x-3,z)<SEA||rawH(x+3,z)<SEA||rawH(x,z-3)<SEA||rawH(x,z+3)<SEA))){tp=4;un=4;}
+else if(biome==='desert'){tp=4;un=4;}else if(snow){tp=8;un=2;}else if(h>=42){tp=3;un=3;}else{tp=1;un=2;}
+let tr2=.62,tg2=.93,tb2=.40;
+tr2+=(.34-tr2)*wet;tg2+=(.74-tg2)*wet;tb2+=(.27-tb2)*wet;
+tr2+=(.78-tr2)*dry;tg2+=(.85-tg2)*dry;tb2+=(.45-tb2)*dry;
+tr2+=(.66-tr2)*cold;tg2+=(.78-tg2)*cold;tb2+=(.64-tb2)*cold;
+const r=h2i(x^0x51ab,z^0x9e3d);
+let tree=0,cac=0,fl=0,tf=0,bush=0;
+if(tp===1){if(biome==='forest'&&r%29===0)tree=1;else if(biome==='plains'&&r%241===0)tree=1;
+else if(r%53===1&&!snow)fl=1;else if(r%17===2&&!snow)tf=1;
+else if((biome==='plains'||biome==='forest')&&!snow&&r%173<2)bush=1;} /* berry bush: VIRGIN r-window appended strictly after every existing deco branch (tp===1 is the enclosing gate, so this IS the chain's end for grass columns) - all tree/fl/tf/cac outcomes stay bit-identical; fires only on previously-bare grass */
+else if(tp===8&&biome==='snowy'&&r%61===0)tree=2;
+else if(biome==='desert'&&tp===4&&h>SEA+2&&r%97<2)cac=1;
+c={h,biome,tp,un,ti:[tr2,tg2,tb2],tree,cac,fl,tf,bush,r,snow};
+CCmap.set(k,c);if(CCmap.size>4e5)CCmap.clear();return c;}
+function cave(x,y,z,h){const d=h-y;
+if(d>14&&vn3(x*.027,y*.045,z*.027)>.79)return true;
+const t=.052*Math.min(1,.3+d/7);
+const a=vn3(x*.052,y*.085,z*.052)-.5;if(Math.abs(a)>t)return false;
+const b=vn3(x*.052+91.3,y*.085+47.7,z*.052+131.1)-.5;return Math.abs(b)<t;}
+/* sinkhole entrance regime (round-8 probe fix: cave mouths were a mountains-only ~1-in-90k-columns event,
+   zero within +-300 of a flat spawn - the near field's max slope is 1, so slope-gated breaches can never
+   fire there). Pure fn of (x,z,seed), in-column and seam-safe like the breach: 12x12 cell grid, 1-in-13
+   cells host a site, center jittered 2..9 inside the cell so the 5x5 funnel never crosses a cell edge.
+   A site is valid only when its center daylights a REAL tunnel - cave() true at hC-4 or hC-5 with the
+   CENTER's own h - on dry open ground (h>SEA+2, !tree, !cac), and the center's chunk fails BOTH
+   structure gates, so funnels never cut well/ruin/hamlet chunks (ring reach 2 < structure local margin
+   >=3 also keeps adjacent-chunk structures untouchable). M + the four salts are free parameters,
+   census-tuned (started M=17 per spec; searched M 13..29 x salt space in a scratch eval): on seed 1337
+   the shipped values yield 4 valid sites within +-150 of spawn (spec band 2-15, nearest 33 blocks out),
+   no funnel at the boot spawn column (116,115) +-2, and none touching the round-8 breach fingerprint
+   column (749,741) +-2. Returns Chebyshev ring radius 0..2 if (wx,wz) participates, else -1. */
+function sinkR(wx,wz){const sgx=Math.floor(wx/12),sgz=Math.floor(wz/12);
+if(h2i(sgx^0x3C58,sgz^0x386A)%13!==0)return -1;
+const cxw=sgx*12+2+h2i(sgx,sgz^0xF699)%8,czw=sgz*12+2+h2i(sgx^0xF2C6,sgz)%8;
+const fr=Math.max(Math.abs(wx-cxw),Math.abs(wz-czw));if(fr>2)return -1;
+const cc=CI(cxw,czw),hC=cc.h;
+if(hC<=SEA+2||cc.tree||cc.cac)return -1;
+if(!(cave(cxw,hC-4,czw,hC)||cave(cxw,hC-5,czw,hC)))return -1;
+const fcx=Math.floor(cxw/16),fcz=Math.floor(czw/16);
+if(h2i(fcx^0xA5A5,fcz^0x5A5A)%37===0||h2i(fcx^0x77C7,fcz^0x3B3B)%89===0)return -1;
+return fr;}
+const chunks=new Map();
+const hamlets=new Map(); /* chunkKey -> [wx,wz] hamlet-center villager anchor; written by genChunk's hamlet block, read by buildChunk's spawnVillager */
+function tset(d,x,y,z,b,force){if(x<0||x>15||z<0||z>15||y<1||y>=H)return;const i=(x*16+z)*H+y;if(force||d[i]===0||d[i]===7||d[i]===15)d[i]=b;}
+function lset(d,x,y,z,b){if(x<0||x>15||z<0||z>15||y<1||y>=H)return;const i=(x*16+z)*H+y;if(d[i]===0)d[i]=b;}
+function genChunk(cx,cz){const key=cx+','+cz;let d=chunks.get(key);if(d)return d;
+d=new Uint8Array(16*16*H);chunks.set(key,d);
+for(let x=0;x<16;x++)for(let z=0;z<16;z++){
+const wx=cx*16+x,wz=cz*16+z,ci=CI(wx,wz),h=ci.h,base=(x*16+z)*H;
+const hN=CI(wx,wz-1).h,hS=CI(wx,wz+1).h,hE=CI(wx+1,wz).h,hW=CI(wx-1,wz).h,lo=Math.min(hN,hS,hE,hW),hi=Math.max(hN,hS,hE,hW),steep=h-lo>=3; /* CI is CCmap-memoized; tree pass + buildChunk's 18x18 precompute already touch these cells, so amortized cost ~0 */
+d[base]=9;
+const cOK=h>SEA;
+for(let y=1;y<=h;y++){let b;
+if(y===h)b=ci.tp;else if(y>h-4)b=ci.un;else b=3;
+if(b===3&&y<h-4){const o=h3i(wx,y,wz)%131;if(o<4&&y>8)b=10;else if(o<6&&y<=14)b=11;}
+if(cOK&&y>1&&((h-y>=3&&cave(wx,y,wz,h))||(steep&&y>lo&&!ci.tree&&!ci.cac&&(cave(wx,y,wz,h)||(y-1>lo&&cave(wx,y-1,wz,h))))))b=0; /* carve >=3 below surface; on steep hillsides also breach above the lowest neighbor's surface, dilated +1 up (cave at y OR y-1) so mouths daylight laterally as 2-high walkable openings, not 1-high slits. Pure fn of (x,y,z,seed). !tree/!cac keeps trunks+cacti off breached caps; known cosmetic: a neighbor canopy's lset may fill an air cell at a mouth edge */
+d[base+y]=b;}
+if(h<SEA){for(let y=h+1;y<=SEA;y++)d[base+y]=5;}
+else if(d[base+h]===ci.tp&&h+1<H-1){
+if(ci.cac){const n=2+(ci.r%2);for(let i=1;i<=n&&h+i<H;i++)d[base+h+i]=12;}
+else if(ci.fl)d[base+h+1]=13;
+else if(ci.tf)d[base+h+1]=14;}
+/* true overhang: 2-block stone lip at the adjoining cliff's top level protruding over this lower column -
+   solid at y>ci.h with air beneath (h+1..hi-3), walkable from the high side. Hash-gated so it's a feature,
+   not a frill on every cliff; ===0 guards never overwrite trees/structures/water; writes stay in-column
+   and neighbor heights come from pure CI, so chunk borders stay seam-free. */
+if(cOK&&hi-h>=4&&hi-1>h+2&&hi<H-1&&h3i(wx,77,wz)%3<2){if(d[base+hi-1]===0)d[base+hi-1]=3;if(d[base+hi-2]===0)d[base+hi-2]=3;}
+/* sinkhole funnel: flat-terrain cave mouth (see sinkR above). Stepped carve - rim r=2 one deep, r=1
+   three, center five, reaching the validated cave() cell so the funnel always opens into a real tunnel,
+   never a dead pit (below h-4 the normal carve branch's own cave() region takes over). Writes stay
+   in-column; only raw terrain ids 1/2/3/4/8/10/11 are overwritten - never bedrock(9)/water(5), and
+   structures gen later with tset force so they always win. !tree/!cac mirrors the breach guard so
+   trunks/cacti never plant on funnel columns; the fl/tf deco block above already ran, so a placed
+   flower/tuft at h+1 is cleared explicitly (no floaters; carving h also re-breaks the d===tp gate). */
+const fr=(cOK&&!ci.tree&&!ci.cac)?sinkR(wx,wz):-1;
+if(fr>=0){const dep=fr===0?5:fr===1?3:1;
+for(let y=h;y>h-dep&&y>1;y--){const t=d[base+y];if(t===1||t===2||t===3||t===4||t===8||t===10||t===11)d[base+y]=0;}
+if(d[base+h+1]===13||d[base+h+1]===14)d[base+h+1]=0;}}
+for(let tx=-3;tx<19;tx++)for(let tz=-3;tz<19;tz++){
+const wx=cx*16+tx,wz=cz*16+tz,ci=CI(wx,wz);
+if(!ci.tree)continue;
+if(cave(wx,ci.h,wz,ci.h))continue;
+const y0=ci.h+1,r=ci.r;
+if(ci.tree===1){const th=4+(r%2);
+/* birch re-skin (round 10): decided ONLY here, per existing tree column, via a fresh hash independent
+   of the deco r - forest oaks only, ~1 in 3. Pure fn of (wx,wz,seed), so neighbor-chunk canopy
+   dilation paints identical ids; footprint/heights/corner-skip hash are oak's exactly, so every block
+   POSITION is unchanged - this is a re-skin, never a re-layout. */
+const bch=ci.biome==='forest'&&h2i(wx^0x77aa,wz^0x31cd)%3===0,TK=bch?36:6,LF=bch?37:7;
+for(let dy=th-2;dy<=th;dy++){const rad=dy===th?1:2;
+for(let dx=-rad;dx<=rad;dx++)for(let dz=-rad;dz<=rad;dz++){
+if(!dx&&!dz&&dy<th)continue;
+if(rad===2&&Math.abs(dx)===2&&Math.abs(dz)===2&&((h3i(wx+dx,y0+dy,wz+dz)&3)===0))continue;
+lset(d,tx+dx,y0+dy,tz+dz,LF);}}
+for(let i=0;i<th;i++)tset(d,tx,y0+i,tz,TK,1);
+lset(d,tx,y0+th+1,tz,LF);
+}else{const th=6+(r%2);
+for(let dy=2;dy<=th;dy++){const rad=dy===th?0:Math.min(2,Math.max(1,(th-dy)>>1));
+for(let dx=-rad;dx<=rad;dx++)for(let dz=-rad;dz<=rad;dz++){
+if(rad===2&&Math.abs(dx)===2&&Math.abs(dz)===2)continue;
+if(!dx&&!dz&&dy<th)continue;
+lset(d,tx+dx,y0+dy,tz+dz,15);}}
+for(let i=0;i<th;i++)tset(d,tx,y0+i,tz,6,1);
+lset(d,tx,y0+th+1,tz,15);}}
+/* berry bushes: placed AFTER the canopy pass and ONLY into cells still air above an intact grass cap,
+   so every pre-existing block (neighbor canopy leaves included) keeps its exact id - bushes are pure
+   additions on previously-bare columns. Flagged substitution vs mirroring the fl/tf in-loop write: this
+   ordering is what makes the fingerprint argument airtight (an in-loop write could claim a cell a later
+   canopy lset used to fill). Carved caps fail the d[h]===tp gate by construction - cave/breach carves
+   and every sinkhole ring depth (fr 0/1/2 all carve y=h) remove the cap - so no floaters and no
+   funnel-clear extension is needed. Structures gen below with tset force and clear/overwrite bushes
+   exactly like flowers (hut interiors force-clear F+1..F+3). In-column writes, pure fn of (x,z,seed).
+   Structure-CANDIDATE chunks (1-in-37 well/ruin, 1-in-89 hamlet gates) stay bush-free: their byType
+   censuses are round-9 fingerprints, so even an air->bush addition there is a regression (flagged
+   conservative narrowing, ~4% of chunks - scatter everywhere else is unaffected). */
+if(h2i(cx^0xA5A5,cz^0x5A5A)%37!==0&&h2i(cx^0x77C7,cz^0x3B3B)%89!==0)
+for(let x=0;x<16;x++)for(let z=0;z<16;z++){const ci=CI(cx*16+x,cz*16+z);
+if(!ci.bush)continue;const base=(x*16+z)*H,h=ci.h;
+if(h+1<H-1&&d[base+h]===ci.tp&&d[base+h+1]===0)d[base+h+1]=38;}
+/* seeded micro-structures: 1-in-37 chunks, candidate at local (8,8), flat 5x5, dry land */
+if(h2i(cx^0xA5A5,cz^0x5A5A)%37===0){
+const wx=cx*16+8,wz=cz*16+8,sc=CI(wx,wz);
+let mn=999,mx=-999;for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const hh=CI(wx+dx,wz+dz).h;if(hh<mn)mn=hh;if(hh>mx)mx=hh;}
+if(mx-mn<=1&&sc.h>SEA+1&&!sc.tree&&!sc.cac){const sh=sc.h;
+if(sc.biome==='desert'){ /* well: 3x3 stone rim, 1-deep water center, 4 corner posts */
+for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)tset(d,8+dx,sh,8+dz,(dx||dz)?3:5,1);
+tset(d,7,sh+1,7,3,1);tset(d,9,sh+1,7,3,1);tset(d,7,sh+1,9,3,1);tset(d,9,sh+1,9,3,1);
+}else{ /* ruin: broken 4x4 stone-wall square (per-cell height 0-2) + crafting table */
+for(let dx=-2;dx<=1;dx++)for(let dz=-2;dz<=1;dz++){
+if(dx>-2&&dx<1&&dz>-2&&dz<1)continue;
+const wh=h3i(wx+dx,0,wz+dz)%3;
+for(let i=1;i<=wh;i++)tset(d,8+dx,sh+i,8+dz,3,1);}
+tset(d,8,sh+1,8,17,1);}}}
+/* hamlet: 1-in-89 chunks (the %37!==0 clause excludes every well/ruin chunk, so round-6 structures
+   stay bit-identical). Two plank huts + dirt path + torch posts; footprint inside local 1..14 =
+   single-chunk, no overlap coherence needed. Floor F = max h of the 13x13 site; sub-floor columns
+   fill with dirt. Known faint edge: a neighbor chunk meshed before this one gens won't show the
+   torch light pool spill across the border until its next remesh - acceptable. */
+let hamletPlaced=false;
+if(h2i(cx^0x77C7,cz^0x3B3B)%89===0&&h2i(cx^0xA5A5,cz^0x5A5A)%37!==0){
+const wx=cx*16+8,wz=cz*16+8,sc=CI(wx,wz);
+let mn=999,mx=-999,tr=false;
+for(let dx=-6;dx<=6;dx++)for(let dz=-6;dz<=6;dz++){const c2=CI(wx+dx,wz+dz);if(c2.h<mn)mn=c2.h;if(c2.h>mx)mx=c2.h;if(c2.tree)tr=true;}
+if(mx-mn<=2&&sc.h>SEA+1&&(sc.biome==='plains'||sc.biome==='forest')&&!tr){
+hamletPlaced=true;const F=mx;
+const found=(x,z)=>{const hh=CI(cx*16+x,cz*16+z).h;for(let y=hh+1;y<=F;y++)tset(d,x,y,z,2,1);};
+const hut=(x0,z0,dX,dZ,item,ix,iz)=>{
+for(let x=x0;x<=x0+4;x++)for(let z=z0;z<=z0+4;z++){found(x,z);
+const per=x===x0||x===x0+4||z===z0||z===z0+4,cor=(x===x0||x===x0+4)&&(z===z0||z===z0+4);
+for(let y=F+1;y<=F+3;y++)tset(d,x,y,z,per?(cor?6:16):0,1); /* plank walls, log corners, interior force-cleared */
+tset(d,x,F+4,z,16,1);} /* flat plank roof */
+tset(d,dX,F+1,dZ,0,1);tset(d,dX,F+2,dZ,0,1); /* 1x2 doorway facing the path */
+tset(d,ix,F+1,iz,item,1);};
+hut(3,3,7,5,17,4,5); /* hut A: east door, crafting table against the back wall */
+hut(9,8,9,10,23,12,10); /* hut B: west door, furnace against the back wall */
+tset(d,4,F+1,4,44,1); /* lane B loot chest: hut A's interior floor corner, beside the table - the cell sits off BOTH torch sight lines (verified against the .090 interior-light ray and the torch->path rays), so light + spawn-gating fingerprints hold; census diff = this one air->chest cell. Contents seed lazily in chestState. */
+for(let z=5;z<=10;z++){found(8,z);tset(d,8,F,z,2,1);tset(d,8,F+1,z,0,1);tset(d,8,F+2,z,0,1);} /* dirt path between the doorways */
+for(const pp of[[9,6],[7,9]]){found(pp[0],pp[1]);tset(d,pp[0],F,pp[1],2,1); /* torch posts flanking the path (local 5..10 keeps light pools barely crossing borders) */
+tset(d,pp[0],F+1,pp[1],6,1);tset(d,pp[0],F+2,pp[1],6,1);tset(d,pp[0],F+3,pp[1],22,1);}
+hamlets.set(key,[cx*16+8,cz*16+8]);}} /* villager anchor: hamlet center on the dirt path */
+const eb=editB.get(key);if(eb)for(const e of eb)d[e[0]]=e[1]; /* re-apply saved player edits */
+/* gen-torch registry sync: torchR is otherwise setB-only, so gen-placed torches would never light or
+   suppress spawns. Ordering is load-bearing: scanning AFTER the edit replay means a player-broken gen
+   torch (edit sets the cell to 0) is never re-registered on reload; live breaks already clear via
+   setB's old===22 branch (same cell index). Registration is idempotent (same key/index) and gated on
+   hamletPlaced, so non-hamlet chunks pay zero cost. */
+if(hamletPlaced){let s=torchR.get(key);
+for(let i=0;i<d.length;i++)if(d[i]===22){if(!s){s=new Map();torchR.set(key,s);}
+s.set(i,[cx*16+(((i/H)|0)>>4),i%H,cz*16+(((i/H)|0)&15)]);}}
+return d;}
+let lck='',lcd=null;
+function getB(x,y,z){if(y<0)return 9;if(y>=H)return 0;
+const cx=x>>4,cz=z>>4,k=cx+','+cz;
+if(k!==lck){lcd=genChunk(cx,cz);lck=k;}
+return lcd[((x&15)*16+(z&15))*H+y];}
+const torchR=new Map(); /* chunkKey 'cx,cz' -> Map(localIdx -> [wx,wy,wz]); fed by setB + genChunk's hamlet torch scan */
+const LIT={22:1,30:1}; /* light emitters sharing the torch registry: torch + lit redstone lamp */
+let inPwr=false; /* reentrancy guard: updatePower's own setB writes must not re-trigger it (manual door toggles in useBlock borrow it so a hand toggle never fires its own power rewrite) */
+const PFAM=b=>(b>=25&&b<=34)||b===42||b===43||b===45||b===46; /* power family: lever/wire/lamp/door + stone button (slice 2) + redstone torch (slice 3); 44 = chest stays out */
+let rtBudget=0,pwrDepth=0; /* slice 3: per-cascade torch-flip budget (8) + recursion depth. Budget resets ONLY at depth-0 entries, so an entire flip cascade (each flip's setB re-fires updatePower) shares one allowance - a paradox loop (torch feeding its own support) burns it and freezes mid-state instead of hanging; the next edit retries fresh. Flagged substitution for MC's tick scheduler. */
+const buttonTimers=[]; /* pressed buttons (43) awaiting their 1.5s sim-clock release; cap 64 FIFO - an evictee force-releases so no network sticks powered. Transient by design (never saved): loaded 43s re-arm fresh timers after the save-restore block. */
+let pwrN=0; /* TEST diagnostic: updatePower invocation count (edit-triggered-only acceptance reads it) */
+function setB(x,y,z,v){if(y<1||y>=H)return;const d=genChunk(x>>4,z>>4),i=((x&15)*16+(z&15))*H+y,old=d[i];d[i]=v;edits.set(x+','+y+','+z,v);lck='';
+if(LIT[old]||LIT[v]){const tk=(x>>4)+','+(z>>4);let s=torchR.get(tk);
+if(LIT[v]){if(!s){s=new Map();torchR.set(tk,s);}s.set(i,[x,y,z]);}
+else if(s){s.delete(i);if(!s.size)torchR.delete(tk);}}
+if(!inPwr&&(PFAM(old)||PFAM(v)))updatePower(x,y,z);}
+/* ---------- redstone-lite power (ids 25-34, state-in-id: auto-persisted via the edits map, save-format-free) ----------
+   Edit-triggered ONLY - never per-frame. BFS the connected power-family component (6-neighbor, cap 200 cells)
+   seeded from the edited cell + its 6 neighbors; flood power from each ON lever (15, -1 per wire step,
+   max-combine across sources); rewrite wires 27/28 + lamps 29/30 (lit when own/adjacent power>0) to steady
+   state in one pass - instant propagation is a flagged pragmatic substitution. Doors 31-34 join connectivity
+   and (slice 2) REACT: each intact pair takes the lamp rule over both halves - power>0 opens, a power edge
+   to 0 closes, halves atomic; manual toggles stick between network updates (power state WINS when a network
+   update touches the door - flagged substitution, no memory bit). Buttons 42/43 join connectivity; 43 emits
+   15 exactly like an ON lever; neither conducts. Lamp light/torchR rides setB's LIT hook; changed chunks
+   are deduped and remeshed once each (lamp flips remesh the full 7-block light-pool footprint).
+   Slice 3 - redstone torches 45/46: a lit torch is a third 15-emitter; torches join connectivity THROUGH
+   their support block (both BFS directions below), get evaluated against the pow map after each pass
+   (support powered by any neighbor but the torch itself -> 46, else 45), and their flips re-fire
+   updatePower OUTSIDE the inPwr guard under the shared rtBudget - see the flip block at the tail. */
+const NB6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+function updatePower(x,y,z){pwrN++;
+if(!pwrDepth)rtBudget=8; /* fresh torch-flip budget at every top-level edit; nested (flip-triggered) calls inherit the cascade's remainder */
+const comp=new Map(),st=[];
+const seed=(sx,sy,sz)=>{if(comp.size>=200)return;const b=getB(sx,sy,sz);
+if(PFAM(b)){const k=sx+','+sy+','+sz;if(!comp.has(k)){comp.set(k,{x:sx,y:sy,z:sz,b});st.push(k);}}};
+seed(x,y,z);for(const n of NB6)seed(x+n[0],y+n[1],z+n[2]);
+while(st.length){const c=comp.get(st.pop());for(const n of NB6)seed(c.x+n[0],c.y+n[1],c.z+n[2]);
+/* slice 3 through-support connectivity: a torch is 2 cells from whatever powers its support, so plain
+   6-adjacency would strand it in its own component. From a torch, seed the SUPPORT's 6 neighbors (what
+   can power it); from any other cell, seed torches standing atop adjacent solids (the reverse edge) -
+   lever->wire->support edits now reach the inverter from either end. */
+if(c.b===45||c.b===46){for(const n of NB6)seed(c.x+n[0],c.y-1+n[1],c.z+n[2]);}
+else for(const n of NB6){const sx2=c.x+n[0],sy2=c.y+n[1],sz2=c.z+n[2],ab2=getB(sx2,sy2+1,sz2);
+if((ab2===45||ab2===46)&&SOLID(getB(sx2,sy2,sz2)))seed(sx2,sy2+1,sz2);}}
+const pow=new Map(),q=[];
+for(const[k,c]of comp)if(c.b===26||c.b===43||c.b===45){pow.set(k,15);q.push(k);} /* emitters: ON lever + pressed button + lit redstone torch (slice 3) */
+for(let qi=0;qi<q.length;qi++){const k=q[qi],p=pow.get(k);if(p<=1)continue;const c=comp.get(k);
+for(const n of NB6){const nk=(c.x+n[0])+','+(c.y+n[1])+','+(c.z+n[2]),nc=comp.get(nk);
+if(nc&&(nc.b===27||nc.b===28)&&(pow.get(nk)||0)<p-1){pow.set(nk,p-1);q.push(nk);}}}
+/* slice 3 torch eval: the support (x,y-1,z) counts as powered when any of ITS 6 neighbors - the torch's
+   own cell excluded (a torch never powers its own support) - carries pow>0; emitters AND powered wires
+   both live in the pow map, so adjacent levers/buttons/torches and decayed wire runs all count. Flips
+   are only COLLECTED here against the same pow snapshot the rewrite pass uses; they apply at the tail,
+   outside the inPwr guard, so each setB re-fires updatePower (instant-on-edit, like the family). */
+const tflips=[];
+for(const[k,c]of comp)if(c.b===45||c.b===46){let sp=false;
+for(const n of NB6){const nx=c.x+n[0],ny=c.y-1+n[1],nz=c.z+n[2];
+if(nx===c.x&&ny===c.y&&nz===c.z)continue;
+if((pow.get(nx+','+ny+','+nz)||0)>0){sp=true;break;}}
+const nv=sp?46:45;if(nv!==c.b)tflips.push({x:c.x,y:c.y,z:c.z,from:c.b,to:nv});}
+const rms=new Set();
+inPwr=true;
+try{for(const[k,c]of comp){let nv=c.b;
+if(c.b===27||c.b===28)nv=(pow.get(k)||0)>0?28:27;
+else if(c.b===29||c.b===30){let lit=false;
+for(const n of NB6)if((pow.get((c.x+n[0])+','+(c.y+n[1])+','+(c.z+n[2]))||0)>0){lit=true;break;}
+nv=lit?30:29;}
+else if(c.b>=31&&c.b<=34){ /* powered doors (slice 2): pair power = lamp rule (max adjacent pow) over BOTH halves; power state WINS on every network update that touches the door - manual toggles stick between power edges */
+const lo=(c.b===31||c.b===33)?c.y:c.y-1,lb=getB(c.x,lo,c.z),ub=getB(c.x,lo+1,c.z),op=(lb===33&&ub===34);
+if(!op&&!(lb===31&&ub===32))continue; /* orphan half mid-break (or pair already rewritten via its partner): leave it for doBreak */
+let dp=0;
+for(const n of NB6){const a=pow.get((c.x+n[0])+','+(lo+n[1])+','+(c.z+n[2]))||0,b2=pow.get((c.x+n[0])+','+(lo+1+n[1])+','+(c.z+n[2]))||0;
+if(a>dp)dp=a;if(b2>dp)dp=b2;}
+if((dp>0)===op)continue;
+setB(c.x,lo,c.z,dp>0?33:31);setB(c.x,lo+1,c.z,dp>0?34:32); /* atomic halves, same shape as useBlock's manual toggle */
+logS('pdoor');sfx(dp>0?460:320,.08,.3,2);
+const dcx=c.x>>4,dcz=c.z>>4,dlx=c.x&15,dlz=c.z&15;rms.add(dcx+','+dcz);
+if(dlx===0)rms.add((dcx-1)+','+dcz);if(dlx===15)rms.add((dcx+1)+','+dcz);
+if(dlz===0)rms.add(dcx+','+(dcz-1));if(dlz===15)rms.add(dcx+','+(dcz+1));
+continue;}
+if(nv===c.b)continue;
+setB(c.x,c.y,c.z,nv); /* LIT hook keeps torchR in sync on lamp flips */
+if(nv===30||c.b===30){for(let rx=(c.x-7)>>4;rx<=(c.x+7)>>4;rx++)for(let rz=(c.z-7)>>4;rz<=(c.z+7)>>4;rz++)rms.add(rx+','+rz);}
+else{const ccx=c.x>>4,ccz=c.z>>4,lx=c.x&15,lz=c.z&15;rms.add(ccx+','+ccz);
+if(lx===0)rms.add((ccx-1)+','+ccz);if(lx===15)rms.add((ccx+1)+','+ccz);
+if(lz===0)rms.add(ccx+','+(ccz-1));if(lz===15)rms.add(ccx+','+(ccz+1));}}}
+finally{inPwr=false;}
+for(const k of rms){const p=k.split(',');remesh(+p[0],+p[1]);}
+/* slice 3 flip application: runs AFTER inPwr released + this pass's remeshes, so every flip's setB
+   re-fires updatePower depth-first (the nested pass rewrites the wires/lamps/doors the flipped emitter
+   feeds and settles further torches). rtBudget is shared down the recursion via pwrDepth - 8 flips per
+   cascade, then freeze ('rtfreeze') instead of a frame hang; the getB recheck skips torches a nested
+   cascade already settled. */
+if(tflips.length){pwrDepth++;
+try{for(const f of tflips){if(rtBudget<=0){logS('rtfreeze');break;}
+if(getB(f.x,f.y,f.z)!==f.from)continue;
+rtBudget--;setB(f.x,f.y,f.z,f.to);touched(f.x,f.y,f.z);logS('rtorch');sfx(f.to===46?420:760,.05,.2,2);}}
+finally{pwrDepth--;}}}
+/* button release ticker (simStep-driven, alongside updFurnace): O(timers) per frame, zero work when idle.
+   Expiry rides simNow, so __vox.pause() freezes a press mid-flight and __vox.step() fires it on the sim
+   schedule; the release setB re-fires updatePower (still edit-triggered - a timer expiry IS an edit).
+   getB recheck makes stale timers (button broken / already released by FIFO eviction) self-clean. */
+function updButtons(dt){if(!buttonTimers.length)return;
+for(let i=buttonTimers.length-1;i>=0;i--){const t=buttonTimers[i];
+if(simNow<t.until)continue;
+buttonTimers.splice(i,1);
+if(getB(t.x,t.y,t.z)===43){setB(t.x,t.y,t.z,42);touched(t.x,t.y,t.z);logS('buttonoff');sfx(640,.05,.18,2);}}}
+/* ---------- three setup ---------- */
+const renderer=new THREE.WebGLRenderer({antialias:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const canvas=renderer.domElement;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(.5,.7,1);
+scene.fog=new THREE.Fog(0x88aaff,RD*16*.5,RD*16*.92);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.08,900);
+camera.rotation.order='YXZ';
+scene.add(camera); /* kept in the scene graph for any future camera-childed props (the held-item viewmodel moved to its own vmScene render pass) */
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);setHbw();});
+const atlas=new THREE.CanvasTexture(TC);atlas.magFilter=atlas.minFilter=THREE.NearestFilter;atlas.generateMipmaps=false;
+const wtex=new THREE.CanvasTexture(WC);wtex.magFilter=wtex.minFilter=THREE.NearestFilter;wtex.generateMipmaps=false;wtex.wrapS=wtex.wrapT=THREE.RepeatWrapping;
+const ctex=new THREE.CanvasTexture(CC2);ctex.wrapS=ctex.wrapT=THREE.RepeatWrapping;ctex.repeat.set(4,4);
+const matO=new THREE.MeshBasicMaterial({map:atlas,vertexColors:true,alphaTest:.4});
+const matW=new THREE.MeshBasicMaterial({map:wtex,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide});
+const sky=new THREE.Group();scene.add(sky);
+const sun=new THREE.Mesh(new THREE.CircleGeometry(26,20),new THREE.MeshBasicMaterial({color:0xffeeaa,fog:false}));sky.add(sun);
+const moon=new THREE.Mesh(new THREE.CircleGeometry(15,20),new THREE.MeshBasicMaterial({color:0xd8e2ff,fog:false}));sky.add(moon);
+const stG=new THREE.BufferGeometry();{const sp=new Float32Array(500*3),R=mb(WS^7);
+for(let i=0;i<500;i++){const a=R()*6.283,b=Math.acos(R()*2-1),r=460;
+sp[i*3]=r*Math.sin(b)*Math.cos(a);sp[i*3+1]=r*Math.cos(b);sp[i*3+2]=r*Math.sin(b)*Math.sin(a);}
+stG.setAttribute('position',new THREE.BufferAttribute(sp,3));}
+const stars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:1.6,sizeAttenuation:false,transparent:true,opacity:0,fog:false,depthWrite:false}));sky.add(stars);
+const clouds=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshBasicMaterial({map:ctex,transparent:true,opacity:.5,depthWrite:false,fog:false,side:THREE.DoubleSide}));
+clouds.rotation.x=-Math.PI/2;clouds.position.y=82;scene.add(clouds);
+const hl=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002,1.002,1.002)),new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:.7}));scene.add(hl);hl.visible=false;
+const ghost=new THREE.Mesh(new THREE.BoxGeometry(.96,.96,.96),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.15,depthWrite:false}));scene.add(ghost);ghost.visible=false;
+const PM=320,pPos=new Float32Array(PM*3),pCol=new Float32Array(PM*3),pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+const pMat=new THREE.PointsMaterial({size:.14,vertexColors:true,depthWrite:false});
+const pts=new THREE.Points(pGeo,pMat);pts.frustumCulled=false;scene.add(pts);
+let parts=[];
+function burst(bx,by,bz,tile){const c=avg[tile]||[1,1,1];
+for(let i=0;i<14&&parts.length<PM;i++)parts.push({x:bx+Math.random(),y:by+Math.random(),z:bz+Math.random(),
+vx:(Math.random()-.5)*3.2,vy:1.5+Math.random()*3,vz:(Math.random()-.5)*3.2,l:.5+Math.random()*.4,c});}
+function updParts(dt){let n=0;
+for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.l-=dt;
+if(p.l<=0){parts.splice(i,1);continue;}
+p.vy-=22*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+if(SOLID(getB(Math.floor(p.x),Math.floor(p.y),Math.floor(p.z)))){p.vy=0;p.vx*=.6;p.vz*=.6;}}
+for(const p of parts){pPos[n*3]=p.x;pPos[n*3+1]=p.y;pPos[n*3+2]=p.z;
+pCol[n*3]=p.c[0];pCol[n*3+1]=p.c[1];pCol[n*3+2]=p.c[2];n++;}
+pGeo.setDrawRange(0,n);pGeo.attributes.position.needsUpdate=true;pGeo.attributes.color.needsUpdate=true;}
+/* ---------- mesher ---------- */
+const FACES=[
+{n:[1,0,0],v:[[1,0,0],[1,1,0],[1,1,1],[1,0,1]],l:.78,u:2,w:1},
+{n:[-1,0,0],v:[[0,0,1],[0,1,1],[0,1,0],[0,0,0]],l:.62,u:2,w:1},
+{n:[0,1,0],v:[[0,1,0],[0,1,1],[1,1,1],[1,1,0]],l:1,u:0,w:2},
+{n:[0,-1,0],v:[[0,0,0],[1,0,0],[1,0,1],[0,0,1]],l:.5,u:0,w:2},
+{n:[0,0,1],v:[[1,0,1],[1,1,1],[0,1,1],[0,0,1]],l:.85,u:0,w:1},
+{n:[0,0,-1],v:[[0,0,0],[0,1,0],[1,1,0],[1,0,0]],l:.7,u:0,w:1}];
+const AOT=[.42,.6,.8,1];
+const FLQ=[[.03,.06,.03],[.03,.06,.97],[.97,.06,.97],[.97,.06,.03]]; /* wire ground-quad corners (top-face winding, .06 above the floor) */
+function tuv(t,u,v){return[((t&7)+.02+u*.96)/8,1-((t>>3)+.02+(1-v)*.96)/16];}/* 8x16 atlas: row div 16 over the 256-tall canvas addresses the same texels tiles 0-60 always had */
+/* mining crack overlay: 1.004 box, alpha-tested crack tiles 21-24 */
+const crackMat=new THREE.MeshBasicMaterial({map:atlas,transparent:true,alphaTest:.3,depthWrite:false});
+const crackGeo=new THREE.BufferGeometry();{const P=[],U=[],I=[];
+for(let f=0;f<6;f++){const F=FACES[f],base=P.length/3;
+for(let i=0;i<4;i++){const v=F.v[i];P.push((v[0]-.5)*1.004,(v[1]-.5)*1.004,(v[2]-.5)*1.004);U.push(v[F.u],v[F.w]);}
+I.push(base,base+1,base+2,base,base+2,base+3);}
+crackGeo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+crackGeo.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
+crackGeo.setIndex(I);}
+const crackUV0=crackGeo.attributes.uv.array.slice();
+const crack=new THREE.Mesh(crackGeo,crackMat);crack.visible=false;scene.add(crack);
+let crackTile=-1;
+function setCrackTile(t){if(t===crackTile)return;crackTile=t;
+const a=crackGeo.attributes.uv.array;
+for(let i=0;i<a.length;i+=2){const q=tuv(t,crackUV0[i],crackUV0[i+1]);a[i]=q[0];a[i+1]=q[1];}
+crackGeo.attributes.uv.needsUpdate=true;}
+const meshes=new Map();
+/* perf instrumentation: 120-frame dt ring + chunk-build accumulator, read via __vox.perf() (allocation-free per frame) */
+const perfFrames=new Float32Array(120);let perfFi=0;const perfBuild={n:0,total:0,max:0};
+function buildChunk(cx,cz){const pT0=performance.now();
+const key=cx+','+cz,d=genChunk(cx,cz),wx0=cx*16,wz0=cz*16;
+const P=[],C=[],U=[],I=[],WP=[],WU=[],WI=[];
+/* per-build light precompute: 18x18 skylight columns (exactly the -1..16 range face loops reference)
+   + flat torch list from the 3x3 chunk neighborhood. lightOf is allocation-free, pure array reads. */
+const hcol=new Int16Array(18*18);
+for(let lx=-1;lx<=16;lx++)for(let lz=-1;lz<=16;lz++)hcol[(lx+1)*18+(lz+1)]=CI(wx0+lx,wz0+lz).h;
+const tlist=[];
+for(let tcx=cx-1;tcx<=cx+1;tcx++)for(let tcz=cz-1;tcz<=cz+1;tcz++){const ts=torchR.get(tcx+','+tcz);if(ts)for(const tv of ts.values())tlist.push(tv);}
+function lightOf(lx,ly,lz){const d2=hcol[(lx+1)*18+(lz+1)]-ly;let L=d2<=0?1:Math.max(.1,1-d2*.16);
+for(let q=0;q<tlist.length;q++){const T2=tlist[q],dx=wx0+lx+.5-T2[0]-.5,dy=ly+.5-T2[1]-.5,dz=wz0+lz+.5-T2[2]-.5;
+const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+/* wall occlusion via the shared occSolids (getB rides the lck/lcd cache); ray only runs when dist<7, i.e. only for faces near torches */
+if(dist<7){let t3=1-dist/7;const oc=occSolids(T2[0],T2[1],T2[2],wx0+lx+.5,ly+.5,wz0+lz+.5);if(oc>=2)t3=0;else if(oc===1)t3*=.25;if(t3>L)L=t3;}}
+return L;}
+const nb=(x,y,z)=>{if(y<0)return 9;if(y>=H)return 0;
+if(x>=0&&x<16&&z>=0&&z<16)return d[(x*16+z)*H+y];return getB(wx0+x,y,wz0+z);};
+for(let x=0;x<16;x++)for(let z=0;z<16;z++){
+const ci=CI(wx0+x,wz0+z),ti=ci.ti,col=(x*16+z)*H;
+for(let y=0;y<H;y++){const b=d[col+y];if(!b)continue;
+const bl=BL[b];
+if(bl.fl!==undefined){const cl=.95*(b===28?1:lightOf(x,y,z)); /* redstone wire: flat ground quad, both windings; powered renders self-lit */
+for(let w2=0;w2<2;w2++){const vs=w2?FLQ.slice().reverse():FLQ,base=P.length/3;
+for(let i=0;i<4;i++){const v=vs[i];P.push(x+v[0],y+v[1],z+v[2]);C.push(cl,cl,cl);
+const q=tuv(bl.fl,v[0],v[2]);U.push(q[0],q[1]);}
+I.push(base,base+1,base+2,base,base+2,base+3);}
+continue;}
+if(bl.cr){const tint=bl.ti===2?ti:[1,1,1],cl=.95*(b===22||b===45?1:lightOf(x,y,z)); /* torches + lit redstone torches render self-lit (45 stays out of the LIT registry - readable in the dark without casting light) */
+const pls=[[[.1,0,.1],[.9,0,.9],[.9,1,.9],[.1,1,.1]],[[.9,0,.1],[.1,0,.9],[.1,1,.9],[.9,1,.1]]];
+for(const pl of pls)for(let w2=0;w2<2;w2++){const vs=w2?pl.slice().reverse():pl,base=P.length/3;
+for(let i=0;i<4;i++){const v=vs[i];P.push(x+v[0],y+v[1],z+v[2]);C.push(cl*tint[0],cl*tint[1],cl*tint[2]);
+const q=tuv(bl.cr,v[0],v[1]);U.push(q[0],q[1]);}
+I.push(base,base+1,base+2,base,base+2,base+3);}
+continue;}
+if(b===5){const ab=nb(x,y+1,z),tH=ab===5?1:.9;
+for(let f=0;f<6;f++){const F=FACES[f],nk=nb(x+F.n[0],y+F.n[1],z+F.n[2]);
+if(f===2){if(!(ab===0||ab===13||ab===14))continue;}
+else if(!(nk===0||nk===13||nk===14))continue;
+const base=WP.length/3;
+for(let i=0;i<4;i++){const v=F.v[i],vx=x+v[0],vy=y+v[1]*tH,vz=z+v[2];
+WP.push(vx,vy,vz);
+if(f===2||f===3)WU.push((wx0+vx)*.5,(wz0+vz)*.5);else WU.push((wx0+vx+wz0+vz)*.5,vy*.5);}
+WI.push(base,base+1,base+2,base,base+2,base+3);}
+continue;}
+for(let f=0;f<6;f++){const F=FACES[f],nk=nb(x+F.n[0],y+F.n[1],z+F.n[2]);
+if(OPQ(nk))continue;
+const tile=bl.t[f===2?0:f===3?1:2];
+const tint=(bl.ti===2||(bl.ti===1&&f===2))?ti:null;
+const qx=x+F.n[0],qy=y+F.n[1],qz=z+F.n[2];
+const lf=lightOf(qx,qy,qz); /* once per face, not per vertex */
+const ao=[],base=P.length/3;
+for(let i=0;i<4;i++){const v=F.v[i],du=v[F.u]?1:-1,dv=v[F.w]?1:-1;
+const o1=[qx,qy,qz],o2=[qx,qy,qz],o3=[qx,qy,qz];
+o1[F.u]+=du;o2[F.w]+=dv;o3[F.u]+=du;o3[F.w]+=dv;
+const s1=OPQ(nb(o1[0],o1[1],o1[2]))?1:0,s2=OPQ(nb(o2[0],o2[1],o2[2]))?1:0,co=OPQ(nb(o3[0],o3[1],o3[2]))?1:0;
+const a=(s1&&s2)?0:3-(s1+s2+co);ao.push(a);
+const li=F.l*AOT[a]*lf;
+P.push(x+v[0],y+v[1],z+v[2]);
+if(tint)C.push(li*tint[0],li*tint[1],li*tint[2]);else C.push(li,li,li);
+const q=tuv(tile,v[F.u],v[F.w]===undefined?0:v[F.w]);U.push(q[0],q[1]);}
+if(ao[0]+ao[2]>=ao[1]+ao[3])I.push(base,base+1,base+2,base,base+2,base+3);
+else I.push(base+1,base+2,base+3,base+1,base+3,base);}}}
+const g=new THREE.BufferGeometry();
+g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
+g.setIndex(I);
+const m=new THREE.Mesh(g,matO);m.position.set(wx0,0,wz0);scene.add(m);
+let wm=null;
+if(WP.length){const wg=new THREE.BufferGeometry();
+wg.setAttribute('position',new THREE.Float32BufferAttribute(WP,3));
+wg.setAttribute('uv',new THREE.Float32BufferAttribute(WU,2));
+wg.setIndex(WI);
+wm=new THREE.Mesh(wg,matW);wm.position.set(wx0,0,wz0);scene.add(wm);}
+meshes.set(key,{o:m,w:wm});
+const hv=hamlets.get(key);if(hv)spawnVillager(hv); /* hamlet inhabitant rides mesh (re)builds: deduped + cap-aware, so a chunk-regen round trip re-seats it without ever stacking */
+const pEl=performance.now()-pT0;perfBuild.n++;perfBuild.total+=pEl;if(pEl>perfBuild.max)perfBuild.max=pEl;}
+function dropMesh(k){const m=meshes.get(k);if(!m)return;
+scene.remove(m.o);m.o.geometry.dispose();
+if(m.w){scene.remove(m.w);m.w.geometry.dispose();}
+meshes.delete(k);}
+function remesh(cx,cz){const k=cx+','+cz;if(meshes.has(k)){dropMesh(k);buildChunk(cx,cz);}}
+/* ---------- player ---------- */
+let pos={x:8.5,y:40,z:8.5},vel={x:0,y:0,z:0},yaw=0,pitch=-.1,onGround=false,fly=false,sneak=false,sprint=false;
+let kbx=0,kbz=0; /* decaying knockback impulse: damage sources write, physics applies+decays (input overwrites vel each frame) */
+let eyeH=1.62,key={},lastW=0,locked=false,started=false,slot=0,muted=false;
+let hp=20,air=10,dead=false,regenT=0,drownT=0,cacT=0;
+let hunger=20,exh=0,starveT=0,eatT=0;
+let poisonT=0,poisonTk=0; /* rotten-flesh poison (seconds left / tick accumulator) - transient by design, deliberately NOT saved: an 8s effect isn't worth a save-format bump */
+let spawnPt=null; /* bed-set respawn point (player-feet world coords) - persisted as optional player.sp, v:1 untouched; null = world SPAWN */
+/* ---------- save / load (sparse player edits + player state, key vox_<seed>) ----------
+   boot-load only when (!TEST && save exists) || (TEST && ?load=1) so plain ?test=1 stays pristine. */
+const edits=new Map(),editB=new Map(),SKEY='vox_'+WS;
+let SV=null;
+try{if(!TEST||qs.get('load')==='1')SV=JSON.parse(localStorage.getItem(SKEY)||'null');}catch(e){SV=null;}
+if(SV&&SV.v!==1)SV=null;
+if(SV){for(const e of SV.edits||[])edits.set(e[0],e[1]);
+for(const[ek,ev]of edits){const p=ek.split(','),ex=+p[0],ey=+p[1],ez=+p[2],ck=(ex>>4)+','+(ez>>4);
+let a=editB.get(ck);if(!a){a=[];editB.set(ck,a);}a.push([((ex&15)*16+(ez&15))*H+ey,ev]);
+if(ev===22||ev===30){let s=torchR.get(ck);if(!s){s=new Map();torchR.set(ck,s);}s.set(((ex&15)*16+(ez&15))*H+ey,[ex,ey,ez]);}} /* lit lamps (30) re-register like torches after reload/regen */
+if(Array.isArray(SV.furn))for(const[k,v]of SV.furn)furnaces.set(k,v); /* optional field - old saves load fine */
+if(Array.isArray(SV.chs))for(const[k,v]of SV.chs)chests.set(k,v); /* optional exactly like furn - old saves unaffected; null-slot entries restore as-is, so taken loot stays taken */
+const pl=SV.player||{};
+if(typeof pl.x==='number'){pos.x=pl.x;pos.y=pl.y;pos.z=pl.z;yaw=pl.yaw||0;pitch=pl.pitch||0;
+hp=pl.hp;air=pl.air;hunger=pl.hunger!==undefined?pl.hunger:20;slot=(pl.slot|0)%9;}
+if(pl.sp)spawnPt=pl.sp; /* optional field: old v:1 fixtures without sp load identically (spawnPt stays null -> SPAWN) */
+if(Array.isArray(SV.inv))for(let i=0;i<36;i++)inv[i]=SV.inv[i]||null;}
+function save(){try{localStorage.setItem(SKEY,JSON.stringify({v:1,edits:[...edits],furn:[...furnaces.entries()],chs:[...chests.entries()],
+player:{x:pos.x,y:pos.y,z:pos.z,yaw,pitch,hp,air,hunger,gt,slot,sp:spawnPt},inv}));}catch(e){}}
+if(!TEST){setInterval(()=>{if(started&&!dead)save();},15000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&started&&!dead)save();});}
+/* The deterministic spawn spiral runs UNCONDITIONALLY (pure CI/cave/sinkR reads, no world mutation) so
+   SPAWN is always the true world anchor; pos is assigned from it only on fresh boots - loaded boots
+   keep the saved position but no longer drift SPAWN (and with it findStructures/findCaveMouth/
+   findOverhang, which center on SPAWN, plus the no-bed respawn) to wherever the save was taken.
+   sinkR(x,z)<0 rejects funnel columns so a fresh spawn never lands inside a sinkhole. The reject can
+   only discard candidates, never promote earlier ones; verified spawn stays exactly (116.5,29.02,115.5)
+   on seed 1337 (the sinkR salts are free parameters chosen so no funnel fires at that column). */
+let best=null;
+for(let r=0;r<600&&!best;r+=8)for(let a=0;a<8;a++){
+const x=Math.round(Math.cos(a*.785)*r)+8,z=Math.round(Math.sin(a*.785)*r)+8,ci=CI(x,z);
+if(ci.h>SEA+1&&(ci.tp===1||ci.tp===4||ci.tp===8)&&!ci.tree&&!ci.cac&&!cave(x,ci.h,z,ci.h)&&sinkR(x,z)<0){best=[x,ci.h,z];break;}}
+if(best&&!SV){pos.x=best[0]+.5;pos.y=best[1]+1.02;pos.z=best[2]+.5;}
+const SPAWN=best?{x:best[0]+.5,y:best[1]+1.02,z:best[2]+.5}:{x:pos.x,y:pos.y,z:pos.z};
+function coll(a,amt){const e=.001;
+const x0=Math.floor(pos.x-.3),x1=Math.floor(pos.x+.3-1e-9),y0=Math.floor(pos.y),y1=Math.floor(pos.y+1.8-1e-9),z0=Math.floor(pos.z-.3),z1=Math.floor(pos.z+.3-1e-9);
+for(let bx=x0;bx<=x1;bx++)for(let by=y0;by<=y1;by++)for(let bz=z0;bz<=z1;bz++){
+if(!SOLID(getB(bx,by,bz)))continue;
+if(a===0){pos.x=amt>0?bx-.3-e:bx+1.3+e;vel.x=0;}
+else if(a===1){if(amt>0)pos.y=by-1.8-e;else{pos.y=by+1+e;onGround=true;}vel.y=0;}
+else{pos.z=amt>0?bz-.3-e:bz+1.3+e;vel.z=0;}
+return;}}
+function sup(){const y=Math.floor(pos.y-.06);
+for(const dx of[-.28,.28])for(const dz of[-.28,.28])
+if(SOLID(getB(Math.floor(pos.x+dx),y,Math.floor(pos.z+dz))))return true;
+return false;}
+let stepAcc=0,swimJ=0; /* swim-jump clamp-bypass window (s): while >0 the water branch skips the 3.2 cap + Space impulse and applies air-rate gravity so the 8.4 bank-mount impulse completes its full 1.41-block arc */
+function physics(dt){
+if(swimJ>0)swimJ-=dt;
+let f=(key.KeyW?1:0)-(key.KeyS?1:0),s=(key.KeyD?1:0)-(key.KeyA?1:0);
+const L=Math.hypot(f,s);if(L>0){f/=L;s/=L;}
+sneak=!!key.ShiftLeft&&!fly;
+if(key.ControlLeft&&f>0)sprint=true;
+if(f<=0||sneak)sprint=false;
+if(hunger<=6)sprint=false; /* too hungry to sprint */
+const inW=getB(Math.floor(pos.x),Math.floor(pos.y+.4),Math.floor(pos.z))===5||getB(Math.floor(pos.x),Math.floor(pos.y+1.5),Math.floor(pos.z))===5;
+let sp=fly?(sprint?17:10.5):sneak?1.7:sprint?7:4.4;
+if(inW&&!fly)sp*=.45;
+const sn=Math.sin(yaw),cs=Math.cos(yaw);
+vel.x=(-sn*f+cs*s)*sp;vel.z=(-cs*f-sn*s)*sp;
+vel.x+=kbx;vel.z+=kbz;const kdec=Math.min(1,dt*5);kbx-=kbx*kdec;kbz-=kbz*kdec;
+if(fly){vel.y=(key.Space?8:0)+(key.ShiftLeft?-8:0);}
+else if(inW&&swimJ>0){vel.y-=25*dt;} /* mid swim-jump: no water clamp, air gravity */
+else if(inW){vel.y-=9.5*dt;if(key.Space)vel.y+=30*dt;vel.y=Math.max(-2.8,Math.min(3.2,vel.y));
+/* surface swim-jump onto a 1-block bank (human finding #2): Space + head above water + moving +
+   a mountable bank within .7 of the move direction (solid at feet level, 2 air above) fires a full
+   ground-jump impulse; the .4s swimJ window keeps the re-clamp from eating it next frame. Never in
+   fly (that branch returns above); open deep water has no bank so the 3.2/-2.8 clamps are untouched. */
+if(key.Space&&L>0&&getB(Math.floor(pos.x),Math.floor(pos.y+1.1),Math.floor(pos.z))!==5){
+const ux=-sn*f+cs*s,uz=-cs*f-sn*s,bx=Math.floor(pos.x+ux*.7),by=Math.floor(pos.y),bz=Math.floor(pos.z+uz*.7);
+if(SOLID(getB(bx,by,bz))&&!SOLID(getB(bx,by+1,bz))&&!SOLID(getB(bx,by+2,bz))){vel.y=8.4;swimJ=.4;exh+=.2;}}}
+else{vel.y-=25*dt;if(vel.y<-45)vel.y=-45;
+if(key.Space&&onGround){vel.y=8.4;exh+=.2;}}
+const wasG=onGround;onGround=false;
+const ox=pos.x,oz=pos.z;
+pos.x+=vel.x*dt;coll(0,vel.x*dt);
+if(sneak&&wasG&&!sup())pos.x=ox;
+pos.z+=vel.z*dt;coll(2,vel.z*dt);
+if(sneak&&wasG&&!sup())pos.z=oz;
+const vy0=vel.y;
+let dy=vel.y*dt;const st=Math.max(1,Math.ceil(Math.abs(dy)/.9));
+for(let i=0;i<st;i++){pos.y+=dy/st;coll(1,dy);}
+if(onGround&&!wasG&&!fly&&!inW){const d=vy0*vy0/50;if(d>3.2)damage(Math.ceil(d-3));}
+const sub=getB(Math.floor(pos.x),Math.floor(pos.y+1.5),Math.floor(pos.z))===5;
+if(sub){air=Math.max(0,air-dt);if(air<=0){drownT+=dt;if(drownT>=1){drownT-=1;damage(2,undefined,undefined,true);}}} /* drowning pierces armor (MC parity); sx stays undefined - 0 would trigger knockback */
+else{air=Math.min(10,air+3*dt);drownT=0;}
+updAir();
+exh+=.005*dt;if(sprint&&L>0&&!fly)exh+=.62*dt;
+while(exh>=4){exh-=4;if(hunger>0){hunger--;updHunger();}}
+if(hp>0&&hp<20&&hunger>=18){regenT+=dt;if(regenT>=4){regenT=0;hp=Math.min(20,hp+1);exh+=6;updHearts();}}else regenT=0;
+if(hunger===0&&hp>1){starveT+=dt;if(starveT>=4){starveT-=4;damage(1,undefined,undefined,true);}}else starveT=0; /* starvation pierces armor (MC parity) */
+/* rotten-flesh poison: 8s, -1 hp per 2s (4 total), floored at 1 hp - never lethal (MC hunger-effect spirit).
+   Bypasses damage() entirely by design: no armor reduction, no knockback; green flash so it never reads as a hit. */
+if(poisonT>0){poisonT-=dt;poisonTk+=dt;
+if(poisonTk>=2){poisonTk-=2;if(hp>1){hp=Math.max(1,hp-1);updHearts();sPoison(); /* sour two-tone beside the green flash - poison ticks are audible now */
+dmgEl.style.background='rgba(70,160,40,.35)';dmgEl.style.transition='none';dmgEl.style.opacity='1';void dmgEl.offsetWidth;dmgEl.style.transition='';dmgEl.style.opacity='0';}}
+if(poisonT<=0)poisonT=0;} /* clamp: getState().poison reads exactly 0 once expired */
+else poisonTk=0;
+cacT-=dt;
+if(cacT<=0){const cx0=Math.floor(pos.x-.32),cx1=Math.floor(pos.x+.32),cy0=Math.floor(pos.y-.05),cy1=Math.floor(pos.y+1.8),cz0=Math.floor(pos.z-.32),cz1=Math.floor(pos.z+.32);
+cc:for(let bx=cx0;bx<=cx1;bx++)for(let by=cy0;by<=cy1;by++)for(let bz=cz0;bz<=cz1;bz++)if(getB(bx,by,bz)===12){damage(1);cacT=.5;break cc;}}
+const hs=Math.hypot(vel.x,vel.z);
+if(onGround&&hs>.5){stepAcc+=hs*dt;if(stepAcc>2.3){stepAcc=0;sStep();}}else stepAcc=0;
+eyeH+=((sneak?1.3:1.62)-eyeH)*Math.min(1,dt*10);
+camera.position.set(pos.x,pos.y+eyeH,pos.z);
+camera.rotation.y=yaw;camera.rotation.x=pitch;
+const tf=sprint?87:75;camera.fov+=(tf-camera.fov)*Math.min(1,dt*7);camera.updateProjectionMatrix();}
+/* ---------- input ---------- */
+const ovEl=document.getElementById('ov'),pauseEl=document.getElementById('pause'),playBtn=document.getElementById('play'),progEl=document.getElementById('prog');
+document.getElementById('seedline').textContent='seed '+WS+' \u00b7 add ?seed=42 to the URL for a new world';
+document.addEventListener('contextmenu',e=>e.preventDefault());
+let firstMM=false; /* set on every pointer-lock engage: the FIRST mousemove after lock is dropped (Chromium/macOS emits a giant bogus delta there) */
+const lookLog=[]; /* ring buffer (32) of raw {mx,my} exactly as received by the REAL handler - TEST diagnostic via __vox.lookLog */
+document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===canvas;
+if(locked){started=true;firstMM=true;ovEl.style.display='none';pauseEl.style.display='none';}
+else if(started&&!TEST&&!dead&&!uiOpen){pauseEl.style.display='flex';key={};mL=false;mR=false;sprint=false;}});
+function lock(){audioInit();if(!canvas.requestPointerLock)return;const p=canvas.requestPointerLock();if(p&&p.catch)p.catch(()=>{const el=pauseEl.querySelector('p');if(el)el.textContent='Mouse not captured — click again';});}
+playBtn.onclick=e=>{playBtn.blur();lock();};
+pauseEl.onclick=lock;
+canvas.addEventListener('click',()=>{if(started&&!locked)lock();});
+function applyLook(mx,my){if(!isFinite(mx)||!isFinite(my))return; /* no-arg/NaN look() must not poison yaw/pitch */
+yaw-=mx*.0022;pitch-=my*.0022;
+pitch=Math.max(-1.55,Math.min(1.55,pitch));}
+/* REAL mouse-look path (human finding #1). locked||TEST matches the keyboard-handler convention so
+   genuine dispatched MouseEvents exercise THIS handler under ?test=1 (injected look() bypasses it).
+   Hardenings: webkitMovementX/Y fallback (undefined deltas no longer freeze the camera via the
+   isFinite guard), per-event |delta| clamp 150 (one OS spike can no longer pin pitch at the -1.55
+   clamp = "stuck facing down"), first-event-after-lock drop, raw deltas ring-logged for diagnosis. */
+document.addEventListener('mousemove',e=>{if(!(locked||TEST))return;
+const mx=e.movementX??e.webkitMovementX??0,my=e.movementY??e.webkitMovementY??0;
+if(lookLog.length>=32)lookLog.shift();lookLog.push({mx,my});
+if(firstMM){firstMM=false;return;}
+applyLook(Math.max(-150,Math.min(150,mx)),Math.max(-150,Math.min(150,my)));});
+let simNow=performance.now(); /* monotonic sim clock: advanced only by simStep so mining/placing/eating timers behave identically under rAF and __vox.step() synthetic frames */
+/* stuck-power guard (slice 2): saved PRESSED buttons (43) re-arm a fresh 1.5s release on load - timers are
+   transient (never saved), so without this a reloaded mid-press circuit would stay powered forever. */
+for(const[ek,ev]of edits)if(ev===43&&buttonTimers.length<64){const p=ek.split(',');buttonTimers.push({x:+p[0],y:+p[1],z:+p[2],until:simNow+1500});}
+let mL=false,mR=false,nextPlace=0;
+let uiOpen=false,tableMode=false,craftN=2,craftG=[],cur=null,furnKey=null,chestKey=null;
+document.addEventListener('mousedown',e=>{if(!locked)return;
+if(e.button===0){vmHitT=simNow+250;if(!attackMob()){mL=true;resetMine();}}
+if(e.button===2){mR=true;tryPlace();nextPlace=simNow+260;}});
+document.addEventListener('mouseup',e=>{if(e.button===0)mL=false;if(e.button===2)mR=false;});
+addEventListener('wheel',e=>{e.preventDefault();if(locked||TEST){slot=(slot+(e.deltaY>0?1:-1)+9)%9;updHotbar();}},{passive:false});
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Tab')e.preventDefault();
+if(e.repeat)return;key[e.code]=true;
+if(e.code==='KeyW'){const n=performance.now();if(n-lastW<280)sprint=true;lastW=n;}
+if(e.code==='KeyF'&&(locked||TEST)){fly=!fly;vel.y=0;}
+if(e.code==='KeyN'&&(locked||TEST))gt+=150;
+if(e.code==='KeyM'){muted=!muted;if(master)master.gain.value=muted?0:.7;}
+if(e.code==='KeyH'){ovEl.style.display=ovEl.style.display==='none'?'flex':'none';}
+if(e.code==='KeyE'&&started&&!dead&&(locked||TEST||uiOpen))toggleInv(false);
+if(e.code==='KeyQ'&&(locked||TEST)&&!uiOpen&&!dead){const it=inv[slot];
+if(it){camera.getWorldDirection(dirV);
+const ex=pos.x+dirV.x*2.4,ey=pos.y+eyeH+dirV.y*2.4,ez=pos.z+dirV.z*2.4;
+if(isTool(it.id)){spawnDrop(ex-.5,ey-.5,ez-.5,it.id,it.dur);inv[slot]=null;}
+else{spawnDrop(ex-.5,ey-.5,ez-.5,it.id);it.count--;if(it.count<=0)inv[slot]=null;}
+updCounts();}}
+if(e.code.startsWith('Digit')){const n=+e.code[5];if(n>=1&&n<=9){slot=n-1;updHotbar();}}});
+document.addEventListener('keyup',e=>{key[e.code]=false;if(e.code==='KeyW')sprint=false;});
+/* ---------- interaction ---------- */
+const dirV=new THREE.Vector3();
+function ray(){camera.getWorldDirection(dirV);
+const o=camera.position;let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
+const dx=dirV.x,dy=dirV.y,dz=dirV.z,sx=dx>0?1:-1,sy=dy>0?1:-1,sz=dz>0?1:-1;
+const tdx=Math.abs(1/dx),tdy=Math.abs(1/dy),tdz=Math.abs(1/dz);
+let tmx=(sx>0?x+1-o.x:o.x-x)*tdx,tmy=(sy>0?y+1-o.y:o.y-y)*tdy,tmz=(sz>0?z+1-o.z:o.z-z)*tdz,t=0,fa=-1;
+for(let i=0;i<60;i++){
+if(tmx<tmy&&tmx<tmz){x+=sx;t=tmx;tmx+=tdx;fa=0;}
+else if(tmy<tmz){y+=sy;t=tmy;tmy+=tdy;fa=1;}
+else{z+=sz;t=tmz;tmz+=tdz;fa=2;}
+if(t>5.5)return null;
+const b=getB(x,y,z);
+if(b&&b!==5){const n=[0,0,0];n[fa]=fa===0?-sx:fa===1?-sy:-sz;return{x,y,z,b,n};}}
+return null;}
+function touched(x,y,z){const cx=x>>4,cz=z>>4,lx=x&15,lz=z&15;
+remesh(cx,cz);
+if(lx===0)remesh(cx-1,cz);if(lx===15)remesh(cx+1,cz);
+if(lz===0)remesh(cx,cz-1);if(lz===15)remesh(cx,cz+1);}
+/* a torch's 7-block light pool can cross into neighbors touched() won't rebuild; superset of touched(), <=4 chunks */
+function remeshTorch(x,z){for(let cx2=(x-7)>>4;cx2<=(x+7)>>4;cx2++)for(let cz2=(z-7)>>4;cz2<=(z+7)>>4;cz2++)remesh(cx2,cz2);}
+function doBreak(h,drop){
+if(h.b===38){ /* berry harvest: full bush -> picked (39), never air; 1-2 berries, count position-hashed like seed drops; regrow queued in the FIFO-capped transient bushes array (never saved - a reload may legitimately leave the bush at 39) */
+setB(h.x,h.y,h.z,39);
+if(bushes.length>=256)bushes.shift();
+bushes.push({x:h.x,y:h.y,z:h.z,t:gt});
+if(drop){spawnDrop(h.x,h.y,h.z,118);if(h3f(h.x,h.y,h.z)<.5)spawnDrop(h.x,h.y,h.z,118);}
+burst(h.x,h.y,h.z,63);touched(h.x,h.y,h.z);sBreak();return;}
+const bl=BL[h.b],tile=bl.cr?bl.cr:bl.t[2];
+if(h.b===23){const fk=h.x+','+h.y+','+h.z,f=furnaces.get(fk);
+if(f){for(const s of[f.inp,f.fuel,f.out])if(s)for(let i=0;i<s.count;i++)spawnDrop(h.x,h.y,h.z,s.id);furnaces.delete(fk);}
+if(uiOpen&&furnKey===fk)closeInv();} /* contents always spill (independent of the tool-gated block drop) */
+if(h.b===44){const ck=h.x+','+h.y+','+h.z,c=chestState(h.x,h.y,h.z); /* seed-then-spill: an unopened chest's loot still drops */
+if(c)for(const s of c)if(s)for(let i=0;i<s.count;i++)spawnDrop(h.x,h.y,h.z,s.id);
+chests.delete(ck);
+if(uiOpen&&chestKey===ck)closeInv();} /* the chest block itself drops nothing - 44 is absent from DROPS by design */
+setB(h.x,h.y,h.z,0);
+if(h.b>=31&&h.b<=34)setB(h.x,(h.b===31||h.b===33)?h.y+1:h.y-1,h.z,0); /* doors break as a unit; DROPS maps every half to one door item (31) */
+if(drop){const di=DROPS[h.b];if(di)spawnDrop(h.x,h.y,h.z,di);
+if((h.b===7||h.b===15||h.b===37)&&h3f(h.x,h.y,h.z)<.1)spawnDrop(h.x,h.y,h.z,105); /* ~10% of leaves drop an apple (birch 37 included) */
+if(h.b===14&&h3f(h.x,h.y,h.z)<.4)spawnDrop(h.x,h.y,h.z,107); /* ~40% of grass tufts drop seeds (position-hashed, deterministic) */
+if(h.b===21)spawnDrop(h.x,h.y,h.z,107);} /* mature wheat: bonus seed alongside the DROPS wheat */
+let yy=h.y+1,ab=getB(h.x,yy,h.z),popT=false;
+while(ab===12||ab===13||ab===14||(ab>=19&&ab<=21)||ab===22||(ab>=25&&ab<=28)||ab===38||ab===39||ab===42||ab===43||ab===45||ab===46){if(ab===22){spawnDrop(h.x,yy,h.z,22);popT=true;}else if(ab>=25&&ab<=28)spawnDrop(h.x,yy,h.z,ab<=26?25:27);else if(ab===42||ab===43)spawnDrop(h.x,yy,h.z,42);else if(ab===45||ab===46)spawnDrop(h.x,yy,h.z,45);setB(h.x,yy,h.z,0);yy++;ab=getB(h.x,yy,h.z);} /* crops pop with no drop, same as flowers; berry bushes 38/39 pop dropless too (regrow queue self-cleans on its getB check); torches drop + clear torchR via setB; levers/wires/buttons/redstone torches pop with drops (setB depowers their circuit - a popped 45's network recomputes via updatePower; a popped 43's timer self-cleans on its getB recheck; 46 normalizes to the lit item 45) */
+burst(h.x,h.y,h.z,tile);if(h.b===22||popT)remeshTorch(h.x,h.z);else touched(h.x,h.y,h.z);sBreak();}
+function tryBreak(){const h=ray();if(!h)return;
+if(h.b===9){sfx(180,.08,.15,2);return;}
+doBreak(h,true);}
+function overlaps(bx,by,bz){return pos.x+.299>bx&&pos.x-.299<bx+1&&pos.y+1.799>by&&pos.y+.001<by+1&&pos.z+.299>bz&&pos.z-.299<bz+1;}
+function placeCell(h){return{x:h.x+h.n[0],y:h.y+h.n[1],z:h.z+h.n[2]};}
+/* lever/button/door right-click dispatch, shared by tryPlace + __vox.interact. Lever/button setB triggers
+   updatePower via the setB hook; manual door toggles route their setB through the inPwr guard so a hand
+   toggle never fires its own power rewrite - it sticks until the next power edge on that network (slice 2
+   flagged substitution; free-standing doors therefore still toggle both ways). */
+function useBlock(b,x,y,z){
+if(b===25||b===26){setB(x,y,z,b===25?26:25);touched(x,y,z);logS('lever');sfx(b===25?900:680,.06,.25,2);return true;}
+if(b===42){if(buttonTimers.length>=64){const o=buttonTimers.shift();if(getB(o.x,o.y,o.z)===43)setB(o.x,o.y,o.z,42);} /* FIFO evictee force-releases: no stuck-powered network */
+setB(x,y,z,43);buttonTimers.push({x,y,z,until:simNow+1500});
+touched(x,y,z);logS('button');sfx(1000,.05,.22,2);return true;}
+if(b===43)return true; /* pressed button: click consumed, no re-trigger, timer untouched */
+if(b>=31&&b<=34){const lo=(b===31||b===33)?y:y-1,open=b<=32;
+inPwr=true;try{setB(x,lo,z,open?33:31);setB(x,lo+1,z,open?34:32);}finally{inPwr=false;}
+touched(x,lo,z);logS('door');sfx(open?460:320,.08,.3,2);return true;}
+if(b===35){useBed(x,y,z);return true;} /* bed: spawn-set (+ night sleep) - shared with __vox.interact */
+return false;}
+/* HUD toast: DOM-only feedback line (bed spawn-set), CSS-faded like the dmg flash - never touches sim state */
+let toastT=0;const toastEl=document.createElement('div');
+toastEl.style.cssText='position:fixed;left:50%;bottom:132px;transform:translateX(-50%);color:#fff;font:13px monospace;text-shadow:0 1px 2px #000;background:rgba(10,10,14,.55);border-radius:6px;padding:4px 12px;opacity:0;transition:opacity .4s;z-index:6;pointer-events:none';
+document.body.appendChild(toastEl);
+function toast(msg){toastEl.textContent=msg;toastEl.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>{toastEl.style.opacity='0';},1600);}
+/* bed use (35): ALWAYS (re)sets spawnPt to standing-on-the-bed; at night - gDL<.3, the same daylight
+   scalar the sunburn gate reads - it also sleeps: gt advances FORWARD-ONLY to the next dawn (468 = the
+   setTime(6) congruence; delta in [0,600) keeps the sim clock monotonic) and setTime's nextChirp guard
+   is re-applied so the chirp scheduler stays sane. updSky() first so gDL is current even when a probe
+   calls setTime + interact inside one frame. Flagged substitutions: no mob-proximity sleep check;
+   1-block bed. Weather/farm need no fixup: weatherAt is a pure fn of gt, crop timers just come due. */
+function useBed(x,y,z){updSky();
+spawnPt={x:x+.5,y:y+1.02,z:z+.5};logS('spawnset');
+if(gDL<.3){gt+=((468-(gt%600))+600)%600;
+if(nextChirp<gt||nextChirp>gt+17)nextChirp=gt+2+Math.random()*4;
+logS('sleep');thump(120,55,.3,.3);toast('Spawn point set · slept to dawn');}
+else{logS('nosleep');toast('Spawn point set');}}
+/* bow (item 117): right-click fires a player-tagged arrow into the SAME arrows[] pool skeletons use
+   (shared arrowGeo/matMob, cap 8 oldest-evicted, same flight physics inside simStep). 0.6s simNow
+   cooldown; INFINITE arrows (flagged substitution - no ammo item); 1 dur per shot, snaps at 0 with the
+   standard break cue. pl:true makes updArrows skip the player-hit check and test mobs instead. */
+let bowT=0;
+function fireBow(it){if(simNow<bowT)return;bowT=simNow+600;
+camera.getWorldDirection(dirV);
+if(arrows.length>=8){const o=arrows.shift();scene.remove(o.m);} /* cap 8, oldest evicted - skeleton parity */
+const ax=pos.x,ay=pos.y+eyeH,az=pos.z;
+const am=new THREE.Mesh(arrowGeo,matMob);am.position.set(ax,ay,az);am.rotation.y=Math.atan2(dirV.x,dirV.z);scene.add(am);
+arrows.push({m:am,x:ax,y:ay,z:az,dx:dirV.x*18,dy:dirV.y*18,dz:dirV.z*18,sx:ax,sz:az,t:0,pl:true});
+sBow();
+it.dur--;if(it.dur<=0){inv[slot]=null;sfx(180,.08,.15,2);}updCounts();}
+function tryPlace(){const h=ray();
+if(h&&h.b===17&&!sneak){openInv(true);mR=false;return;}
+if(h&&h.b===23&&!sneak){openFurnace(h.x,h.y,h.z);mR=false;return;}
+if(h&&h.b===44&&!sneak){openChest(h.x,h.y,h.z);mR=false;return;}
+if(h&&!sneak&&(h.b===25||h.b===26||h.b===42||h.b===43||(h.b>=31&&h.b<=34))){useBlock(h.b,h.x,h.y,h.z);mR=false;return;}
+if(h&&h.b===35&&!sneak){useBed(h.x,h.y,h.z);mR=false;return;} /* bed: spawn-set + night sleep */
+const it=inv[slot];
+/* seeds (107): till-and-plant on grass/dirt/farmland top face. Pragmatic substitution: seeds till on use, no hoe item. */
+if(it&&it.id===107){if(h&&h.n[1]===1&&(h.b===1||h.b===2||h.b===18)&&getB(h.x,h.y+1,h.z)===0){
+if(h.b!==18)setB(h.x,h.y,h.z,18);setB(h.x,h.y+1,h.z,19);
+farm.set(h.x+','+(h.y+1)+','+h.z,gt+20+h3f(h.x,h.y,h.z)*20);
+it.count--;if(it.count<=0)inv[slot]=null;touched(h.x,h.y,h.z);updCounts();sPlace();}return;}
+if(it&&it.id===117){fireBow(it);return;} /* bow fires even aiming at sky - dispatched before the generic item return */
+if(it&&it.id>=100){if(FOOD[it.id])eatFood(slot);return;} /* tools/sticks not placeable; food is eaten (even aiming at sky) */
+if(!h)return;
+if(h.b===5||h.b===13||h.b===14||h.b===38||h.b===39){sfx(180,.08,.15,2);logS('refuse');return;} /* non-solid deco cross-planes are not support faces: refusing here kills the floating-wire-off-a-grass-tuft class of placements */
+const c=placeCell(h),cb=getB(c.x,c.y,c.z);
+if(!(cb===0||cb===5||cb===13||cb===14)){sfx(180,.08,.15,2);logS('refuse');return;} /* blocked target cell: audible refusal (matches the empty-hand cue) - no more silent dead right-clicks */
+if(overlaps(c.x,c.y,c.z)){sfx(180,.08,.15,2);logS('refuse');return;} /* would intersect the player's own column: same refusal cue */
+if(c.y<1||c.y>=H)return;
+if(!it||it.count<=0){sfx(180,.08,.15,2);logS('refuse');return;} /* empty-hand/empty-stack refusal is ledger-visible too */
+if(it.id===31){if(c.y+1>=H||getB(c.x,c.y+1,c.z)!==0||overlaps(c.x,c.y+1,c.z))return; /* 2-block door: upper cell must be free air too */
+setB(c.x,c.y,c.z,31);setB(c.x,c.y+1,c.z,32);touched(c.x,c.y,c.z);
+it.count--;if(it.count<=0)inv[slot]=null;updCounts();sPlace();return;}
+if((it.id===27||it.id===45||it.id===46)&&!SOLID(getB(c.x,c.y-1,c.z))){sfx(180,.08,.15,2);logS('refuse');return;} /* wire is a ground quad + redstone torches are floor-mounted only (support = block below; flagged substitution vs MC wall mounting): both need a solid floor under their cell, never air/deco */
+setB(c.x,c.y,c.z,it.id);if(it.id===22)remeshTorch(c.x,c.z);else touched(c.x,c.y,c.z);
+it.count--;if(it.count<=0)inv[slot]=null;
+updCounts();sPlace();}
+let mineT=0,mineKey='',mtLast=simNow,mineSnd=0;
+function resetMine(){mineT=0;mineKey='';crack.visible=false;}
+function mineTick(now){const mdt=Math.min(Math.max(now-mtLast,0)/1000,.05);mtLast=now;
+if(mL&&!uiOpen){const h=ray();
+if(!h)resetMine();
+else{const k=h.x+'_'+h.y+'_'+h.z+'_'+h.b;
+if(k!==mineKey){mineT=0;mineSnd=0;mineKey=k;crack.visible=false;if(h.b===9)sfx(180,.08,.15,2);}
+if(h.b!==9){const it=inv[slot],tier=(it&&PICKT[it.id])||0,req=TOOLREQ[h.b]||0,eff=tier>=req;
+const base=HARD[h.b]!==undefined?HARD[h.b]:.8,need=(req&&eff)?base*PMULT[tier]:base;
+mineT+=mdt;mineSnd+=mdt;
+if(mineSnd>.22){mineSnd=0;sfx(700+Math.random()*300,.05,.1);}
+if(mineT>=need){doBreak(h,eff);
+if(it&&PICKT[it.id]){it.dur--;if(it.dur<=0){inv[slot]=null;sfx(180,.08,.15,2);}updCounts();}
+resetMine();}
+else{crack.visible=true;crack.position.set(h.x+.5,h.y+.5,h.z+.5);
+crackMat.color.copy(matO.color);
+setCrackTile(21+Math.min(3,4*mineT/need|0));}}}}
+else if(mineKey||crack.visible)resetMine();
+if(mR&&now>=nextPlace&&!uiOpen){tryPlace();nextPlace=now+260;}}
+function updHL(){const h=(locked||TEST)?ray():null;
+if(h){hl.visible=true;hl.position.set(h.x+.5,h.y+.5,h.z+.5);
+const c=placeCell(h),cb=getB(c.x,c.y,c.z);
+if((cb===0||cb===5||cb===13||cb===14)&&!overlaps(c.x,c.y,c.z)&&c.y>=1&&c.y<H&&inv[slot]&&inv[slot].id<100){
+ghost.visible=true;ghost.position.set(c.x+.5,c.y+.5,c.z+.5);}else ghost.visible=false;}
+else{hl.visible=false;ghost.visible=false;}}
+/* ---------- drops ---------- */
+const matDrop=new THREE.MeshBasicMaterial({map:atlas});
+const dropGeos={};
+function dropGeo(id){let g=dropGeos[id];if(g)return g;
+const bl=BL[id],P=[],U=[],I=[];
+for(let f=0;f<6;f++){const F=FACES[f],tile=id>=100?ITILE[id]:(bl.cr!==undefined?bl.cr:bl.t[f===2?0:f===3?1:2]),base=P.length/3;
+for(let i=0;i<4;i++){const v=F.v[i];P.push((v[0]-.5)*.25,(v[1]-.5)*.25,(v[2]-.5)*.25);
+const q=tuv(tile,v[F.u],v[F.w]===undefined?0:v[F.w]);U.push(q[0],q[1]);}
+I.push(base,base+1,base+2,base,base+2,base+3);}
+g=new THREE.BufferGeometry();
+g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
+g.setIndex(I);dropGeos[id]=g;return g;}
+/* held-item viewmodel: dedicated render pass. The mesh lives in its own tiny scene (vmScene) with its
+   own origin camera (vmCam, fov/aspect synced to the main camera) and is drawn AFTER the world with a
+   clearDepth() between (see the render loop). Rationale: an opaque camera-child mesh renders in the
+   OPAQUE list, and three.js draws the transparent list (water/clouds/particles, depthWrite:false)
+   after ALL opaque objects regardless of renderOrder - so water used to alpha-blend over the held
+   block, making it look see-through against any transparent surface. The separate pass composites it
+   opaquely over everything (day/night, water, sky) for the cost of one clearDepth + a one-mesh scene.
+   depthTest stays ON so the block self-occludes correctly. Render-side only (loop guard B) - never
+   touched by simStep, so determinism + the pause-freeze envelope are unaffected. hideUI is DOM-only. */
+const vmMat=new THREE.MeshBasicMaterial({map:atlas,alphaTest:.4});
+const vmScene=new THREE.Scene();
+const vmCam=new THREE.PerspectiveCamera(camera.fov,camera.aspect,.05,10);
+let vmMesh=null,vmId=-1,vmSwing=0,vmHitT=0;
+function updVM(dt){const it=inv[slot],id=it?it.id:0;
+if(id!==vmId){vmId=id;
+if(vmMesh){vmScene.remove(vmMesh);vmMesh=null;} /* dropGeo geometries are cached + shared - no dispose */
+if(id>0){vmMesh=new THREE.Mesh(dropGeo(id),vmMat);vmMesh.scale.setScalar(1.8);vmScene.add(vmMesh);}}
+if(!vmMesh)return;
+vmMat.color.copy(matO.color); /* tracks day/night/storm world tint */
+if(mL||simNow<vmHitT)vmSwing=1;else vmSwing=Math.max(0,vmSwing-dt*4);
+const dp=Math.sin(vmSwing*Math.PI*.6); /* swing dip: held at ~full while mining, eases back on release */
+vmMesh.position.set(.5,-.42-.14*dp,-.8);
+vmMesh.rotation.set(-.7*dp,Math.PI/5,0);}
+let drops=[];
+function spawnDrop(bx,by,bz,id,dur,count){ /* count: whole-stack drops (death drops); existing call sites omit it = 1 */
+if(drops.length>=64){const o=drops.shift();scene.remove(o.m);}
+const m=new THREE.Mesh(dropGeo(id),matDrop);
+const D={m,id,dur,count:count||1,x:bx+.5,y:by+.5,z:bz+.5,vy:2,t:0,ph:Math.random()*6.28};
+m.position.set(D.x,D.y,D.z);scene.add(m);drops.push(D);return D;}
+function updDrops(dt){matDrop.color.copy(matO.color);
+for(let i=drops.length-1;i>=0;i--){const D=drops[i];D.t+=dt;
+if(D.t>(D.life||60)){scene.remove(D.m);drops.splice(i,1);continue;} /* death drops carry life=300; ordinary drops keep the 60s default */
+D.vy-=22*dt;if(D.vy<-28)D.vy=-28;D.y+=D.vy*dt;
+const fy=Math.floor(D.y-.13);
+if(D.vy<=0&&SOLID(getB(Math.floor(D.x),fy,Math.floor(D.z)))){D.y=fy+1.13;D.vy=0;}
+const dx=pos.x-D.x,dy=pos.y+.9-D.y,dz=pos.z-D.z,dd=Math.hypot(dx,dy,dz);
+if(D.t<.8){} /* pickup immunity window (fresh drops, Q-throws) */
+else if(dd<1.1){
+if(addItem({id:D.id,count:D.count||1,dur:D.dur})){sfx(2100,.05,.12);scene.remove(D.m);drops.splice(i,1);continue;}}
+else if(dd<2.2){const s=Math.min(1,6*dt);D.x+=dx*s;D.y+=dy*s;D.z+=dz*s;D.vy=0;}
+D.m.rotation.y+=2*dt;
+D.m.position.set(D.x,D.y+.04*Math.sin(D.t*3+D.ph),D.z);}}
+/* ---------- mobs (pig + zombie, shared entity layer; transient - never saved) ---------- */
+let mobs=[];const MOBMAX=8;
+let gDL=1,mobSpawnT=0,spawnOn=false;
+function mkMobGeo(w,h,d,r,g,b){const geo=new THREE.BoxGeometry(w,h,d),n=geo.attributes.position.count,col=new Float32Array(n*3);
+const FL=[.78,.62,1,.5,.85,.7];
+for(let i=0;i<n;i++){const l=FL[i>>2]||1;col[i*3]=r*l;col[i*3+1]=g*l;col[i*3+2]=b*l;}
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));return geo;}
+const matMob=new THREE.MeshBasicMaterial({vertexColors:true});
+const matMobH=new THREE.MeshBasicMaterial({vertexColors:true}); /* hurt-flash red tint */
+const pigLegG=mkMobGeo(.18,.28,.18,.92,.52,.58),zomArmG=mkMobGeo(.16,.16,.55,.36,.62,.3),zomLegG=mkMobGeo(.2,.7,.2,.16,.2,.42);
+const shpLegG=mkMobGeo(.18,.34,.18,.8,.78,.72),skArmG=mkMobGeo(.12,.12,.55,.86,.85,.8),skLegG=mkMobGeo(.13,.7,.13,.84,.83,.78);
+const vilLegG=mkMobGeo(.16,.5,.16,.34,.27,.22);
+const MOBDEF={
+pig:{hp:5,spd:1.4,hw:.35,hh:.9,tile:31,parts:[
+[mkMobGeo(.66,.46,.88,1,.62,.68),0,.51,0],[mkMobGeo(.42,.4,.42,1,.68,.74),0,.64,.58],
+[pigLegG,.2,.14,.3],[pigLegG,-.2,.14,.3],[pigLegG,.2,.14,-.3],[pigLegG,-.2,.14,-.3]]},
+sheep:{hp:8,spd:1.2,hw:.45,hh:1.1,tile:50,parts:[ /* pig-like layout, boxier white wool body + dark face */
+[mkMobGeo(.74,.62,1,.93,.9,.84),0,.66,0],[mkMobGeo(.4,.38,.4,.91,.88,.82),0,.88,.6],
+[mkMobGeo(.3,.28,.16,.3,.26,.23),0,.86,.82],
+[shpLegG,.22,.17,.34],[shpLegG,-.22,.17,.34],[shpLegG,.22,.17,-.34],[shpLegG,-.22,.17,-.34]]},
+villager:{hp:10,spd:1.1,hw:.3,hh:1.8,tile:6,parts:[ /* lane B hamlet passive: robe-brown build - head + big nose + ankle-length robe torso + folded-arm bar; wanders on the pig/sheep brain, leashed to its hamlet anchor (hx/hz) */
+[mkMobGeo(.42,.42,.42,.78,.61,.46),0,1.55,0],[mkMobGeo(.12,.2,.12,.71,.53,.39),0,1.45,.26],
+[mkMobGeo(.5,.8,.3,.4,.31,.25),0,.94,0],[mkMobGeo(.56,.16,.22,.33,.25,.2),0,1.16,.22],
+[vilLegG,.12,.27,0],[vilLegG,-.12,.27,0]]},
+zombie:{hp:10,spd:2.3,hw:.3,hh:1.8,tile:14,parts:[
+[mkMobGeo(.45,.45,.45,.36,.62,.3),0,1.52,0],[mkMobGeo(.5,.62,.26,.23,.4,.55),0,.99,0],
+[zomArmG,.26,1.22,.3],[zomArmG,-.26,1.22,.3],[zomLegG,.13,.35,0],[zomLegG,-.13,.35,0]]},
+skeleton:{hp:8,spd:2,hw:.3,hh:1.8,tile:9,parts:[ /* zombie layout in bone-white; tile 9 = whitest burst color */
+[mkMobGeo(.42,.42,.42,.88,.87,.82),0,1.52,0],[mkMobGeo(.44,.62,.22,.84,.83,.78),0,.99,0],
+[skArmG,.24,1.22,.3],[skArmG,-.24,1.22,.3],[skLegG,.11,.35,0],[skLegG,-.11,.35,0]]}};
+function mkMobGrp(type){const grp=new THREE.Group();
+for(const p of MOBDEF[type].parts){const m=new THREE.Mesh(p[0],matMob);m.position.set(p[1],p[2],p[3]);grp.add(m);}
+return grp;}
+function spawnMob(type,x,y,z){const D=MOBDEF[type];if(!D||mobs.length>=MOBMAX)return false;
+if(!isFinite(x)||!isFinite(z))return false;
+if(y===undefined||y===null)y=CI(Math.floor(x),Math.floor(z)).h+1;
+if(!isFinite(y))return false;
+const grp=mkMobGrp(type);grp.position.set(x,y,z);scene.add(grp);
+mobs.push({type,x,y,z,vx:0,vy:0,vz:0,yaw:0,hp:D.hp,t:Math.random()*6.28,hurtT:0,atkT:0,wanderT:0,fleeT:0,sunT:0,mv:0,grd:false,grp});
+return true;}
+function rmMob(i,fx){const M=mobs[i];
+if(fx)burst(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),MOBDEF[M.type].tile);
+scene.remove(M.grp);mobs.splice(i,1);} /* shared geometries - no dispose */
+/* lane B hamlet inhabitant: fired from buildChunk whenever a hamlet chunk's mesh (re)builds. Deduped on the
+   leash anchor + cap-aware via spawnMob (MOBMAX), so it never stacks and never overflows the cap. Transient
+   like every mob (>56 blocks from the player = culled); the next rebuild on return re-seats it - that's the
+   chunk-regen round trip. groundY (not stale CI.h) finds the path dirt the hamlet generator laid at F. */
+function spawnVillager(hv){const ax=hv[0]+.5,az=hv[1]+.5;
+for(const M of mobs)if(M.type==='villager'&&M.hx===ax&&M.hz===az)return false;
+const gy=groundY(hv[0],hv[1]);if(gy<0)return false;
+if(!spawnMob('villager',ax,gy+1,az))return false;
+const M=mobs[mobs.length-1];M.hx=ax;M.hz=az;return true;}
+/* generic AABB-vs-world resolver mirroring the player's coll() (player path untouched) */
+function entColl(M,hw,hh,a,amt){const e=.001;
+const x0=Math.floor(M.x-hw),x1=Math.floor(M.x+hw-1e-9),y0=Math.floor(M.y),y1=Math.floor(M.y+hh-1e-9),z0=Math.floor(M.z-hw),z1=Math.floor(M.z+hw-1e-9);
+for(let bx=x0;bx<=x1;bx++)for(let by=y0;by<=y1;by++)for(let bz=z0;bz<=z1;bz++){
+if(!SOLID(getB(bx,by,bz)))continue;
+if(a===0){M.x=amt>0?bx-hw-e:bx+1+hw+e;M.vx=0;}
+else if(a===1){if(amt>0)M.y=by-hh-e;else{M.y=by+1+e;M.grd=true;}M.vy=0;}
+else{M.z=amt>0?bz-hw-e:bz+1+hw+e;M.vz=0;}
+return true;}
+return false;}
+function attackMob(){if(!mobs.length)return false;
+camera.getWorldDirection(dirV);
+let best=-1,bestT=1e9;
+for(let i=0;i<mobs.length;i++){const M=mobs[i],D=MOBDEF[M.type];
+for(let t=.25;t<=3.5;t+=.25){const rx=camera.position.x+dirV.x*t,ry=camera.position.y+dirV.y*t,rz=camera.position.z+dirV.z*t;
+if(rx>M.x-D.hw&&rx<M.x+D.hw&&ry>M.y&&ry<M.y+D.hh&&rz>M.z-D.hw&&rz<M.z+D.hw){if(t<bestT){bestT=t;best=i;}break;}}}
+if(best<0)return false;
+const M=mobs[best],it=inv[slot];
+const dmg=(it&&ATK[it.id])?ATK[it.id]:(it&&PICKT[it.id])?3:2;M.hp-=dmg;M.hurtT=.3;
+if(it&&ATK[it.id]){it.dur--;if(it.dur<=0){inv[slot]=null;sfx(180,.08,.15,2);}updCounts();} /* sword durability only - pick attack behavior unchanged */
+const kdx=M.x-pos.x,kdz=M.z-pos.z,kl=Math.hypot(kdx,kdz)||1;
+M.vx=6*kdx/kl;M.vz=6*kdz/kl;M.vy=4;M.grd=false;
+if(M.type==='pig'||M.type==='sheep'||M.type==='villager')M.fleeT=3;
+logS('hit');sfx(260,.09,.3,2);
+return true;}
+let wScx=0,wScz=0; /* module-level scratch (zero per-frame allocs) */
+/* solid occlusion between torch center (tx+.5,ty+.5,tz+.5) and sample (x,y,z): march the segment at
+   ~.5-block steps (dist<7 => <=14 samples), floor to cells, skip the sample's cell and the torch's
+   whole column (its own cell + mounting post - a post-top torch must not shadow the ground at its
+   own feet), dedupe consecutive cells, count OPQ hits. Shared by lightAtW + buildChunk's lightOf. */
+function occSolids(tx,ty,tz,x,y,z){const ax=tx+.5,ay=ty+.5,az=tz+.5;
+const dx=x-ax,dy=y-ay,dz=z-az,dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+const N=Math.ceil(dist*2);if(N<2)return 0;
+const sx=Math.floor(x),sy=Math.floor(y),sz=Math.floor(z);
+let n=0,px=tx,py=ty,pz=tz;
+for(let i=1;i<N;i++){const t=i/N,cx=Math.floor(ax+dx*t),cy=Math.floor(ay+dy*t),cz=Math.floor(az+dz*t);
+if(cx===px&&cy===py&&cz===pz)continue;px=cx;py=cy;pz=cz;
+if((cx===tx&&cz===tz)||(cx===sx&&cy===sy&&cz===sz))continue;
+if(OPQ(getB(cx,cy,cz)))n++;}
+return n;}
+/* world-space light probe: depth-based skylight + torch pool from the 3x3 chunk neighborhood */
+function lightAtW(x,y,z){const d2=CI(Math.floor(x),Math.floor(z)).h-y,sky=d2<=0?1:Math.max(.1,1-d2*.16);
+let tl=0;const ccx=Math.floor(x)>>4,ccz=Math.floor(z)>>4;
+for(let tcx=ccx-1;tcx<=ccx+1;tcx++)for(let tcz=ccz-1;tcz<=ccz+1;tcz++){const s=torchR.get(tcx+','+tcz);if(!s)continue;
+for(const tv of s.values()){const dx=x-tv[0]-.5,dy=y-tv[1]-.5,dz=z-tv[2]-.5,dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+if(dist<7){let t3=1-dist/7;const oc=occSolids(tv[0],tv[1],tv[2],x,y,z);if(oc>=2)t3=0;else if(oc===1)t3*=.25;if(t3>tl)tl=t3;}}}
+return{sky,torch:tl,eff:Math.max(sky*gDL,tl)};}
+/* real ground: walk the column down from cached h+8 so structure fills (hamlet paths raise ground above stale CI.h) are seen */
+function groundY(sx,sz){for(let y=Math.min(H-2,CI(sx,sz).h+8);y>0;y--)if(SOLID(getB(sx,y,sz)))return y;return -1;}
+/* per-candidate spawn validation, probe-addressable via __vox.spawnAt; return-code vocabulary ('water'/'solid'/'light'/'biome'/'cap'/'ok') is load-bearing for the prober */
+function trySpawnAt(type,sx,sz){const ci=CI(sx,sz);
+if(ci.h<=SEA)return'water';
+const gy=groundY(sx,sz);if(gy<0)return'solid';
+if(getB(sx,gy+1,sz)===5)return'water';
+if(SOLID(getB(sx,gy+1,sz))||SOLID(getB(sx,gy+2,sz)))return'solid';
+/* hostiles only (zombie+skeleton): at an unlit night column eff=gDL<.12 - baseline behavior preserved; torch-lit columns (hamlet paths included) read the honest 'light' */
+if((type==='zombie'||type==='skeleton')&&lightAtW(sx+.5,gy+1,sz+.5).eff>=.15)return'light';
+if((type==='pig'||type==='sheep')&&ci.tp!==1)return'biome';
+if(!spawnMob(type,sx+.5,gy+1,sz+.5))return'cap';
+return'ok';}
+/* cave spawn: first 2-tall air pocket with solid floor below the heightmap; depth skylight floors at .1 (>=6 deep) so deep pockets pass <.15 even at noon while shallow ones read 'light' */
+function trySpawnCaveAt(sx,sz){const ci=CI(sx,sz);
+for(let y=ci.h-4;y>=6;y--){if(getB(sx,y,sz)!==0||getB(sx,y+1,sz)!==0||!SOLID(getB(sx,y-1,sz)))continue;
+if(lightAtW(sx+.5,y,sz+.5).eff>=.15)return'light';
+return spawnMob('zombie',sx+.5,y,sz+.5)?'ok':'cap';}
+return'nopocket';}
+function spawnTick(){let nz=0,np=0;for(const M of mobs){if(M.type==='zombie'||M.type==='skeleton')nz++;else np++;} /* nz = hostiles (zombie+skeleton) */
+const night=gDL<.12,day=gDL>.5;
+for(let k=0;k<3&&mobs.length<MOBMAX;k++){
+if(night?nz>=4:(!day||np>=4))break;
+const a=Math.random()*6.283,r=night?18+Math.random()*14:16+Math.random()*16;
+const sx=Math.floor(pos.x+Math.cos(a)*r),sz=Math.floor(pos.z+Math.sin(a)*r);
+const type=night?(Math.random()<.3?'skeleton':'zombie'):(Math.random()<.5?'sheep':'pig'); /* 30% skeleton at night; passives 50/50 */
+if(trySpawnAt(type,sx,sz)==='ok'){if(night)nz++;else np++;}}
+/* one cave attempt per tick, independent of day/night: dark pockets matter at noon; bounded by MOBMAX + nz<4 */
+if(mobs.length<MOBMAX&&nz<4){const a2=Math.random()*6.283,r2=10+Math.random()*20;
+if(trySpawnCaveAt(Math.floor(pos.x+Math.cos(a2)*r2),Math.floor(pos.z+Math.sin(a2)*r2))==='ok')nz++;}}
+function updMobs(dt){
+matMob.color.copy(matO.color);
+matMobH.color.setRGB(Math.min(1,matO.color.r*1.4+.35),matO.color.g*.22,matO.color.b*.22);
+mobSpawnT+=dt;
+if(mobSpawnT>=1){mobSpawnT=0;
+if(!TEST||spawnOn)spawnTick();}
+for(let i=mobs.length-1;i>=0;i--){const M=mobs[i],D=MOBDEF[M.type];
+M.t+=dt;if(M.hurtT>0)M.hurtT-=dt;if(M.atkT>0)M.atkT-=dt;
+if(M.hp<=0){if(M.type==='pig')spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),106);
+else if(M.type==='sheep'){spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),24,undefined,1+(Math.random()<.5?1:0));spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),119);} /* 1-2 wool + 1 raw mutton (119, smelts to cooked 120) */
+else if(M.type==='skeleton'&&Math.random()<.5)spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),100); /* 50% stick - pragmatic bone substitution (no bone item) */
+else if(M.type==='zombie'&&Math.random()<.6)spawnDrop(Math.floor(M.x),Math.floor(M.y),Math.floor(M.z),114);rmMob(i,true);continue;}
+const pdx=pos.x-M.x,pdz=pos.z-M.z,pd=Math.hypot(pdx,pdz);
+if(!isFinite(pd)||pd>56||!isFinite(M.y)||M.y<-16){rmMob(i,false);continue;} /* isFinite is load-bearing: NaN pd never exceeds 56 */
+if((M.type==='zombie'||M.type==='skeleton')&&gDL>.5&&lightAtW(M.x,M.y+1,M.z).sky>.5){M.sunT+=dt;if(M.sunT>=1.5){rmMob(i,true);continue;}}else M.sunT=0; /* sky-gated: cave hostiles (depth skylight<=.36) don't combust underground; surface burn timer unchanged */
+wScx=0;wScz=0;
+if(M.type==='zombie'){
+if(pd<24&&pd>.001){M.yaw=Math.atan2(pdx,pdz);wScx=pdx/pd*D.spd;wScz=pdz/pd*D.spd;}
+if(M.atkT<=0){const gx=Math.max(0,Math.abs(pdx)-(D.hw+.3)),gz=Math.max(0,Math.abs(pdz)-(D.hw+.3)),gy=Math.max(0,pos.y-(M.y+D.hh),M.y-(pos.y+1.8));
+if(Math.hypot(gx,gy,gz)<1){damage(2,M.x,M.z);M.atkT=1;}}}
+else if(M.type==='skeleton'){ /* kiting archer: approach >11, retreat <5, strafe between; shoot on LOS every 2s */
+if(pd<24&&pd>.001){M.yaw=Math.atan2(pdx,pdz);const ux=pdx/pd,uz=pdz/pd;
+if(pd>11){wScx=ux*D.spd;wScz=uz*D.spd;}
+else if(pd<5){wScx=-ux*D.spd;wScz=-uz*D.spd;}
+else{wScx=uz*D.spd*.8;wScz=-ux*D.spd*.8;}
+if(M.atkT<=0&&pd>4&&pd<14){
+/* line of sight: march ~.5-block steps from head to player chest, abort on SOLID (<=28 getB reads, at most once per 2s) */
+const hy=M.y+1.4,ax=pos.x-M.x,ay=pos.y+1-hy,az=pos.z-M.z,al=Math.sqrt(ax*ax+ay*ay+az*az)||1,NS=Math.ceil(al*2);
+let clear=true;
+for(let q=1;q<NS;q++){const t2=q/NS;
+if(SOLID(getB(Math.floor(M.x+ax*t2),Math.floor(hy+ay*t2),Math.floor(M.z+az*t2)))){clear=false;break;}}
+if(clear){if(arrows.length>=8){const o=arrows.shift();scene.remove(o.m);} /* cap 8, oldest evicted */
+const am=new THREE.Mesh(arrowGeo,matMob);am.position.set(M.x,hy,M.z);am.rotation.y=Math.atan2(ax,az);scene.add(am);
+arrows.push({m:am,x:M.x,y:hy,z:M.z,dx:ax/al*18,dy:ay/al*18,dz:az/al*18,sx:M.x,sz:M.z,t:0});
+M.atkT=2;}}}}
+else{if(M.fleeT>0){M.fleeT-=dt;if(pd>.001){M.yaw=Math.atan2(-pdx,-pdz);wScx=-pdx/pd*3.2;wScz=-pdz/pd*3.2;}}
+else{M.wanderT-=dt;
+const ldx=M.hx!==undefined?M.hx-M.x:0,ldz=M.hx!==undefined?M.hz-M.z:0;
+if(M.hx!==undefined&&Math.hypot(ldx,ldz)>10){M.yaw=Math.atan2(ldx,ldz);M.mv=1;if(M.wanderT<1)M.wanderT=1;} /* villager leash: past ~10 blocks of the hamlet anchor it steers home EVERY frame - no wander segment can walk it out (pigs/sheep have no hx: branch never fires) */
+else if(M.wanderT<=0){M.wanderT=2+Math.random()*3;M.mv=Math.random()<.7?1:0;M.yaw=Math.random()*6.283;}
+if(M.mv){wScx=Math.sin(M.yaw)*D.spd;wScz=Math.cos(M.yaw)*D.spd;}}}
+if(M.hurtT>0){wScx=0;wScz=0;} /* brief stun so knockback reads */
+const str=Math.min(1,dt*5);
+M.vx+=(wScx-M.vx)*str;M.vz+=(wScz-M.vz)*str;
+M.x+=M.vx*dt;const hbx=entColl(M,D.hw,D.hh,0,M.vx*dt);
+M.z+=M.vz*dt;const hbz=entColl(M,D.hw,D.hh,2,M.vz*dt);
+if((hbx||hbz)&&M.grd)M.vy=7.5; /* auto-jump 1-block steps */
+M.vy-=25*dt;if(M.vy<-45)M.vy=-45;
+M.grd=false;
+const dy=M.vy*dt,st2=Math.max(1,Math.ceil(Math.abs(dy)/.9));
+for(let s2=0;s2<st2;s2++){M.y+=dy/st2;if(entColl(M,D.hw,D.hh,1,dy))break;}
+const mvs=Math.hypot(M.vx,M.vz);
+M.grp.position.set(M.x,M.y+(M.grd&&mvs>.4?Math.abs(Math.sin(M.t*9))*.06:0),M.z);
+M.grp.rotation.y=M.yaw;
+const wm=M.hurtT>0?matMobH:matMob;
+if(M.grp.userData.mt!==wm){M.grp.userData.mt=wm;for(let c2=0;c2<M.grp.children.length;c2++)M.grp.children[c2].material=wm;}}}
+/* ---------- skeleton arrows: <=8 live, shared thin-box geo, transient like mobs (never saved) ---------- */
+const arrowGeo=mkMobGeo(.06,.06,.5,.45,.38,.3);
+let arrows=[];
+function updArrows(dt){
+for(let i=arrows.length-1;i>=0;i--){const A=arrows[i];A.t+=dt;
+A.x+=A.dx*dt;A.y+=A.dy*dt;A.z+=A.dz*dt;
+if(A.t>2||SOLID(getB(Math.floor(A.x),Math.floor(A.y),Math.floor(A.z)))){scene.remove(A.m);arrows.splice(i,1);continue;}
+if(A.pl){let hit=false; /* player arrows: SKIP the player-hit check (no self-hits, even straight down), test mobs instead - <=8 arrows x <=8 mobs only on arrow-alive frames; hit reuses attackMob's exact semantics; death falls through updMobs' hp<=0 -> rmMob drop path untouched */
+for(let j=0;j<mobs.length;j++){const M=mobs[j],D=MOBDEF[M.type];
+if(Math.hypot(A.x-M.x,A.y-(M.y+D.hh*.6),A.z-M.z)<.9){
+M.hp-=3;M.hurtT=.3;
+const kl=Math.hypot(A.dx,A.dz)||1;
+M.vx=6*A.dx/kl;M.vz=6*A.dz/kl;M.vy=4;M.grd=false; /* knockback 6 along the arrow's horizontal dir */
+if(M.type==='pig'||M.type==='sheep'||M.type==='villager')M.fleeT=3;
+sArrowHit();hit=true;break;}}
+if(hit){scene.remove(A.m);arrows.splice(i,1);continue;}}
+else{const dx=pos.x-A.x,dy=pos.y+.9-A.y,dz=pos.z-A.z;
+if(Math.hypot(dx,dy,dz)<.8){damage(3,A.sx,A.sz);scene.remove(A.m);arrows.splice(i,1);continue;}} /* skeleton arrows keep the verbatim player path: 3 dmg is the point - bare 3 / plank 2 / iron 1, armor tiers diverge */
+A.m.position.set(A.x,A.y,A.z);}}
+/* ---------- audio ---------- */
+let AC=null,master=null,nbuf=null,nextChirp=8,rainG=null;
+function audioInit(){if(AC){AC.resume&&AC.resume();return;}
+try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+master=AC.createGain();master.gain.value=muted?0:.7;master.connect(AC.destination);
+nbuf=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);
+const ch=nbuf.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
+const src=AC.createBufferSource();src.buffer=nbuf;src.loop=true;
+const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=300;
+const g=AC.createGain();g.gain.value=.035;
+const lfo=AC.createOscillator();lfo.frequency.value=.09;
+const lg=AC.createGain();lg.gain.value=130;lfo.connect(lg);lg.connect(fl.frequency);lfo.start();
+src.connect(fl);fl.connect(g);g.connect(master);src.start();
+/* rain bed: looped noise -> 900Hz lowpass -> gain 0; updWeather lerps the gain toward .07*wI while raining */
+const rs=AC.createBufferSource();rs.buffer=nbuf;rs.loop=true;
+const rf=AC.createBiquadFilter();rf.type='lowpass';rf.frequency.value=900;
+rainG=AC.createGain();rainG.gain.value=0;
+rs.connect(rf);rf.connect(rainG);rainG.connect(master);rs.start();}
+function sfx(freq,dur,vol,Q){if(!AC)return;const t=AC.currentTime;
+const s=AC.createBufferSource();s.buffer=nbuf;s.loop=true;
+const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=Q||1.2;
+const g=AC.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+s.connect(f);f.connect(g);g.connect(master);s.start();s.stop(t+dur);}
+function thump(f0,f1,dur,vol){if(!AC)return;const t=AC.currentTime;
+const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';
+o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+o.connect(g);g.connect(master);o.start();o.stop(t+dur);}
+function logS(t){if(TEST&&window.__vox&&window.__vox.sfx.length<300)window.__vox.sfx.push({t,gt:+gt.toFixed(2)});}
+function sBreak(){logS('break');sfx(1500+Math.random()*600,.13,.5);thump(160,60,.1,.35);}
+function sPlace(){logS('place');thump(130,72,.09,.5);sfx(2100,.05,.12);}
+function sStep(){logS('step');sfx(420+Math.random()*260,.07,.16);}
+function sBow(){logS('bow');sfx(560+Math.random()*180,.12,.32,5);thump(300,110,.07,.18);} /* string twang: high-Q band pluck + short body knock */
+function sArrowHit(){logS('arrowhit');sfx(950,.05,.3,2);thump(150,70,.07,.3);} /* thock */
+function sPoison(){logS('poison');if(!AC)return;const t=AC.currentTime; /* sour descending two-tone (tritone-ish) */
+for(let i=0;i<2;i++){const o=AC.createOscillator(),g=AC.createGain(),t0=t+i*.13;
+o.type='triangle';o.frequency.setValueAtTime(i?311:466,t0);o.frequency.exponentialRampToValueAtTime(i?233:350,t0+.16);
+g.gain.setValueAtTime(.1,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.2);
+o.connect(g);g.connect(master);o.start(t0);o.stop(t0+.22);}}
+function caveAmb(){logS('caveamb');if(!AC)return;const t=AC.currentTime; /* low filtered rumble swell + one echoing drip; swell peaks by t+.25 so the .5s audioCheck render reads a real peak */
+const s=AC.createBufferSource();s.buffer=nbuf;s.loop=true;
+const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=160;
+const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.09,t+.25);g.gain.exponentialRampToValueAtTime(.001,t+2.4);
+s.connect(f);f.connect(g);g.connect(master);s.start();s.stop(t+2.5);
+const o=AC.createOscillator(),g2=AC.createGain(),t0=t+.25;
+o.type='sine';o.frequency.setValueAtTime(1750,t0);o.frequency.exponentialRampToValueAtTime(880,t0+.09);
+g2.gain.setValueAtTime(.05,t0);g2.gain.exponentialRampToValueAtTime(.001,t0+.5);
+o.connect(g2);g2.connect(master);o.start(t0);o.stop(t0+.5);}
+function chirp(){logS('chirp');if(!AC)return;const t=AC.currentTime;
+for(let i=0;i<3;i++){const o=AC.createOscillator(),g=AC.createGain(),t0=t+i*.22+Math.random()*.05;
+o.type='sine';o.frequency.setValueAtTime(2300+Math.random()*700,t0);o.frequency.exponentialRampToValueAtTime(1700,t0+.12);
+g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(.04,t0+.02);g.gain.exponentialRampToValueAtTime(.001,t0+.16);
+o.connect(g);g.connect(master);o.start(t0);o.stop(t0+.2);}}
+function cricket(){logS('cricket');if(!AC)return;const t=AC.currentTime;
+for(let i=0;i<4;i++){const o=AC.createOscillator(),g=AC.createGain(),t0=t+i*.09;
+o.type='square';o.frequency.value=3900;
+g.gain.setValueAtTime(.008,t0);g.gain.exponentialRampToValueAtTime(.0005,t0+.06);
+o.connect(g);g.connect(master);o.start(t0);o.stop(t0+.07);}}
+/* one-shot rain burst (audioCheck probe for the otherwise-continuous rain bed) */
+function sRainBurst(){if(!AC)return;const t=AC.currentTime,s=AC.createBufferSource();s.buffer=nbuf;s.loop=true;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=900;const g=AC.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);s.connect(f);f.connect(g);g.connect(master);s.start();s.stop(t+.4);}
+/* ---------- streaming ---------- */
+let pend=[],lastPC='',ready=false,initTotal=1;
+function refreshPend(){const pcx=Math.floor(pos.x/16),pcz=Math.floor(pos.z/16);
+pend=[];
+for(let dx=-RD;dx<=RD;dx++)for(let dz=-RD;dz<=RD;dz++){
+const d2=dx*dx+dz*dz;if(d2>RD*RD+2)continue;
+if(!meshes.has((pcx+dx)+','+(pcz+dz)))pend.push([pcx+dx,pcz+dz,d2]);}
+pend.sort((a,b)=>b[2]-a[2]);
+for(const k of[...meshes.keys()]){const p=k.split(','),ddx=+p[0]-pcx,ddz=+p[1]-pcz;
+if(ddx*ddx+ddz*ddz>(RD+2)*(RD+2))dropMesh(k);}}
+function updChunks(){const pk=Math.floor(pos.x/16)+','+Math.floor(pos.z/16);
+if(pk!==lastPC){lastPC=pk;refreshPend();}
+const t0=performance.now(),budget=ready?7:40;
+while(pend.length&&performance.now()-t0<budget){const c=pend.pop();
+if(!meshes.has(c[0]+','+c[1]))buildChunk(c[0],c[1]);}
+if(!ready){if(!pend.length){ready=true;progEl.style.display='none';if(TEST){started=true;ovEl.style.display='none';}else playBtn.style.display='block';}
+else progEl.textContent='Generating world... '+Math.round(100*(1-pend.length/initTotal))+'%';}}
+refreshPend();initTotal=pend.length||1;
+/* ---------- sky / hud ---------- */
+let gt=0;if(SV&&SV.player&&typeof SV.player.gt==='number')gt=SV.player.gt;
+/* ---------- farming: player-planted wheat, 1Hz growth ticker (farm map bounded by planting - no natural crops) ---------- */
+const farm=new Map();let farmT=0;
+const bushes=[]; /* picked-berry regrow queue {x,y,z,t:gt} - FIFO cap 256, timers transient (never saved); on load every 39 in the edits map re-arms a fresh 60s timer below, so a reloaded picked bush regrows */
+function updFarm(dt){farmT+=dt;if(farmT<1)return;farmT=0;
+for(const[k,due]of farm){if(gt<due)continue;
+const p=k.split(','),x=+p[0],y=+p[1],z=+p[2],b=getB(x,y,z);
+if(b===19){setB(x,y,z,20);touched(x,y,z);farm.set(k,gt+20+h3f(x,y+19,z)*20);}
+else if(b===20){setB(x,y,z,21);touched(x,y,z);farm.delete(k);} /* mature - drop the timer */
+else farm.delete(k);} /* crop gone (broken/popped) - self-clean */
+for(let i=bushes.length-1;i>=0;i--){const B=bushes[i];if(gt-B.t<60)continue; /* berry regrow: 60s on the same 1Hz tick */
+if(getB(B.x,B.y,B.z)===39){setB(B.x,B.y,B.z,38);touched(B.x,B.y,B.z);} /* cell no longer 39 (popped/broken/built over): entry just drops */
+bushes.splice(i,1);}}
+for(const[ek,ev]of edits)if(ev===19||ev===20)farm.set(ek,gt+15); /* saved crops resume growing (21 needs no timer) */
+for(const[ek,ev]of edits)if(ev===39){const p=ek.split(',');if(bushes.length<256)bushes.push({x:+p[0],y:+p[1],z:+p[2],t:gt});} /* saved picked bushes re-arm a fresh 60s regrow timer (FIFO cap honored) */
+/* ---------- weather: deterministic gt-seeded rain/snow episodes (pure fn of gt - no saved state, so save/load-coherent) ---------- */
+function weatherAt(t){const ep=Math.floor(t/90),r=h2f(ep,9341);if(r>=.4)return 0;const f=(t-ep*90)/90;return sst(.04,.18,f)*sst(.97,.82,f);}
+let wxOverride=null,wI=0,wKind='none',wxPrev=0,wxP=null;
+const WXN=600,wxPos=new Float32Array(WXN*3),wxGeo=new THREE.BufferGeometry();
+wxGeo.setAttribute('position',new THREE.BufferAttribute(wxPos,3));wxGeo.setDrawRange(0,0);
+const wxMat=new THREE.PointsMaterial({size:.11,transparent:true,opacity:.85,depthWrite:false});
+const wxPts=new THREE.Points(wxGeo,wxMat);wxPts.frustumCulled=false;scene.add(wxPts);
+function wxSpawn(p){for(let a=0;a<5;a++){p.x=pos.x+(Math.random()-.5)*44;p.z=pos.z+(Math.random()-.5)*44;
+if(CI(Math.floor(p.x),Math.floor(p.z)).biome!=='desert')break;} /* <=4 bounded re-rolls: no streaks bleeding over desert columns */
+p.y=pos.y+10+Math.random()*16;
+const th=CI(Math.floor(p.x),Math.floor(p.z)).h;if(p.y<th+2)p.y=th+2+Math.random()*14;} /* never seed below terrain: no flicker inside caves */
+function updWeather(dt){
+wI=wxOverride!==null?wxOverride:weatherAt(gt);
+const cb=CI(Math.floor(pos.x),Math.floor(pos.z));
+wKind=(wI<=0)?'none':(cb.biome==='snowy'||cb.h>=45)?'snow':(cb.biome==='desert')?'none':'rain';
+if(rainG)rainG.gain.value+=((wKind==='rain'?.07*wI:0)-rainG.gain.value)*Math.min(1,dt*3);
+if(wI>.05&&wxPrev<=.05)logS('rain');wxPrev=wI;
+const n=wKind==='none'?0:Math.floor(wI*WXN);
+if(n>0){if(!wxP){wxP=[];for(let i=0;i<WXN;i++){const p={x:0,y:0,z:0};wxSpawn(p);wxP.push(p);}}
+const snow=wKind==='snow';
+if(snow)wxMat.color.copy(matO.color);else wxMat.color.setRGB(.62*matO.color.r,.68*matO.color.g,.78*matO.color.b); /* flakes inherit the world tint: dim at night, ~white at noon */
+for(let i=0;i<n;i++){const p=wxP[i];
+p.y-=(snow?2.2:18)*dt;if(snow)p.x+=Math.sin(gt*1.7+i)*.6*dt;
+if(p.y<CI(Math.floor(p.x),Math.floor(p.z)).h+1||p.y<pos.y-20)wxSpawn(p); /* terrain stop: dies at the surface, never indoors */
+wxPos[i*3]=p.x;wxPos[i*3+1]=p.y;wxPos[i*3+2]=p.z;}
+wxGeo.attributes.position.needsUpdate=true;}
+wxGeo.setDrawRange(0,n);}
+const skyC=new THREE.Color(),tmpC=new THREE.Color();
+function updSky(){const dayT=((gt/600)+.22)%1,ang=dayT*Math.PI*2,sy=Math.sin(ang),sx2=Math.cos(ang);
+const dl=sst(-.08,.22,sy),hor=Math.exp(-Math.abs(sy)*7)*(sy>-.3?1:0);
+gDL=dl;
+skyC.setRGB(lerp(.012,.45,dl),lerp(.02,.68,dl),lerp(.055,.99,dl));
+tmpC.setRGB(.95,.46,.24);skyC.lerp(tmpC,hor*.5);
+const wd=(wKind==='none')?0:wI; /* storm dim: wI/wKind are module state (init 0/'none'), safe before start/while paused */
+if(wd>0)skyC.lerp(tmpC.setRGB(.42,.46,.52),.45*wd);
+const cw=getB(Math.floor(camera.position.x),Math.floor(camera.position.y),Math.floor(camera.position.z))===5;
+if(cw){scene.fog.near=2;scene.fog.far=22;skyC.setRGB(.04*(1+dl),.13*(1+dl),.32*(1+dl));uwEl.style.display='block';}
+else{scene.fog.near=RD*16*.5;scene.fog.far=RD*16*.92;uwEl.style.display='none';}
+scene.fog.color.copy(skyC);scene.background.copy(skyC);
+const L=(.22+.78*dl)*(1-.25*wd),lr=Math.min(1,L*(1+.25*hor)),lg2=L*(1-.05*hor),lb=L*(1-.2*hor);
+matO.color.setRGB(lr,lg2,lb);matW.color.setRGB(lr,lg2,Math.min(1,lb*1.1));pMat.color.setRGB(lr,lg2,lb);
+sky.position.copy(camera.position);
+sun.position.set(sx2*430,sy*430,90);sun.lookAt(camera.position);sun.visible=sy>-.18;
+sun.material.color.setRGB(1,lerp(.55,.95,dl),lerp(.3,.7,dl));
+moon.position.set(-sx2*430,-sy*430,-90);moon.lookAt(camera.position);moon.visible=-sy>-.18;
+stars.material.opacity=Math.max(0,1-dl*1.4);
+clouds.position.x=camera.position.x;clouds.position.z=camera.position.z;
+clouds.material.opacity=Math.min(.85,.14+.36*dl+.35*wd);
+ctex.offset.set(camera.position.x/350-gt*.004,-camera.position.z/350);
+wtex.offset.set(gt*.05,gt*.032);
+if((AC||TEST)&&gt>nextChirp){nextChirp=gt+5+Math.random()*12;dl>.6?chirp():cricket();}
+return dayT;}
+const hudEl=document.getElementById('hud'),uwEl=document.getElementById('uw');
+let fpsT=0,fpsN=0,fps=60,hudT=0;
+function updHUD(dayT){
+const hrs=(6+dayT*24)%24,hh=hrs|0,mm=(hrs%1)*60|0;
+hudEl.textContent='FPS '+Math.round(fps)+'  |  XYZ '+Math.floor(pos.x)+' '+Math.floor(pos.y)+' '+Math.floor(pos.z)
++'  |  '+CI(Math.floor(pos.x),Math.floor(pos.z)).biome
++'  |  '+(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm
++'  |  seed '+WS+(fly?'  |  FLY':'')+(muted?'  |  muted':'')+(wI>.1&&wKind!=='none'?'  |  '+wKind:'');}
+/* ---------- hotbar ---------- */
+const hbEl=document.getElementById('hotbar');
+function drawIcon(c,id){c.globalCompositeOperation='source-over';c.clearRect(0,0,16,16);if(!id)return;
+const t=id>=100?ITILE[id]:(BL[id].cr?BL[id].cr:BL[id].t[id===1||id===7?0:2]),ox=(t&7)*16,oy=(t>>3)*16;
+c.drawImage(TC,ox,oy,16,16,0,0,16,16);
+if(id<100&&BL[id].ti){c.globalCompositeOperation='multiply';c.fillStyle=(id===7||id===37)?'#4a8c38':'#7ec850';c.fillRect(0,0,16,16);
+c.globalCompositeOperation='destination-in';c.drawImage(TC,ox,oy,16,16,0,0,16,16);c.globalCompositeOperation='source-over';}}
+function updISlot(s,it){const c=s.querySelector('canvas').getContext('2d');c.imageSmoothingEnabled=false;
+drawIcon(c,it?it.id:0);
+s.querySelector('.cnt').textContent=it&&!isTool(it.id)?it.count:'';
+const du=s.querySelector('.dur');
+if(it&&isTool(it.id)){const r=it.dur/DURMAX[it.id];du.style.display='block';du.style.width=(r*72)+'%';du.style.background=r>.5?'#6e6':r>.25?'#ed5':'#e55';}
+else du.style.display='none';}
+function mkSlotEls(s){const cv=document.createElement('canvas');cv.width=16;cv.height=16;
+const ct=document.createElement('div');ct.className='cnt';
+const du=document.createElement('div');du.className='dur';
+s.appendChild(cv);s.appendChild(ct);s.appendChild(du);}
+function buildHotbar(){hbEl.innerHTML='';
+for(let i=0;i<9;i++){const s=document.createElement('div');s.className='slot'+(i===slot?' sel':'');
+mkSlotEls(s);
+const sp=document.createElement('span');sp.textContent=i+1;
+const nm=document.createElement('i');
+s.appendChild(sp);s.appendChild(nm);hbEl.appendChild(s);}}
+function updHotbar(){[...hbEl.children].forEach((s,i)=>s.className='slot'+(i===slot?' sel':''));}
+function updCounts(){[...hbEl.children].forEach((s,i)=>{const it=inv[i];updISlot(s,it);
+s.querySelector('i').textContent=it?(NAMES[it.id]||''):'';});
+updArmorChip();
+if(uiOpen)renderInv();}
+/* worn-armor HUD chip: best-DEF scan (the SAME rule damage() applies, so what the chip shows is what
+   absorbs) + durability fraction bar/text. Event-driven only: updCounts fires on every inventory event
+   AND inside damage()'s armor-absorb branch - never per-frame; armLast keys id_dur so unchanged state
+   costs zero DOM writes. display:none when no armor is in inventory. */
+const armEl=document.getElementById('armorchip'),armCv=armEl.querySelector('canvas').getContext('2d'),armBar=armEl.querySelector('.abar i'),armTxt=armEl.querySelector('span');
+let armLast='';
+function updArmorChip(){let bi=-1,bd=0;for(let i=0;i<36;i++){const s=inv[i];if(s&&DEF[s.id]&&DEF[s.id]>bd){bd=DEF[s.id];bi=i;}}
+if(bi<0){if(armLast!==''){armLast='';armEl.style.display='none';}return;}
+const s=inv[bi],k=s.id+'_'+s.dur;if(k===armLast)return;armLast=k;
+armEl.style.display='flex';
+armCv.imageSmoothingEnabled=false;drawIcon(armCv,s.id);
+const r=s.dur/DURMAX[s.id];armBar.style.width=(r*100)+'%';armBar.style.background=r>.5?'#6e6':r>.25?'#ed5':'#e55';
+armTxt.textContent=s.dur+'/'+DURMAX[s.id];}
+function setHbw(){const w=hbEl.getBoundingClientRect().width;if(w>0)document.documentElement.style.setProperty('--hbw',w+'px');} /* vitals rows anchor to the real hotbar width; w>0 guard skips hidden-hotbar measurements (hideUI/test) */
+buildHotbar();updCounts();setHbw();
+/* ---------- inventory / crafting UI ---------- */
+const invEl=document.getElementById('invui'),curEl=document.getElementById('curstack');
+let uiSlots={h:[],s:[],c:[],o:null};
+function mkISlot(fn){const s=document.createElement('div');s.className='islot';mkSlotEls(s);
+s.addEventListener('mousedown',fn);return s;}
+function buildInvUI(){invEl.innerHTML='';uiSlots={h:[],s:[],c:[],o:null,fp:null};
+const p=document.createElement('div');p.id='invpanel';
+const h1=document.createElement('h3');h1.textContent=chestKey?'CHEST':furnKey?'FURNACE':tableMode?'CRAFTING TABLE 3×3':'CRAFTING 2×2';p.appendChild(h1);
+const cr=document.createElement('div');cr.id='craftrow';
+const cg=document.createElement('div');cg.className='igrid';
+if(chestKey){cg.style.gridTemplateColumns='repeat(3,44px)'; /* take-only loot row: 3 slots, NO arrow/output slot and no deposit path - clicks only ever addItem() OUT */
+for(let i=0;i<3;i++){const el=mkISlot(e=>slotClickT(i,e));cg.appendChild(el);uiSlots.c.push(el);}}
+else if(furnKey){cg.style.gridTemplateColumns='repeat(2,44px)'; /* [input, fuel] - clicks write straight into the furnaces entry */
+for(let i=0;i<2;i++){const el=mkISlot(e=>slotClickF(i,e));cg.appendChild(el);uiSlots.c.push(el);}}
+else{cg.style.gridTemplateColumns='repeat('+craftN+',44px)';
+for(let i=0;i<craftN*craftN;i++){const el=mkISlot(e=>slotClickC(i,e));cg.appendChild(el);uiSlots.c.push(el);}}
+cr.appendChild(cg);
+if(!chestKey){const ar=document.createElement('div');ar.id='carrow';ar.textContent='→';
+const out=mkISlot(e=>furnKey?furnOutClick(e):outClick(e));out.style.borderColor='#fa6';
+cr.appendChild(ar);cr.appendChild(out);uiSlots.o=out;}
+if(furnKey){const fp=document.createElement('div');fp.style.cssText='color:#9ab;font:11px monospace;white-space:nowrap';
+cr.appendChild(fp);uiSlots.fp=fp;}
+p.appendChild(cr);
+const h2=document.createElement('h3');h2.textContent='INVENTORY';p.appendChild(h2);
+const sg=document.createElement('div');sg.className='igrid';sg.style.gridTemplateColumns='repeat(9,44px)';
+for(let i=9;i<36;i++){const el=mkISlot(e=>slotClickI(i,e));sg.appendChild(el);uiSlots.s.push(el);}
+p.appendChild(sg);
+const hg=document.createElement('div');hg.className='igrid';hg.style.gridTemplateColumns='repeat(9,44px)';hg.style.marginTop='6px';
+for(let i=0;i<9;i++){const el=mkISlot(e=>slotClickI(i,e));hg.appendChild(el);uiSlots.h.push(el);}
+p.appendChild(hg);invEl.appendChild(p);renderInv();}
+function matchRecipe(){const t={};let any=false;
+for(const g of craftG)if(g){t[g.id]=(t[g.id]||0)+g.count;any=true;}
+if(!any)return null;
+/* most-specific-wins: among satisfiable recipes (same exact key-set check), pick the largest total
+   input count - a 6-plank grid yields armor, not sticks; ties keep RECIPES array order */
+let best=null,bestN=-1;
+outer:for(const r of RECIPES){const ks=Object.keys(r.in);
+if(ks.length!==Object.keys(t).length)continue;
+for(const k of ks)if((t[k]||0)<r.in[k])continue outer;
+let n=0;for(const k of ks)n+=r.in[k];
+if(n>bestN){bestN=n;best=r;}}
+return best;}
+function renderInv(){if(!uiOpen)return;
+uiSlots.h.forEach((s,i)=>updISlot(s,inv[i]));
+uiSlots.s.forEach((s,i)=>updISlot(s,inv[i+9]));
+if(chestKey)renderChest();
+else if(furnKey)renderFurn();
+else{uiSlots.c.forEach((s,i)=>updISlot(s,craftG[i]));
+const r=matchRecipe();updISlot(uiSlots.o,r?mkStack(r.out,r.n):null);}
+renderCur();}
+function renderChest(){const c=chestKey&&chests.get(chestKey);if(!c)return;
+for(let i=0;i<3;i++)updISlot(uiSlots.c[i],c[i]);}
+/* chest slot: TAKE-ONLY - the whole stack addItem()s into the inventory. cur is never written into the
+   chest, shift/right-click have no special path: there is no deposit, by construction. */
+function slotClickT(i,e){e.preventDefault();e.stopPropagation();
+const c=chestKey&&chests.get(chestKey);if(!c||!c[i])return;
+const s=c[i];c[i]=null;
+if(!addItem(s)&&s.count>0)c[i]=s; /* inventory full: the remainder stays in the chest */
+sPlace();updCounts();}
+function renderFurn(){const f=furnKey&&furnaces.get(furnKey);if(!f||!uiSlots.fp)return;
+updISlot(uiSlots.c[0],f.inp);updISlot(uiSlots.c[1],f.fuel);updISlot(uiSlots.o,f.out);
+uiSlots.fp.textContent='burn '+(f.burn>0?Math.ceil(f.burn):0)+'s · '+Math.round(f.cook/5*100)+'%';}
+function renderCur(){if(uiOpen&&cur){curEl.style.display='block';
+const c=curEl.querySelector('canvas').getContext('2d');c.imageSmoothingEnabled=false;drawIcon(c,cur.id);
+curEl.querySelector('.cnt').textContent=!isTool(cur.id)?cur.count:'';}
+else curEl.style.display='none';}
+function genClick(arr,i,e){const s=arr[i];
+if(e&&e.button===2&&!(s&&isTool(s.id))&&!(cur&&isTool(cur.id))){
+if(!cur){if(s){const h=Math.ceil(s.count/2);cur={id:s.id,count:h};s.count-=h;if(s.count<=0)arr[i]=null;}return;}
+if(!s){arr[i]={id:cur.id,count:1};cur.count--;if(cur.count<=0)cur=null;return;}
+if(s.id===cur.id&&s.count<64){s.count++;cur.count--;if(cur.count<=0)cur=null;return;}
+arr[i]=cur;cur=s;return;}
+if(!cur){if(s){cur=s;arr[i]=null;}}
+else if(!s){arr[i]=cur;cur=null;}
+else if(s.id===cur.id&&!isTool(s.id)){const t=Math.min(64-s.count,cur.count);s.count+=t;cur.count-=t;if(cur.count<=0)cur=null;}
+else{arr[i]=cur;cur=s;}}
+function slotClickI(i,e){e.preventDefault();e.stopPropagation();
+if(e.shiftKey){const s=inv[i];if(!s)return;inv[i]=null;
+if(!addItem(s,i<9?9:0,i<9?36:9)&&s.count>0)inv[i]=s;updCounts();return;}
+genClick(inv,i,e);updCounts();}
+function slotClickC(i,e){e.preventDefault();e.stopPropagation();
+if(e.shiftKey){const s=craftG[i];if(!s)return;craftG[i]=null;
+if(!addItem(s)&&s.count>0)craftG[i]=s;updCounts();return;}
+genClick(craftG,i,e);updCounts();}
+/* furnace slots: genClick against a 2-array view of the live entry, then write back (smelting keeps running) */
+function slotClickF(i,e){e.preventDefault();e.stopPropagation();
+const f=furnKey&&furnaces.get(furnKey);if(!f)return;
+const a=[f.inp,f.fuel];
+if(e.shiftKey){const s=a[i];if(s){a[i]=null;if(!addItem(s)&&s.count>0)a[i]=s;}}
+else genClick(a,i,e);
+f.inp=a[0];f.fuel=a[1];updCounts();}
+function furnOutClick(e){e.preventDefault();e.stopPropagation(); /* take-only - no recipe matching */
+const f=furnKey&&furnaces.get(furnKey);if(!f||!f.out)return;
+if(cur){if(isTool(cur.id)||cur.id!==f.out.id||cur.count+f.out.count>64)return;cur.count+=f.out.count;}
+else cur=f.out;
+f.out=null;sPlace();updCounts();}
+function outClick(e){e.preventDefault();e.stopPropagation();
+const r=matchRecipe();if(!r)return;
+if(cur){if(isTool(r.out)||cur.id!==r.out||cur.count+r.n>64)return;cur.count+=r.n;}
+else cur=mkStack(r.out,r.n);
+for(const id in r.in){let need=r.in[id];
+for(let i=0;i<craftG.length&&need>0;i++){const g=craftG[i];
+if(g&&g.id===+id){const t=Math.min(g.count,need);g.count-=t;need-=t;if(g.count<=0)craftG[i]=null;}}}
+sPlace();updCounts();}
+function openInv(tbl){if(uiOpen)return;uiOpen=true;tableMode=!!tbl;craftN=tbl?3:2;furnKey=null;chestKey=null;
+craftG=new Array(craftN*craftN).fill(null);cur=null;
+key={};sprint=false;mL=false;mR=false;resetMine();
+buildInvUI();invEl.style.display='flex';
+if(locked&&document.exitPointerLock)document.exitPointerLock();}
+function openFurnace(x,y,z){if(uiOpen)return;if(!furnState(x,y,z))return; /* get-or-create; verifies the block is 23 */
+uiOpen=true;tableMode=false;furnKey=x+','+y+','+z;chestKey=null;craftG=[];cur=null;
+key={};sprint=false;mL=false;mR=false;resetMine();
+buildInvUI();invEl.style.display='flex';
+if(locked&&document.exitPointerLock)document.exitPointerLock();}
+function openChest(x,y,z){if(uiOpen)return;if(!chestState(x,y,z))return; /* get-or-create + verifies the block is 44; first open lazily seeds the loot */
+uiOpen=true;tableMode=false;furnKey=null;chestKey=x+','+y+','+z;craftG=[];cur=null;
+key={};sprint=false;mL=false;mR=false;resetMine();
+buildInvUI();invEl.style.display='flex';
+if(locked&&document.exitPointerLock)document.exitPointerLock();}
+function closeInv(){if(!uiOpen)return;uiOpen=false;
+if(furnKey)furnKey=null; /* furnace slots write straight into the furnaces entry - contents stay in the furnace */
+else if(chestKey)chestKey=null; /* chest slots ARE the live chests entry - leftovers stay in the chest */
+else for(let i=0;i<craftG.length;i++)if(craftG[i]){addItem(craftG[i]);craftG[i]=null;} /* overflow discarded (36 slots) */
+if(cur){addItem(cur);cur=null;}
+invEl.style.display='none';renderCur();updCounts();
+if(started&&!TEST&&!dead)lock();}
+function toggleInv(tbl){uiOpen?closeInv():openInv(tbl);}
+invEl.addEventListener('mousedown',e=>{if(e.target===invEl)closeInv();});
+document.addEventListener('mousemove',e=>{if(uiOpen&&cur)curEl.style.transform='translate('+(e.clientX-16)+'px,'+(e.clientY-16)+'px)';});
+/* ---------- vitals ---------- */
+const heartsEl=document.getElementById('hearts'),bubEl=document.getElementById('bubbles'),dmgEl=document.getElementById('dmg'),deathEl=document.getElementById('death');
+function updHearts(){let s='';for(let i=0;i<10;i++)s+='<span style="color:'+(hp>=2*i+2?'#e33':hp===2*i+1?'#933':'#333')+'">♥</span>';heartsEl.innerHTML=s;}
+const hungerEl=document.getElementById('hunger');
+function updHunger(){let s='';for(let i=9;i>=0;i--){const st=hunger>=2*i+2?'':hunger===2*i+1?'opacity:.55':'opacity:.15;filter:grayscale(1)';
+s+='<span style="'+st+'">🍗</span>';}hungerEl.innerHTML=s;} /* reversed iteration: depleted drumsticks read from the LEFT end - true MC mirror of hearts (which grey from the right) */
+const FOOD={105:4,106:4,109:5,110:8,114:3,118:2,119:3,120:6}; /* id -> hunger restored; raw porkchop changed 8->4, cooked 8 (MC-direction parity); rotten flesh 3 - true risk food: +3 hunger but triggers a real 8s poison (set in eatFood, drained in physics); berries 2, raw mutton 3 / cooked mutton 6 (raw weak, cooked strong) */
+function eatFood(i){const s2=inv[i];if(!s2||!FOOD[s2.id]||hunger>=20)return false;
+const n=simNow;if(n<eatT)return false;eatT=n+400;
+hunger=Math.min(20,hunger+FOOD[s2.id]);updHunger();
+s2.count--;if(s2.count<=0)inv[i]=null;updCounts();
+logS('eat');sfx(900,.18,.3);
+if(s2.id===114){poisonT=8;poisonTk=0;logS('poison');} /* rotten flesh gamble: logged after 'eat' so the sfx log reads eat -> poison */
+return true;}
+let lastAirN=-1;
+function updAir(){bubEl.style.display=air<10?'':'none';const n=Math.ceil(air);if(n===lastAirN)return;lastAirN=n;
+let s='';for(let i=0;i<10;i++)s+='<span style="color:'+(n>i?'#8cf':'#345')+'">●</span>';bubEl.innerHTML=s;}
+function damage(n,sx,sz,pierce){if(dead)return; /* signature backward-compatible: existing 1/3-arg call sites (zombie melee included) get pierce=undefined */
+/* armor: best DEF item anywhere in inventory counts as worn - pragmatic substitution, no armor slot UI.
+   Flat 1/2 reduction (1-hp floor) on mob/fall/cactus hits, 1 dur per absorbed hit; pierce=true (drowning/starvation) skips. */
+if(!pierce&&n>0){let bi=-1,bd=0;for(let i2=0;i2<36;i2++){const s3=inv[i2];if(s3&&DEF[s3.id]&&DEF[s3.id]>bd){bd=DEF[s3.id];bi=i2;}}
+if(bi>=0){n=Math.max(1,n-bd);const s3=inv[bi];s3.dur--;if(s3.dur<=0){inv[bi]=null;sfx(180,.08,.15,2);}updCounts();}}
+hp=Math.max(0,hp-n);
+if(sx!==undefined){const kl=Math.hypot(pos.x-sx,pos.z-sz)||1;kbx=(pos.x-sx)/kl*7;kbz=(pos.z-sz)/kl*7;if(!fly)vel.y=Math.max(vel.y,3.4);}
+dmgEl.style.background='rgba(255,0,0,.35)'; /* re-assert red: poison's green flash must never bleed into hit flashes */
+dmgEl.style.transition='none';dmgEl.style.opacity='1';void dmgEl.offsetWidth;dmgEl.style.transition='';dmgEl.style.opacity='0';
+thump(90,40,.15,.5);updHearts();if(hp<=0)die();}
+function die(){dead=true;mL=false;mR=false;key={};sprint=false;
+/* death drops: corpse-run stakes - ONE drop per non-null slot carrying the full stack count (and tool dur),
+   +-1.5 scatter around the death point, vy 2..4. D.life=300 widens ONLY these drops' despawn window to
+   300s so corpse runs beyond 200 blocks are winnable; ordinary drops keep 60s, so the 64-cap FIFO perf
+   posture is untouched. <=36 drops fits the cap, but pre-existing ground drops can still be evicted
+   oldest-first. Drops stay transient (never saved): a reload still forfeits the corpse. */
+for(let i=0;i<36;i++){const s=inv[i];if(!s)continue;
+const D=spawnDrop(pos.x-.5+(Math.random()*3-1.5),pos.y,pos.z-.5+(Math.random()*3-1.5),s.id,s.dur,s.count);
+D.vy=2+Math.random()*2;D.life=300;}
+inv.fill(null);updCounts();
+document.exitPointerLock&&document.exitPointerLock();deathEl.style.display='flex';}
+document.getElementById('respawn').onclick=()=>{let rp=SPAWN;
+if(spawnPt){if(getB(Math.floor(spawnPt.x),Math.floor(spawnPt.y)-1,Math.floor(spawnPt.z))===35)rp=spawnPt;
+else logS('bedgone');} /* bed destroyed -> world spawn (MC parity); 'bedgone' only when a bed spawn existed */
+pos.x=rp.x;pos.y=rp.y;pos.z=rp.z;vel.x=vel.y=vel.z=0;kbx=kbz=0;swimJ=0;
+hp=20;air=10;hunger=20;exh=0;starveT=0;drownT=0;regenT=0;poisonT=0;poisonTk=0;dead=false;deathEl.style.display='none';updHearts();updAir();updHunger();
+camera.position.set(pos.x,pos.y+eyeH,pos.z);if(!TEST)lock();};
+updHearts();updAir();updHunger();
+/* ---------- main loop ---------- */
+camera.position.set(pos.x,pos.y+eyeH,pos.z);
+let last=performance.now(),testPaused=false,sampReq=null,simErr=false,rndErr=false;
+let caveChkT=0,caveAmbT=0; /* cave ambience: 1Hz check accumulator + wall-clock retrigger gate (render-side, guard B) */
+function simStep(dt){simNow+=dt*1000;gt+=dt;physics(dt);updParts(dt);mineTick(simNow);updDrops(dt);updMobs(dt);updArrows(dt);updFarm(dt);updFurnace(dt);updButtons(dt);updWeather(dt);}
+function loop(){requestAnimationFrame(loop);
+let dt=0,active=false;
+try{ /* guard A: sim (always records into __vox.errors, warns once) */
+const now=performance.now();dt=(now-last)/1000;last=now;
+perfFrames[perfFi++%120]=dt*1000;
+fpsT+=dt;fpsN++;if(fpsT>.5){fps=fpsN/fpsT;fpsT=0;fpsN=0;}
+dt=Math.min(dt,.05);
+active=(locked||TEST)&&started&&!testPaused;
+if(active&&!dead)simStep(dt);
+if(sampReq){sampReq.rec.push({t:+(now/1000).toFixed(3),x:pos.x,y:pos.y,z:pos.z,vx:vel.x,vy:vel.y,vz:vel.z,g:onGround});
+if(sampReq.rec.length>=sampReq.n){const q=sampReq;sampReq=null;q.res(q.rec);}}
+}catch(e){if(!simErr){simErr=true;console.warn('vox sim error',e);}
+if(TEST&&window.__vox&&window.__vox.errors.length<300)window.__vox.errors.push({msg:'sim: '+String(e&&e.message||e)});}
+try{ /* guard B: world/render */
+updChunks();
+const dayT=updSky();
+camera.rotation.y=yaw;camera.rotation.x=pitch; /* camera follows look state unconditionally, every frame - no state can leave a stale rotation on screen */
+updHL();
+updVM(dt);
+caveChkT+=dt;if(caveChkT>=1){caveChkT=0; /* cave ambience: 1Hz render-side sky-exposure probe at the player's FEET (tunnel-floor depth is what matters; never per-frame); retriggers at most once per 4s when sky<.3, silent above ground */
+if(active&&!dead&&lightAtW(pos.x,pos.y,pos.z).sky<.3&&performance.now()>=caveAmbT){caveAmbT=performance.now()+4000;caveAmb();}}
+hudT+=dt;if(hudT>.25||!active){hudT=0;updHUD(dayT);}
+renderer.render(scene,camera);
+if(vmMesh){ /* viewmodel pass: depth cleared so the held block composites opaquely over the whole world (incl. transparent water drawn after opaques); color buffer kept (autoClear off for this one call) */
+if(vmCam.fov!==camera.fov||vmCam.aspect!==camera.aspect){vmCam.fov=camera.fov;vmCam.aspect=camera.aspect;vmCam.updateProjectionMatrix();}
+renderer.autoClear=false;renderer.clearDepth();renderer.render(vmScene,vmCam);renderer.autoClear=true;}
+}catch(e){if(!rndErr){rndErr=true;console.warn('vox render error',e);}
+if(TEST&&window.__vox&&window.__vox.errors.length<300)window.__vox.errors.push({msg:'render: '+String(e&&e.message||e)});}}
+loop();
+/* ---------- test hook (?test=1) ---------- */
+if(TEST){window.__vox={
+setCam:(x,y,z,ya,pi)=>{if(!isFinite(x)||!isFinite(y)||!isFinite(z)||!isFinite(ya)||!isFinite(pi))return false; /* leave all state untouched on bad input */
+pos.x=x;pos.y=y;pos.z=z;yaw=ya;pitch=Math.max(-1.55,Math.min(1.55,pi));vel.x=vel.y=vel.z=0;onGround=false;
+camera.position.set(pos.x,pos.y+eyeH,pos.z);camera.rotation.y=yaw;camera.rotation.x=pitch;return true;},
+getState:()=>({fps:Math.round(fps),x:pos.x,y:pos.y,z:pos.z,yaw,pitch,biome:CI(Math.floor(pos.x),Math.floor(pos.z)).biome,time:gt,selected:inv[slot]?inv[slot].id:0,flying:fly,inv:inv.slice(0,9).map(s=>s?s.count:0),hp,air,hunger,vel:{x:vel.x,y:vel.y,z:vel.z},onGround,eyeH,fov:camera.fov,sprint,sneak,locked,paused:testPaused,poison:+poisonT.toFixed(2)}),
+hideUI:()=>{for(const id of['hud','xh','vig','hotbar','ov','pause'])document.getElementById(id).style.display='none';},
+showUI:()=>{for(const id of['hud','xh','vig','hotbar'])document.getElementById(id).style.display='';},
+key:(n,down)=>{const c=n.length===1?(n>='1'&&n<='9'?'Digit'+n:'Key'+n.toUpperCase()):n==='Shift'?'ShiftLeft':n==='Ctrl'?'ControlLeft':n;
+if(down!==false)document.dispatchEvent(new KeyboardEvent('keydown',{code:c}));
+if(down!==true)document.dispatchEvent(new KeyboardEvent('keyup',{code:c}));},
+place:()=>tryPlace(),brk:()=>tryBreak(),
+look:(dx,dy)=>applyLook(dx,dy),
+lookLog, /* live ref: last 32 raw {mx,my} received by the REAL mousemove handler */
+give:(id,c)=>addItem(mkStack(id,c||1)),
+craft:(out)=>{const r=RECIPES.find(q=>q.out===out);if(!r)return false;
+for(const id in r.in)if(invCount(+id)<r.in[id])return false;
+for(const id in r.in)consume(+id,r.in[id]);
+addItem(mkStack(r.out,r.n));updCounts();return true;},
+mineHold:(b)=>{mL=!!b;if(!b)resetMine();},
+toggleInv:(t)=>toggleInv(!!t),
+invFull:()=>inv.map(s=>s?Object.assign({},s):null),
+swapSlots:(a,b)=>{const t=inv[a];inv[a]=inv[b];inv[b]=t;updCounts();},
+pause:()=>{testPaused=true;pauseEl.style.display='flex';},
+resume:()=>{testPaused=false;pauseEl.style.display='none';},
+setTime:(hours)=>{gt=(((hours-6)/24-.22)%1+1)%1*600;if(nextChirp<gt||nextChirp>gt+17)nextChirp=gt+2+Math.random()*4;},
+skyInfo:()=>({hex:'#'+skyC.getHexString(),cloudOx:ctex.offset.x,sunVis:sun.visible,starOp:stars.material.opacity}),
+sample:(n)=>new Promise(res=>{sampReq={n:Math.max(1,n|0),rec:[],res};}),
+block:(x,y,z)=>getB(x,y,z),
+dropList:()=>drops.map(D=>({id:D.id,count:D.count||1,x:D.x,y:D.y,z:D.z})),
+spawnMob:(type,x,y,z)=>spawnMob(type,x,y,z),
+mobs:()=>mobs.map(M=>({type:M.type,x:M.x,y:M.y,z:M.z,hp:M.hp})),
+clearMobs:()=>{for(const M of mobs)scene.remove(M.grp);mobs.length=0;
+for(const A of arrows)scene.remove(A.m);arrows.length=0;}, /* in-flight arrows go with their shooters: keeps armor-step assertions exact between scenarios */
+arrows:()=>arrows.map(a=>({x:a.x,y:a.y,z:a.z})),
+matchGrid:(stacks)=>{const old=craftG;craftG=stacks.map(s=>s?{id:s[0],count:s[1]}:null);
+const r=matchRecipe();craftG=old;return r?{out:r.out,n:r.n}:null;}, /* UI-free recipe-matrix probe */
+setSpawning:(b)=>{spawnOn=!!b;return spawnOn;},
+lightAt:(x,y,z)=>lightAtW(x,y,z),
+spawnAt:(type,x,z)=>{updSky();return trySpawnAt(type,Math.floor(x),Math.floor(z));},
+torches:()=>{const o=[];for(const s of torchR.values())for(const t of s.values())o.push(t);return o;},
+attack:()=>attackMob(),
+save:()=>{save();return true;},
+clearSave:()=>{try{localStorage.removeItem(SKEY);}catch(e){}},
+setHunger:(n)=>{hunger=Math.max(0,Math.min(20,n|0));exh=0;starveT=0;updHunger();},
+setHp:(n)=>{hp=Math.max(1,Math.min(20,n|0));updHearts();return hp;}, /* floor 1: a test helper must never create a dead-without-die() state */
+colInfo:(x,z)=>{const c=CI(x,z);return{h:c.h,biome:c.biome,tp:c.tp,snow:c.snow};},
+weather:()=>({kind:wKind,intensity:+wI.toFixed(2),scheduled:+weatherAt(gt).toFixed(2)}),
+setWeather:(v)=>{wxOverride=(v===null||v===undefined)?null:Math.max(0,Math.min(1,+v));updWeather(0);return wxOverride;}, /* updWeather(0): wI/wKind/drawRange reflect immediately, dt=0 so no sim advance */
+findStructures:(r)=>{const out=[],ccx=Math.floor(SPAWN.x)>>4,ccz=Math.floor(SPAWN.z)>>4,cr=Math.min(128,Math.ceil((r||256)/16)); /* clamp: huge r no longer wedges the page */
+for(let cx=ccx-cr;cx<=ccx+cr;cx++)for(let cz=ccz-cr;cz<=ccz+cr;cz++){
+if(h2i(cx^0xA5A5,cz^0x5A5A)%37!==0)continue;
+const wx=cx*16+8,wz=cz*16+8,sc=CI(wx,wz);
+if(sc.h<=SEA+1||sc.tree||sc.cac)continue;
+let mn=999,mx=-999;for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const hh=CI(wx+dx,wz+dz).h;if(hh<mn)mn=hh;if(hh>mx)mx=hh;}
+if(mx-mn>1)continue;
+out.push({type:sc.biome==='desert'?'well':'ruin',x:wx,y:sc.h,z:wz});}
+/* second pass: hamlets - exact replica of genChunk's gate + site test, appended after the
+   well/ruin entries so the existing output stays unchanged */
+for(let cx=ccx-cr;cx<=ccx+cr;cx++)for(let cz=ccz-cr;cz<=ccz+cr;cz++){
+if(h2i(cx^0x77C7,cz^0x3B3B)%89!==0||h2i(cx^0xA5A5,cz^0x5A5A)%37===0)continue;
+const wx=cx*16+8,wz=cz*16+8,sc=CI(wx,wz);
+if(sc.h<=SEA+1||(sc.biome!=='plains'&&sc.biome!=='forest'))continue;
+let mn=999,mx=-999,tr=false;
+for(let dx=-6;dx<=6;dx++)for(let dz=-6;dz<=6;dz++){const c2=CI(wx+dx,wz+dz);if(c2.h<mn)mn=c2.h;if(c2.h>mx)mx=c2.h;if(c2.tree)tr=true;}
+if(mx-mn>2||tr)continue;
+genChunk(cx,cz); /* gen now so the hamlet's torches register before the prober reads torches()/lightAt */
+out.push({type:'hamlet',x:wx,y:mx,z:wz});}
+return out;},
+eat:()=>{const i=inv[slot]&&FOOD[inv[slot].id]?slot:inv.findIndex(s2=>s2&&FOOD[s2.id]);return i<0?false:eatFood(i);},
+growCrops:()=>{for(const k of farm.keys())farm.set(k,gt-1);farmT=1;updFarm(1);return[...farm.keys()].length;},
+farmInfo:()=>[...farm.entries()].map(([k,d])=>({k,due:+d.toFixed(1)})),
+furnaceInfo:(x,y,z)=>{const f=furnaces.get(x+','+y+','+z);return f?{inp:f.inp,fuel:f.fuel,out:f.out,burn:+f.burn.toFixed(2),cook:+f.cook.toFixed(2)}:null;},
+furnacePut:(x,y,z,which,id,n)=>{const f=furnState(x,y,z);if(!f||!(which==='inp'||which==='fuel'||which==='out'))return false;
+f[which]={id,count:n||1};if(uiOpen&&furnKey)renderFurn();return true;},
+openFurnace:(x,y,z)=>openFurnace(x,y,z),
+step:(secs)=>{secs=Math.max(0,Math.min(30,+secs||0));const fx=1/60;let t=0,i=0;
+while(t<secs&&i<1800){if(dead)break;if(i%15===0)updSky();simStep(fx);t+=fx;i++;}
+updSky();return{t:+t.toFixed(3),mobs:mobs.length,hp,dead};},
+tickSpawns:(n)=>{updSky();for(let i=0;i<Math.min(60,n||1);i++)spawnTick();
+return mobs.map(M=>({type:M.type,x:+M.x.toFixed(1),z:+M.z.toFixed(1)}));},
+audioCheck:async()=>{if(typeof OfflineAudioContext==='undefined')return null;
+const out={},gens=[['break',sBreak],['place',sPlace],['chirp',chirp],['rain',sRainBurst],['step',sStep],['bow',sBow],['arrowhit',sArrowHit],['poison',sPoison],['caveamb',caveAmb]]; /* step registration closes the two-round-old asterisk; bow/arrowhit/poison/caveamb are this round's layer */
+for(const[nm,gen]of gens){const oac=new OfflineAudioContext(1,22050,44100);
+const oldAC=AC,oldM=master,oldN=nbuf;
+try{AC=oac;master=oac.createGain();master.gain.value=.7;master.connect(oac.destination);
+nbuf=oac.createBuffer(1,oac.sampleRate*2,oac.sampleRate);
+const ch=nbuf.getChannelData(0);for(let j=0;j<ch.length;j++)ch[j]=Math.random()*2-1;
+gen();}finally{AC=oldAC;master=oldM;nbuf=oldN;}
+const buf=await oac.startRendering(),d=buf.getChannelData(0);let pk=0;
+for(let j=0;j<d.length;j++){const v=Math.abs(d[j]);if(v>pk)pk=v;}
+out[nm]=+pk.toFixed(4);}
+return out;},
+vm:()=>({id:vmId,children:vmScene.children.length}), /* viewmodel lives in its own render-pass scene now, not under the camera */
+perf:()=>{const n=Math.min(perfFi,120);let s=0,mx=0;for(let i=0;i<n;i++){const v=perfFrames[i];s+=v;if(v>mx)mx=v;}
+return{frame:{avg:n?+(s/n).toFixed(3):0,max:+mx.toFixed(3)},build:{n:perfBuild.n,avg:perfBuild.n?+(perfBuild.total/perfBuild.n).toFixed(3):0,max:+perfBuild.max.toFixed(3)}};},
+/* finders: two-regime cave-mouth search. Pass 1 enumerates flat-terrain SINKHOLE funnels straight from
+   the 12x12 region hash (same site derivation + validity as sinkR; nearest-first; getB verifies the
+   center column actually daylighted), which makes small radii productive - the default drops 920->160
+   and the floor drops to 32. Pass 2 is the round-8 BREACH scan, unchanged: stride-8 high-ground
+   prefilter (steep terrain needs mountains, h>=32) and getB/chunk-gen only on exact-gated steep columns. */
+findCaveMouth:(r)=>{const out=[],x0=Math.floor(SPAWN.x),z0=Math.floor(SPAWN.z),RM=Math.min(Math.max(r||160,32),1280),cand=[];
+const sites=[];
+for(let gx=Math.floor((x0-RM)/12);gx<=Math.floor((x0+RM)/12);gx++)for(let gz=Math.floor((z0-RM)/12);gz<=Math.floor((z0+RM)/12);gz++){
+if(h2i(gx^0x3C58,gz^0x386A)%13!==0)continue;
+const sx=gx*12+2+h2i(gx,gz^0xF699)%8,sz=gz*12+2+h2i(gx^0xF2C6,gz)%8,dd=Math.max(Math.abs(sx-x0),Math.abs(sz-z0));
+if(dd>RM||sinkR(sx,sz)!==0)continue;sites.push([sx,sz,dd]);}
+sites.sort((a,b)=>a[2]-b[2]);
+for(const s of sites){if(out.length>=12)break;
+const hC=CI(s[0],s[1]).h;if(getB(s[0],hC,s[1])===0)out.push({x:s[0],y:hC,z:s[1]});}
+for(let x=x0-RM;x<=x0+RM;x+=8)for(let z=z0-RM;z<=z0+RM;z+=8)if(CI(x,z).h>=32)cand.push([x,z,Math.max(Math.abs(x-x0),Math.abs(z-z0))]);
+cand.sort((a,b)=>a[2]-b[2]); /* nearest mountain samples first */
+const seen=new Set();
+for(const c of cand){if(out.length>=12)break;
+for(let x=c[0]-5;x<=c[0]+5;x++)for(let z=c[1]-5;z<=c[1]+5;z++){
+const k=x+'_'+z;if(seen.has(k))continue;seen.add(k);
+const h=CI(x,z).h;
+if(h-Math.min(CI(x,z-1).h,CI(x,z+1).h,CI(x+1,z).h,CI(x-1,z).h)<3)continue; /* breach-gate replica */
+for(let y=h;y>=Math.max(2,h-2);y--){if(getB(x,y,z)!==0)continue;
+if((getB(x+1,y,z)===0&&CI(x+1,z).h<y)||(getB(x-1,y,z)===0&&CI(x-1,z).h<y)||(getB(x,y,z+1)===0&&CI(x,z+1).h<y)||(getB(x,y,z-1)===0&&CI(x,z-1).h<y)){out.push({x,y,z});if(out.length>=12)return out;}}}}
+return out;},
+findOverhang:(r)=>{const out=[],x0=Math.floor(SPAWN.x),z0=Math.floor(SPAWN.z),RM=Math.min(Math.max(r||920,920),1280),cand=[];
+for(let x=x0-RM;x<=x0+RM;x+=8)for(let z=z0-RM;z<=z0+RM;z+=8)if(CI(x,z).h>=32)cand.push([x,z,Math.max(Math.abs(x-x0),Math.abs(z-z0))]);
+cand.sort((a,b)=>a[2]-b[2]);
+const seen=new Set();
+for(const c of cand){if(out.length>=12)break;
+for(let x=c[0]-5;x<=c[0]+5;x++)for(let z=c[1]-5;z<=c[1]+5;z++){
+const k=x+'_'+z;if(seen.has(k))continue;seen.add(k);
+const ci2=CI(x,z);if(ci2.tree)continue;
+if(Math.max(CI(x+1,z).h,CI(x-1,z).h,CI(x,z+1).h,CI(x,z-1).h)-ci2.h<4)continue; /* column steepness gate excludes flat-site ruin walls */
+for(let y=ci2.h+1;y<=ci2.h+6;y++)if(getB(x,y,z)===3&&getB(x,y-1,z)===0){out.push({x,y,z});if(out.length>=12)return out;}}}
+return out;},
+spawnCaveAt:(x,z)=>{updSky();return trySpawnCaveAt(Math.floor(x),Math.floor(z));},
+/* same pocket predicate as trySpawnCaveAt (2-tall air, solid floor, y<=CI.h-4) so the prober can locate candidates deterministically */
+findCavePocket:(r)=>{const out=[],x0=Math.floor(pos.x),z0=Math.floor(pos.z),RM=Math.min(r||64,128);
+for(let x=x0-RM;x<=x0+RM&&out.length<8;x++)for(let z=z0-RM;z<=z0+RM&&out.length<8;z++){
+const hC=CI(x,z).h;
+for(let y=hC-4;y>=6;y--)if(getB(x,y,z)===0&&getB(x,y+1,z)===0&&SOLID(getB(x,y-1,z))){out.push({x,y,z});break;}}
+return out;},
+mem:()=>({chunks:chunks.size,cc:CCmap.size,meshes:meshes.size,drops:drops.length,torchChunks:torchR.size,mobs:mobs.length,furnaces:furnaces.size,chests:chests.size,edits:edits.size,heap:(performance.memory&&performance.memory.usedJSHeapSize)||null}),
+getBlock:(x,y,z)=>getB(x,y,z),
+pwrCalls:()=>pwrN, /* updatePower invocation counter - edit-triggered-only acceptance: flat across idle frames */
+buttons:()=>buttonTimers.map(t=>({x:t.x,y:t.y,z:t.z,until:+t.until.toFixed(1)})),
+interact:(x,y,z)=>{const b=getB(x,y,z); /* direct right-click dispatch on a cell: lever/button/door/table/furnace */
+if(useBlock(b,x,y,z))return true;
+if(b===17){openInv(true);return true;}
+if(b===23){openFurnace(x,y,z);return true;}
+if(b===44){openChest(x,y,z);return true;}
+return false;},
+chestInfo:(x,y,z)=>{const c=chests.get(x+','+y+','+z);return c?c.map(s=>s?{id:s.id,count:s.count}:null):null;}, /* map-only peek (no seeding) - null until first open, so reseed bugs are visible */
+chestTake:(x,y,z,i)=>{const c=chestState(x,y,z);if(!c||!c[i])return false; /* UI-free mirror of slotClickT - still take-only */
+const s=c[i];c[i]=null;if(!addItem(s)&&s.count>0){c[i]=s;updCounts();return false;}return true;},
+sfx:[],
+errors:[]};
+window.addEventListener('error',e=>{if(window.__vox.errors.length<300)window.__vox.errors.push({msg:String(e.message||e.error||e)});});
+window.addEventListener('unhandledrejection',e=>{if(window.__vox.errors.length<300)window.__vox.errors.push({msg:String(e.reason&&e.reason.message||e.reason||e)});});
+/* stage-0 suite loader (?suite=1): injects tests/suite.js; the suite gates on (and, under rAF
+   starvation, synchronously drives) boot before asserting. Silent no-op when tests/ is absent,
+   so the single-file artifact stays self-contained. */
+if(qs.get('suite')==='1'){const sc=document.createElement('script');sc.src='tests/suite.js';sc.onerror=()=>{};document.body.appendChild(sc);}}
+</script>
+</body>
+</html>
